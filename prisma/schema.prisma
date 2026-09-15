@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+  moduleFormat = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Scenario {
+  id String @id @db.VarChar(120)
+  category String @db.VarChar(40)
+  versions ScenarioTemplateVersion[]
+}
+
+model ScenarioTemplateVersion {
+  templateId String @db.VarChar(120)
+  version Int
+  variant String @db.VarChar(40)
+  configuration Json
+  publishedAt DateTime @default(now())
+  scenario Scenario @relation(fields: [templateId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  sessions TrainingSession[]
+  @@id([templateId, version, variant])
+}
+
+model TrainingSession {
+  id String @id @db.VarChar(120)
+  ownerId String @db.VarChar(120)
+  templateId String @db.VarChar(120)
+  templateVersion Int
+  variant String @db.VarChar(40)
+  status String @db.VarChar(30)
+  state String @db.VarChar(40)
+  revision Int
+  startedAt DateTime
+  lastActivityAt DateTime
+  endedAt DateTime?
+  template ScenarioTemplateVersion @relation(fields: [templateId, templateVersion, variant], references: [templateId, version, variant], onDelete: Restrict, onUpdate: Restrict)
+  actions TrainingAction[]
+  opportunities SessionOpportunity[]
+  events TrainingEvent[]
+  messages TrainingMessage[]
+  turns DialogueTurnReceipt[]
+  result TrainingResult?
+  @@index([ownerId, status])
+}
+
+model TrainingAction {
+  sessionId String @db.VarChar(120)
+  id String @db.VarChar(120)
+  kind String @db.VarChar(40)
+  fingerprint String @db.Text
+  state String @db.VarChar(40)
+  revision Int
+  at DateTime
+  validationStatus String @db.VarChar(40)
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  events TrainingEvent[]
+  finalizedOpportunities SessionOpportunity[]
+  turn DialogueTurnReceipt?
+  @@id([sessionId, id])
+  @@unique([sessionId, revision])
+}
+
+model SessionOpportunity {
+  position Int
+  sessionId String @db.VarChar(120)
+  definitionId String @db.VarChar(120)
+  skill String @db.VarChar(1)
+  state String @db.VarChar(40)
+  eligibleMaximum Float
+  earned Float
+  openedAt DateTime
+  finalizedAt DateTime?
+  finalizedByActionId String? @db.VarChar(120)
+  correctWarningSignIds Json
+  incorrectEvidenceIds Json
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  action TrainingAction? @relation(fields: [sessionId, finalizedByActionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
+  events TrainingEvent[]
+  @@id([sessionId, definitionId])
+}
+
+model TrainingEvent {
+  position Int
+  sessionId String @db.VarChar(120)
+  id String @db.VarChar(255)
+  actionId String @db.VarChar(120)
+  opportunityId String @db.VarChar(120)
+  code String @db.VarChar(60)
+  state String @db.VarChar(40)
+  ruleId String @db.VarChar(255)
+  authority String @db.VarChar(30)
+  critical Boolean
+  at DateTime
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  action TrainingAction @relation(fields: [sessionId, actionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
+  opportunity SessionOpportunity @relation(fields: [sessionId, opportunityId], references: [sessionId, definitionId], onDelete: Restrict, onUpdate: Restrict)
+  @@id([sessionId, id])
+}
+
+model DialogueTurnReceipt {
+  sessionId String @db.VarChar(120)
+  id String @db.VarChar(100)
+  actionId String @db.VarChar(120)
+  inputKey String @db.Text
+  state String @db.VarChar(40)
+  templateVersion Int
+  snapshotRevision Int
+  committedRevision Int
+  response Json
+  candidateStatus String @db.VarChar(40)
+  usedFallback Boolean
+  failureReason String? @db.VarChar(30)
+  attempts Int
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  action TrainingAction @relation(fields: [sessionId, actionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
+  messages TrainingMessage[]
+  @@id([sessionId, id])
+  @@unique([sessionId, actionId])
+}
+
+model TrainingMessage {
+  position Int
+  sessionId String @db.VarChar(120)
+  id String @db.VarChar(120)
+  turnId String @db.VarChar(100)
+  role String @db.VarChar(20)
+  text String @db.Text
+  state String @db.VarChar(40)
+  at DateTime
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  turn DialogueTurnReceipt @relation(fields: [sessionId, turnId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
+  @@id([sessionId, id])
+  @@unique([sessionId, turnId, role])
+}
+
+model TrainingResult {
+  sessionId String @id @db.VarChar(120)
+  templateId String @db.VarChar(120)
+  templateVersion Int
+  scores Json
+  trainingScore Float?
+  outcome String @db.VarChar(30)
+  criticalEventIds Json
+  weakestSkills Json
+  recommendation Json
+  calculatedAt DateTime
+  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}

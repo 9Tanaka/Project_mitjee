@@ -1,0 +1,31 @@
+{
+  "name": "mitjee-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "db:deploy": "prisma migrate deploy",
+    "test:mysql": "node scripts/test-mysql.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.0",
+    "@prisma/adapter-mariadb": "7.10.0",
+    "xstate": "5.32.6",
+    "zod": "4.6.2"
+  },
+  "overrides": {
+    "mariadb": "3.5.4",
+    "mysql2": "3.24.4",
+    "deepmerge-ts": "8.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.2",
+    "prisma": "7.10.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
+  }
+}
