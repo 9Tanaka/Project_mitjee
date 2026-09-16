@@ -53,9 +53,15 @@ Prisma client อ่าน credentials จาก URL ที่ caller ส่ง�
 CLI ใช้ DATABASE_URL; tests ใช้ MYSQL_TEST_DATABASE_URL; เก็บค่าใน private environment
 helper ยอม non-TLS เฉพาะ loopback ส่วน remote ต้องส่ง trusted tlsCa พร้อม certificate verification
 การทดสอบเดิมเป็น loopback MySQL ไม่ครอบคลุม remote TLS deployment
-รอบ Documentation พบ connection blocker หลัง restart MySQL ที่ใช้ caching_sha2_password:
-driver ไม่มี RSA public key ฝั่ง client ดู [known verification blocker](persistence.md#known-verification-blocker)
-ยังไม่แก้ driver options หรือ database authentication เพื่อเลี่ยง error นี้
+รอบ Documentation วันที่ 15 กันยายน 2026 พบ connection blocker หลัง restart MySQL ที่ใช้ caching_sha2_password
+แก้วันที่ 17 กันยายนด้วย trusted server public key เฉพาะ loopback development/test
+ดู [resolved verification issue](persistence.md#resolved-verification-issue)
+test setup อ่าน MYSQL_TEST_RSA_PUBLIC_KEY_PATH ผ่าน environment; key ต้องมาจาก trusted local filesystem
+ห้ามใช้ private key หรือ commit key files; ไม่เปิด automatic public-key retrieval
+helper ปฏิเสธ loopbackRsaPublicKey บน remote host และคง rejectUnauthorized=true เมื่อใช้ TLS
+RSA นี้เข้ารหัสเฉพาะ password exchange; loopback non-TLS ยังไม่ได้เข้ารหัสข้อมูลทั้ง connection
+ไม่เปลี่ยน authentication plugin, credentials, production policy หรือ transaction timeouts
+ผลทดสอบปัจจุบันยืนยัน local persistence และ configuration guards เท่านั้น ไม่ใช่ production-ready
 
 `.gitignore` ปัจจุบันครอบ .env, .local-mysql/, node_modules/, src/generated/ และ build artifacts บางชนิด
 ไม่ได้ครอบ secret filename ทุกรูปแบบ จึงต้องตรวจ git status/diff และ staged files ก่อน commit ทุกครั้ง

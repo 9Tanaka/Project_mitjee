@@ -2,7 +2,7 @@
 
 ## Project overview
 
-MITJEE เป็นระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
+โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
 โค้ดปัจจุบันเป็น backend library สำหรับ SMS / Phishing: สนทนากับ Mock Provider
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 ยังไม่มีเว็บหรือ HTTP server สำหรับผู้ใช้ปลายทาง
@@ -68,8 +68,10 @@ npm test
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
 เมื่อมีฐานข้อมูลทดสอบพร้อม ให้ตั้ง environment แบบส่วนตัวตาม [Persistence](docs/persistence.md)
 แล้วใช้ `npm run test:mysql` ซึ่งจะ fail หากไม่มี URL
-รอบตรวจเอกสารพบ [MySQL authentication blocker](docs/persistence.md#known-verification-blocker)
-จึงยังไม่ยืนยันว่า MySQL tests ผ่านในสภาพแวดล้อมรอบนี้
+ผลตรวจวันที่ 17 กันยายน 2026: Prisma generate/validate และ typecheck ผ่าน;
+`npm test` ผ่าน 132 tests ไม่มี skip รวม MySQL 24 กรณี และ `npm run test:mysql` ผ่าน 24/24
+แก้ [MySQL authentication issue](docs/persistence.md#resolved-verification-issue) ด้วย trusted RSA public key
+เฉพาะ loopback development/test; ผลนี้ไม่ใช่การยืนยัน production deployment
 อย่า commit credentials, `.env`, `.local-mysql/` หรือ `node_modules/`
 
 ## Documentation

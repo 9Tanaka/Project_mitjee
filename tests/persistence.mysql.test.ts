@@ -11,7 +11,9 @@ const url = process.env.MYSQL_TEST_DATABASE_URL;
 if (url && !/^mitjee_test(?:_[a-z0-9_]+)?$/.test(new URL(url).pathname.slice(1))) {
   throw new Error("Use a dedicated database named mitjee_test or mitjee_test_<suffix>");
 }
-const client = url ? createPrismaClient(url) : null;
+const publicKeyPath = process.env.MYSQL_TEST_RSA_PUBLIC_KEY_PATH;
+const connectionOptions = publicKeyPath ? { loopbackRsaPublicKey: publicKeyPath } : {};
+const client = url ? createPrismaClient(url, connectionOptions) : null;
 afterAll(async () => { await client?.$disconnect(); });
 
 describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
@@ -86,7 +88,7 @@ describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
 
   it("a new database client resumes without republishing or relying on process memory", async () => {
     const h = await repositoryHarness(new PrismaTrainingRepository(client!)); await h.say(); await h.act(safeActions[0]!);
-    const before = await h.current(); const secondClient = createPrismaClient(url!);
+    const before = await h.current(); const secondClient = createPrismaClient(url!, connectionOptions);
     try {
       const core = await TrainingCore.create([], new PrismaTrainingRepository(secondClient), () => 1000);
       expect(await core.resume(h.id, "test-owner")).toEqual(before);

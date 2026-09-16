@@ -107,6 +107,16 @@ Runtime client รับ URL ผ่าน createPrismaClient โดยตรง 
 helper ยอม non-TLS เฉพาะ loopback; remote ต้องส่ง tlsCa และตรวจ certificate
 URL ที่มี query/hash ถูก reject แทนการ ignore options; remote TLS ยังไม่ถูกยืนยันด้วย tests ปัจจุบัน
 
+สำหรับ local MySQL ที่ใช้ caching_sha2_password โดยไม่ใช้ TLS ให้ตั้ง
+`MYSQL_TEST_RSA_PUBLIC_KEY_PATH` ผ่าน environment เป็น absolute path ไปยัง **public key ของ server ที่เชื่อถือได้**
+tests ส่ง path นี้เข้า `createPrismaClient(url, { loopbackRsaPublicKey })` รวมถึง client ที่ใช้ทดสอบ resume
+รับ key จาก local server filesystem ที่ควบคุมได้; ตรวจว่าเป็น key ของ instance นั้นก่อนใช้
+ห้ามใช้ private key และห้าม commit key files; หาก server เปลี่ยน key ต้องปรับ trusted path ตามจริง
+ไม่ตั้งค่า environment นี้ให้อัตโนมัติ และไม่ใส่ URL/credentials ลง repository
+driver รองรับทั้ง path และ PEM content แต่ test setup ใช้ path เท่านั้น
+ตัวเลือกนี้ถูกปฏิเสธบน remote host แม้ส่ง tlsCa มาด้วย; remote ยังคงใช้ trusted CA และ certificate verification
+`allowPublicKeyRetrieval` เป็น false เสมอ; RSA ป้องกัน password exchange ไม่ได้เข้ารหัส session traffic ทั้งหมด
+
 ## Verification coverage
 
 MYSQL_TEST_DATABASE_URL ต้องชี้ dedicated database ชื่อ mitjee_test หรือ mitjee_test_<suffix>
@@ -125,7 +135,7 @@ Tests ใช้ IDs แยกสำหรับ session และบาง templ
 บน MySQL 8.4.11 แบบ local; เป็น historical verification ไม่ใช่ผลทดสอบ production
 ผลรอบ Documentation Refactor รายงานแยกในข้อความส่งมอบ ไม่แก้ tests เพื่อให้ตัวเลขเท่าเดิม
 
-### Known verification blocker
+### Resolved verification issue
 
 ตรวจวันที่ 15 กันยายน 2026
 
@@ -135,11 +145,43 @@ Tests ใช้ IDs แยกสำหรับ session และบาง templ
 ER_CANNOT_RETRIEVE_RSA_KEY ขณะยืนยันตัวตนกับบัญชีที่ใช้ caching_sha2_password
 ข้อความ error ระบุว่าไม่มี RSA public key ฝั่ง client
 
-client helper ปัจจุบันไม่ได้ตั้ง cachingRsaPublicKey หรือ allowPublicKeyRetrieval
-การทดสอบนี้จึงติดที่ connection/authentication readiness ไม่ได้พิสูจน์ว่า domain transaction rules เปลี่ยน
-ไม่แก้ adapter, credentials, DB authentication settings หรือ test timeouts ใน documentation phase
-ต้อง review วิธีเชื่อมต่อที่ปลอดภัยในงานแยกก่อนยืนยัน DB suite อีกครั้ง
-ผลผ่านวันที่ 13 กันยายนข้างต้นยังเป็น historical result ไม่ใช่ผลผ่านของรอบนี้
+แก้และตรวจซ้ำวันที่ 17 กันยายน 2026:
+
+- **Root cause:** MySQL 8.4.11 / test account ใช้ caching_sha2_password;
+  Prisma adapter 7.10.0 ใช้ MariaDB driver 3.5.4 ตาม lockfile/override
+  helper เดิมไม่ส่ง TLS หรือ RSA public key สำหรับ loopback จึงทำ full authentication หลัง restart ไม่ได้
+  pool ยังคง connectionLimit=8, timezone=Z; transaction/test timeout ไม่เปลี่ยน
+- **Why previous tests worked:** ทดลองรอบนี้พบ cold/no-key → ER_CANNOT_RETRIEVE_RSA_KEY,
+  pinned-key → connected, warm/no-key → connected จึงพิสูจน์กลไก authentication cache ได้
+  ผลเก่าวันที่ 13 กันยายนสอดคล้องกับ cache ที่อุ่นแล้ว แต่ไม่มี log ยืนยันว่า client ใดเติม cache ในวันนั้น
+- **Why portable MySQL failed:** restart ทำให้ต้อง full authentication ใหม่;
+  server ตอบ ping ได้ไม่ได้แปลว่าบัญชี test ผ่าน authentication แล้ว
+- **Chosen fix:** เพิ่ม loopbackRsaPublicKey ที่ composition-root helper ส่งให้ driver เป็น cachingRsaPublicKey
+  อ่าน path จาก MYSQL_TEST_RSA_PUBLIC_KEY_PATH ใน test setup; ไม่เปลี่ยน user/plugin/credentials หรือ repository semantics
+- **Safety/scope:** ใช้ public key ที่ได้จาก local filesystem ของ instance ที่เชื่อถือได้;
+  ไม่ขอ key จากเครือข่ายอัตโนมัติ และไม่ลด certificate verification สำหรับ remote
+  นี่เป็น configuration เฉพาะ local Demo/test ไม่ใช่การรับรอง production security
+
+Verification ปัจจุบัน:
+
+| Check | ผล |
+|---|---|
+| npm run prisma:generate | ผ่าน |
+| npm run prisma:validate | ผ่าน |
+| npm run typecheck | ผ่าน |
+| npm test พร้อม dedicated DB และ pinned key | 132 passed, 0 skipped |
+| npm run test:mysql | 24 passed, 0 skipped |
+
+132 กรณีรวม MySQL 24 กรณีและ connection-configuration tests ใหม่ 9 กรณี;
+การรัน test:mysql เป็นการตรวจซ้ำ subset เดิม ไม่ใช่อีก 24 กรณีใหม่
+ได้ทดสอบหลัง restart ก่อน test account เติม cache และทดสอบซ้ำหลัง cache อุ่นแล้ว
+ใช้ dedicated database mitjee_test_verification เท่านั้น
+ครอบคลุม shared repository contract, safe/critical path, duplicate action/turn, CAS/revision conflict,
+template immutability, resume, atomic rollback และ FK/unique constraints
+remote TLS มี unit test ยืนยัน configuration แต่ยังไม่ได้ทดสอบกับ remote server จริง
+
+Driver/auth references: [MariaDB connection options](https://mariadb.com/docs/connectors/mariadb-connector-nodejs/node-js-connection-options),
+[MySQL 8.4 caching SHA-2 authentication](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html)
 
 Retention cleanup, production operations และ performance benchmarks ยัง Planned
 dependency overrides ปัจจุบันอยู่ใน package.json; อย่าสรุปจาก audit ในอดีตว่าปลอดช่องโหว่ตลอดไป
