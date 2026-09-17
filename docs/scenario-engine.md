@@ -54,7 +54,8 @@ Version 1 ใช้ Dialogue โดยตรงไม่ได้และจะ
 
 `validateAction` คืน ValidatedPlan แล้ว Core จึงสร้าง TrainingEvent/finalize Opportunity
 ไม่รับคะแนนหรือ credential จริงเป็น field ของ ActionInput และไม่สร้าง UI button ใน milestone นี้
-การยืนยันปุ่มในอนาคตต้องเข้ามาเป็น explicit command; ขณะนี้ tests เป็นผู้เรียก command
+HTTP action endpoint แปลง public definition/payload เป็น explicit command แล้ว; ยังไม่มีปุ่ม Frontend UI
+availableActions เป็น presentation projection ของ current State/opportunities ไม่ใช่การส่งกฎภายในให้ client
 
 ## Event Registry and candidate validation
 

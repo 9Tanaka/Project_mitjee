@@ -18,6 +18,10 @@ STATUS: PARTIAL IMPLEMENTATION FOR DEMO; NOT PRODUCTION SECURITY
 | CAS and idempotency | ป้องกัน stale/duplicate writes; Action/Event/State/Result commit ร่วมกัน |
 | Published version immutability | repository checks และ MySQL triggers ป้องกันเปลี่ยน config ย้อนหลัง |
 | Provider timeout cancellation | ส่ง AbortSignal และป้องกัน late response commit |
+| HTTP Authentication Boundary | ทุก endpoint ผ่าน RequestAuthenticator; runtime default deny, test adapter อยู่เฉพาะ tests |
+| HTTP owner isolation | ใช้ authenticated id; foreign/missing Session ได้ 404 เหมือนกัน |
+| Public DTO projection | ไม่ serialize aggregate/template; opaque action IDs และ explicit response fields |
+| Transport limits / errors | strict Zod, body 64 KiB, no-store, ข้อความ error คงที่ และไม่ log raw request/provider/database error |
 
 AI ไม่มี authority เปลี่ยน State, คะแนน, Critical Failure หรือ pass/fail
 confidence และ safety flags ที่ Provider ส่งมาไม่ใช่หลักฐานยืนยันการกระทำหรือการรับรองความปลอดภัย
@@ -31,7 +35,8 @@ confidence และ safety flags ที่ Provider ส่งมาไม่ใ
 | Live moderation service | Planned / Not Implemented |
 | Comprehensive prompt-injection guardrail | Planned / Not Implemented |
 | Auth.js / identity verification | Planned / Not Implemented |
-| HTTP authorization, CSRF/CORS, rate limits | Planned / Not Implemented |
+| HTTP authorization | Implemented against injected identity; ยังไม่มี real identity adapter |
+| CSRF/CORS, rate limits | มี same-origin POST check เมื่อมี Origin; full cookie/CSRF policy และ rate-limit infrastructure ยัง Planned |
 | Retention cleanup / scheduled deletion | Planned / Not Implemented |
 | Automated termination policy for out-of-scope content | Planned; ปัจจุบันใช้ fallback ไม่จบ Session อัตโนมัติ |
 | Production security validation / external TLS test | Not verified by current tests |
@@ -43,9 +48,12 @@ Local sanitizer ไม่ตรวจชื่อ ที่อยู่ หร�
 
 ระบบเชื่อถือ caller ภายใน process, provider implementation และ repository adapter
 freeze context ไม่ใช่ sandbox แยก process; ผู้ที่เข้าถึง Core/repository/DB โดยตรงเป็น privileged code
-ownerId ต้องเป็น opaque identifier จาก identity boundary ในอนาคต ไม่ใช่ชื่อ/email ที่ใช้แทนการยืนยันตัวตน
-เมื่อมี API ต้องทำ DTO projection ปิด answer keys และห้ามส่ง raw internal errors ที่อาจมี input กลับผู้ใช้
-ปัจจุบันยังไม่มี public error-handling layer จึงไม่อ้างว่า error logging/HTTP responses ป้องกัน PII แล้ว
+ownerId ต้องเป็น opaque identifier จาก authenticator ไม่ใช่ชื่อ/email ที่ client ส่งแทนการยืนยันตัวตน
+API มี DTO projection ปิด answer keys และ centralized errors ที่ไม่ส่ง raw internal error กลับผู้ใช้แล้ว
+runtime ไม่มี identity adapter ที่ใช้งานจริง จึงปฏิเสธทุกคำขอด้วย 401; ไม่มี header impersonation bypass
+แบบทดสอบ authenticated flow ผูก Request กับ identity เฉพาะใน test process
+มาตรการเหล่านี้ไม่ใช่การรับรอง production identity/CSRF/PII security
+Public response ใช้ explicit fields แต่ข้อความสนทนายังพึ่ง Demo sanitizer ตามข้อจำกัดเดิม
 
 ## Storage and operational hygiene
 

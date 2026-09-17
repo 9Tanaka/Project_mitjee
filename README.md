@@ -3,9 +3,10 @@
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น backend library สำหรับ SMS / Phishing: สนทนากับ Mock Provider
+โค้ดปัจจุบันเป็น backend พร้อม Next.js HTTP API สำหรับ SMS / Phishing: สนทนากับ Mock Provider
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
-ยังไม่มีเว็บหรือ HTTP server สำหรับผู้ใช้ปลายทาง
+มี Authentication Boundary และตัวตรวจผู้ใช้สำหรับ tests; runtime ปกติปฏิเสธทุกคำขอ (401)
+จนกว่าจะเชื่อมตัวตรวจ identity จริง ยังไม่มี Frontend UI หรือระบบ login
 
 ## Current implementation status
 
@@ -17,8 +18,9 @@
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
 | Prisma/MySQL Persistence | Implemented |
-| HTTP API | Planned / Not Implemented |
-| Authentication / Auth.js | Planned / Not Implemented |
+| HTTP API / Public DTO | Implemented — 8 endpoints |
+| Authentication Boundary | Implemented — injected authenticator; default deny |
+| Auth.js / real identity provider | Planned / Not Implemented |
 | Frontend UI | Planned / Not Implemented |
 | Live AI Provider | Planned / Not Implemented |
 | Voice / playable Call Center | Planned / Not Implemented |
@@ -31,7 +33,8 @@
 
 ```text
 Client [FUTURE]
-  → Application / Dialogue Layer
+  → Next.js Route Handler → Authentication → Strict DTO
+    → Application / Dialogue Layer
     → TrainingCore
       → TrainingRepository
         ├─ InMemoryTrainingRepository (memory only)
@@ -61,18 +64,26 @@ Node.js 24 เป็น tested development environment ไม่ใช่ Propos
 ```sh
 npm ci --ignore-scripts
 npm run prisma:generate
+npm run prisma:validate
 npm run typecheck
 npm test
+npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
 เมื่อมีฐานข้อมูลทดสอบพร้อม ให้ตั้ง environment แบบส่วนตัวตาม [Persistence](docs/persistence.md)
 แล้วใช้ `npm run test:mysql` ซึ่งจะ fail หากไม่มี URL
 ผลตรวจวันที่ 17 กันยายน 2026: Prisma generate/validate และ typecheck ผ่าน;
-`npm test` ผ่าน 132 tests ไม่มี skip รวม MySQL 24 กรณี และ `npm run test:mysql` ผ่าน 24/24
+HTTP phase: `npm test` ผ่าน 196 tests ไม่มี skip รวม baseline MySQL 24 กรณี
+และ HTTP + MySQL เพิ่ม 1 กรณี; `npm run test:http` ผ่าน 64/64, `npm run test:mysql` ผ่าน 24/24
+Next.js build ผ่าน และตรวจ server จริงครบ 8 endpoints ว่าคืน 401/no-store เมื่อยังไม่มี identity adapter
 แก้ [MySQL authentication issue](docs/persistence.md#resolved-verification-issue) ด้วย trusted RSA public key
 เฉพาะ loopback development/test; ผลนี้ไม่ใช่การยืนยัน production deployment
 อย่า commit credentials, `.env`, `.local-mysql/` หรือ `node_modules/`
+
+`npm run dev` หรือ `npm run build` แล้ว `npm start` เปิด API บน loopback
+ทุก endpoint ต้อง authenticate; ไม่มี demo header ที่ใช้ impersonate ผู้ใช้ได้
+ดู [API contract และ composition setup](docs/api.md) ก่อนเชื่อม identity adapter จริง
 
 ## Documentation
 
@@ -82,11 +93,11 @@ npm test
 - [Scoring และคำแนะนำ](docs/scoring.md)
 - [AI Integration — Mock ทำแล้ว / Live ยังไม่ทำ](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
-- [API — Planned / Not Implemented](docs/api.md)
+- [HTTP API และ Authentication Boundary](docs/api.md)
 - [Security และข้อจำกัด](docs/security.md)
 - [Demo Assumptions](docs/demo-assumptions.md)
 
 เอกสารแยก Proposal Requirement, Demo Assumption, Implemented Technical Design
 และ Planned / Not Implemented ตาม [เกณฑ์การอ้างอิง](docs/architecture.md#reference-policy)
 มีหมายเหตุข้อขัดแย้งเรื่องชื่อ State ใน Proposal v4; ไม่แก้ Proposal หรือ `sources/`
-Phase HTTP API + Authentication Boundary **ยังไม่ได้เริ่ม implementation**
+Phase HTTP API + Authentication Boundary implement แล้ว; รอ review ก่อน Frontend หรือ Live AI

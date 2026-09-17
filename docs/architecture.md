@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence เท่านั้น
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP Boundary
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -40,13 +40,14 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence เท่า�
 ## Component view
 
 ลูกศรทึบแสดงการเรียกใช้/implementation ที่มีแล้ว; ลูกศรประแสดงส่วนที่ Planned
-นี่คือมุมมอง module ภายใน backend library ไม่ใช่ microservices ที่ deploy แยกกัน
+นี่คือมุมมอง module ภายใน backend และ Next.js API process ไม่ใช่ microservices ที่ deploy แยกกัน
 ถ้า renderer ไม่รองรับ Mermaid ให้ใช้ตารางหน้าที่และ flow ข้อความด้านล่าง
 
 ```mermaid
 flowchart LR
-    futureClient["User / Client - PLANNED"] -.-> futureBoundary["HTTP / Authentication - PLANNED"]
-    futureBoundary -.-> entry["Application entry points"]
+    futureClient["User / Frontend - PLANNED"] -.-> http["Next.js Route Handlers"]
+    http --> auth["RequestAuthenticator / Strict DTO / Public Projection"]
+    auth --> entry["Application Services"]
     tests["Tests / trusted caller"] --> entry
     entry --> dialogue["ScenarioDialogueOrchestrator"]
     entry --> core["TrainingCore"]
@@ -65,6 +66,10 @@ flowchart LR
 
 | Component | หน้าที่ / authority |
 |---|---|
+| Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
+| RequestAuthenticator | คืน verified identity; runtime default deny, deterministic adapter อยู่เฉพาะ tests |
+| Application service / catalog | เลือก playable v2/DEFAULT, derive domain command จาก opaque public action ID; project public response |
+| Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
 | Template Validator | ตรวจ schema, graph, score mappings และ D/W/S บนทุก Safe Resolution path |
 | EventValidator + Critical rules | ตรวจ explicit actions; candidate เป็น hint ไม่มีสิทธิ์สร้าง Event |
@@ -76,6 +81,12 @@ flowchart LR
 | InMemory / Prisma adapters | คง ownership, identity, history และ atomic persistence semantics |
 
 ## Boundaries and data flow
+
+HTTP request → RequestAuthenticator → strict Zod DTO → TrainingApplicationService
+→ Core/Dialogue → repository → explicit public response projection
+ownerId มาจาก authenticator เท่านั้น; catalog เป็น presentation/application policy ไม่ใช่ scoring rules
+Template ไม่มี label ของ decision options จึงเพิ่ม label ใน catalog โดยไม่แก้ published configuration
+คำขอเริ่มใช้ expectedRevision=0 และ startId; Session ใหม่เริ่ม revision 0 ตาม Core เดิม
 
 Explicit action → Core.submit → parseAction → ownership/lifecycle/idempotency/revision
 → EventValidator → Opportunity/State Machine/Scoring → repository.save → result
@@ -96,5 +107,7 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Dialogue](../src/dialogue/orchestrator.ts), [Repository port](../src/domain/training-repository.ts)
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
-HTTP/API/UI/Auth.js/Live Provider/Voice/WebSocket ยังไม่ implement
-ดู [API plan](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
+HTTP/API boundary implement แล้ว; UI/Auth.js/Live Provider/Voice/WebSocket ยังไม่ implement
+ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
+หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/application/runtime.ts),
+[HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)

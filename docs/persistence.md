@@ -162,7 +162,7 @@ ER_CANNOT_RETRIEVE_RSA_KEY ขณะยืนยันตัวตนกับ�
   ไม่ขอ key จากเครือข่ายอัตโนมัติ และไม่ลด certificate verification สำหรับ remote
   นี่เป็น configuration เฉพาะ local Demo/test ไม่ใช่การรับรอง production security
 
-Verification ปัจจุบัน:
+Verification ณ Mini-Phase MySQL Recovery (ก่อน HTTP phase):
 
 | Check | ผล |
 |---|---|
@@ -179,6 +179,10 @@ Verification ปัจจุบัน:
 ครอบคลุม shared repository contract, safe/critical path, duplicate action/turn, CAS/revision conflict,
 template immutability, resume, atomic rollback และ FK/unique constraints
 remote TLS มี unit test ยืนยัน configuration แต่ยังไม่ได้ทดสอบกับ remote server จริง
+
+HTTP phase verification วันที่ 17 กันยายน 2026: regression ทั้งชุดผ่าน 196 tests ไม่มี skip
+baseline MySQL suite ยังคงผ่าน 24/24 และ HTTP integration เพิ่ม real-MySQL safe path/resume อีก 1 กรณี
+ไม่มีการเปลี่ยน persistence adapter, schema, authentication security หรือ transaction semantics ใน HTTP phase
 
 Driver/auth references: [MariaDB connection options](https://mariadb.com/docs/connectors/mariadb-connector-nodejs/node-js-connection-options),
 [MySQL 8.4 caching SHA-2 authentication](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html)

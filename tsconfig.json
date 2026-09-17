@@ -9,8 +9,33 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "lib": ["ES2022"],
-    "types": ["node"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node"
+    ],
+    "allowJs": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "prisma.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "prisma.config.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

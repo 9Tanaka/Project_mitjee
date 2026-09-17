@@ -77,4 +77,13 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 - Local sanitizer เป็น demonstration control ไม่ใช่ production PII detector
 
 รายละเอียด implementation อยู่ใน [Persistence](persistence.md) และ [Security](security.md)
-HTTP API, Authentication, Frontend, Voice และ WebSocket ยัง Planned ทั้งหมด
+## HTTP phase application choices
+
+- Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers; ไม่มี UI components
+- Authentication Boundary implement แล้ว แต่ runtime default deny จนกว่าจะมี real identity adapter
+- SMS fixture v2/DEFAULT เป็น playable allowlist; catalog เพิ่ม public description/labels โดยไม่เปลี่ยน Template
+- Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
+- Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
+- Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)
+
+Auth.js real integration, Frontend, Voice และ WebSocket ยัง Planned

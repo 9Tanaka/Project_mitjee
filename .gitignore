@@ -4,3 +4,5 @@ coverage/
 .local-mysql/
 .env
 src/generated/
+.next/
+next-env.d.ts

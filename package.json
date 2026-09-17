@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "next dev --webpack --hostname 127.0.0.1",
+    "build": "next build --webpack",
+    "start": "next start --hostname 127.0.0.1",
+    "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
@@ -12,8 +16,11 @@
     "test:mysql": "node scripts/test-mysql.mjs"
   },
   "dependencies": {
-    "@prisma/client": "7.10.0",
     "@prisma/adapter-mariadb": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "xstate": "5.32.6",
     "zod": "4.6.2"
   },
@@ -24,6 +31,8 @@
   },
   "devDependencies": {
     "@types/node": "22.20.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "prisma": "7.10.0",
     "typescript": "7.0.2",
     "vitest": "5.0.0"
