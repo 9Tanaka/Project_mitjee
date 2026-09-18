@@ -7,17 +7,20 @@
     "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build --webpack",
     "start": "next start --hostname 127.0.0.1",
-    "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts",
+    "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts tests/accounts.http.test.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",
-    "test:mysql": "node scripts/test-mysql.mjs"
+    "test:mysql": "node scripts/test-mysql.mjs",
+    "test:auth": "vitest run tests/accounts.test.ts tests/accounts.http.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts",
+    "test:auth:live": "node scripts/test-auth-live.mjs"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.0",
     "@prisma/client": "7.10.0",
+    "bcrypt": "6.0.0",
     "next": "16.3.5",
     "next-auth": "5.0.0-beta.32",
     "react": "19.3.0",
@@ -31,6 +34,7 @@
     "deepmerge-ts": "8.0.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "6.0.0",
     "@types/node": "22.20.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

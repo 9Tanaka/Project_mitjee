@@ -45,6 +45,23 @@ it("Application has no HTTP/Next global types or transport errors", () => {
     expect(source, localName(file)).not.toMatch(/\b(Request|Response|NextRequest|NextResponse|ApiError|ApiErrorCode)\b/);
   }
 });
+it("account ports/services stay independent of concrete persistence, hashing and Training rules", () => {
+  for (const file of sources.keys()) {
+    const name = localName(file);
+    if (name.startsWith("accounts/") || name === "application/account-service.ts") {
+      for (const dependency of reached(file)) {
+        expect(localName(dependency)).not.toMatch(/^(http|auth|server|app|persistence|security|domain|dialogue)\/|^core\.ts$/);
+        expect(dependency).not.toMatch(/^(bcrypt|next|next-auth|@prisma)(\/|$)/);
+      }
+    }
+    if (/^(domain|dialogue)\/|^core\.ts$/.test(name)) {
+      for (const dependency of reached(file)) {
+        expect(localName(dependency)).not.toMatch(/^(accounts|security|persistence)\/|^application\/account-service\.ts$/);
+        expect(dependency).not.toMatch(/^(bcrypt|next-auth|@prisma)(\/|$)/);
+      }
+    }
+  }
+});
 it("import scanner covers static, type-only, barrel, multiline, dynamic and require forms", () => {
   expect(imports(`import type { A } from "a"; export * from "b"; import("c"); require("d"); type E = import("e").E; import f = require("f"); import {\n G\n} from "g"; import "h";`)).toEqual(["a", "b", "g", "h", "c", "d", "e", "f"]);
 });

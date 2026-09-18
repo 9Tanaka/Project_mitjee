@@ -1,3 +1,4 @@
+import { readJson } from "./body.js";
 import { z } from "zod";
 import { getRuntime } from "../server/runtime.js";
 import { ApiError, publicError } from "./errors.js";
@@ -10,30 +11,6 @@ function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input);
   if (!result.success) throw new ApiError("INVALID_REQUEST");
   return result.data;
-}
-async function readJson(request: Request): Promise<unknown> {
-  if (request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json" || request.headers.has("content-encoding")) throw new ApiError("INVALID_REQUEST");
-  const length = request.headers.get("content-length");
-  if (length !== null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) throw new ApiError("PAYLOAD_TOO_LARGE");
-  const reader = request.body?.getReader();
-  if (!reader) throw new ApiError("INVALID_REQUEST");
-  let size = 0;
-  const chunks: Uint8Array[] = [];
-  try {
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      size += chunk.value.byteLength;
-      if (size > MAX_BODY_BYTES) { void reader.cancel().catch(() => {}); throw new ApiError("PAYLOAD_TOO_LARGE"); }
-      chunks.push(chunk.value);
-    }
-    const bytes = new Uint8Array(size); let offset = 0;
-    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError("INVALID_REQUEST");
-  } finally { reader.releaseLock(); }
 }
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", Vary: "Authorization, Cookie" };
 function success(schema: z.ZodType, data: unknown, status = 200) {
@@ -52,7 +29,7 @@ export function route(endpoint: Endpoint) {
       const scenarioId = ["scenario", "start"].includes(endpoint) ? parse(dto.scenarioParams, params).scenarioId : "";
       const sessionId = ["resume", "message", "action", "quit", "result"].includes(endpoint) ? parse(dto.sessionParams, params).sessionId : "";
       // Validate before constructing database dependencies. No raw body/error logging.
-      const input = ["start", "message", "action", "quit"].includes(endpoint) ? await readJson(request) : undefined;
+      const input = ["start", "message", "action", "quit"].includes(endpoint) ? await readJson(request, MAX_BODY_BYTES) : undefined;
       const start = endpoint === "start" ? parse(dto.startRequest, input) : undefined;
       const message = endpoint === "message" ? parse(dto.messageRequest, input) : undefined;
       const action = endpoint === "action" ? parse(dto.actionRequest, input) : undefined;

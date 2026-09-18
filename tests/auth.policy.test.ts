@@ -2,15 +2,33 @@ import { randomUUID } from "node:crypto";
 import { afterEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ nextAuth: vi.fn() }));
 vi.mock("next-auth", () => ({ default: mocks.nextAuth }));
-import { resolveAuthJsSession } from "../src/auth/authjs.js";
+import { resolveAuthJsSession, authHandlers } from "../src/auth/authjs.js";
+import type { NextRequest } from "next/server.js";
 import { identityCallbacks } from "../src/auth/session-policy.js";
 import { toActionInput, toMessageInput, toQuitInput, toStartInput, toScenarioDto } from "../src/http/mapping.js";
 import { publicScenario, playableTemplate } from "../src/application/catalog.js";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
-it.each([false, true])("without an approved provider even AUTH_SECRET present=%s cannot enable authentication", async configuredSecret => {
-  vi.stubEnv("AUTH_SECRET", configuredSecret ? randomUUID() : "");
+it("without AUTH_SECRET the approved provider remains fail closed", async () => {
+  vi.stubEnv("AUTH_SECRET", "");
   expect(await resolveAuthJsSession()).toBeNull(); expect(mocks.nextAuth).not.toHaveBeenCalled();
+});
+it("configured authentication delegates to supported Auth.js instance", async () => {
+  vi.stubEnv("AUTH_SECRET", randomUUID());
+  mocks.nextAuth.mockReturnValue({ auth: async () => null });
+  expect(await resolveAuthJsSession()).toBeNull();
+  expect(mocks.nextAuth).toHaveBeenCalledOnce();
+  const config = mocks.nextAuth.mock.calls[0]![0];
+  expect(config.session.strategy).toBe("jwt");
+  expect(config.providers[0].id).toBe("credentials");
+  expect(config.adapter).toBeUndefined();
+});
+it.each(["GET", "POST"] as const)("missing secret keeps Auth.js %s routes closed without provider work", async method => {
+  vi.stubEnv("AUTH_SECRET", " ");
+  const response = await authHandlers[method](new Request("http://localhost/api/auth/session", { method }) as NextRequest);
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({ error: { code: "UNAUTHENTICATED", message: "Authentication required." } });
+  expect(mocks.nextAuth).not.toHaveBeenCalled();
 });
 type JWTInput = Parameters<typeof identityCallbacks.jwt>[0];
 type SessionInput = Parameters<typeof identityCallbacks.session>[0];

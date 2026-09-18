@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + Auth.js Integration Boundary
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + User Accounts / Auth.js Credentials
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -15,7 +15,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + Auth
 
 อ้างอิง `Proposal_mitjee_revised_turnitin_v4.docx` ที่อยู่ใน `output/docx/`
 ของ workspace ต้นทาง โดยไม่คัดลอกไฟล์เข้า code repository หรือแก้ไขไฟล์นั้น
-ตรวจวันที่ 15 กันยายน 2026; SHA-256:
+ตรวจเดิมวันที่ 15 กันยายน และตรวจส่วนบัญชี/Auth ซ้ำวันที่ 18 กันยายน 2026; SHA-256:
 `A41018AE9DBB7F15C252F90128CCF61A8FEF1FA9A64C5D11EF07E2F6E0207EF5`
 โฟลเดอร์ `sources/` ของ workspace ว่าง ณ วันที่ตรวจ จึงไม่มีไฟล์เพิ่มเติมให้ยืนยัน
 ผู้ที่อ่านจาก GitHub ต้องเข้าถึง reference ต้นทางแยกต่างหาก ไม่ได้แนบ private Proposal ในเอกสารนี้
@@ -27,6 +27,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + Auth
 | แนะนำเนื้อหาจากทักษะต่ำสุด โดยไม่ปรับความยากอัตโนมัติ | 4.1.4 และ 5.3.6 | คืน recommendation metadata แล้ว; เนื้อหาเต็มยัง Planned |
 | แนวโน้มคะแนนย้อนหลังไม่เกิน 3 ครั้ง | 4.1.4 และ 5.3.6 | Planned; Core คิดผลของ Session ปัจจุบันเท่านั้น |
 | ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | 4.1.5 และขอบเขตโครงงาน | ทำเฉพาะ SMS fixture + Mock; ส่วนอื่น Planned |
+| Signup/login, Auth.js Session/Cookie, bcrypt hash/compare, Zod email/password, MySQL user data | Backend/MySQL และ Auth.js, bcrypt, Zod | Implemented; exact policy values เป็น Demo Assumptions |
 | Moderation, การปิดบังข้อมูลและการทดสอบ Prompt Injection | 5.3.5 | มี local redaction/authority boundary บางส่วน ไม่ใช่ production implementation |
 
 ### ข้อขัดแย้งของแหล่งอ้างอิงที่รายงานแล้ว
@@ -67,7 +68,7 @@ flowchart LR
 | Component | หน้าที่ / authority |
 |---|---|
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
-| RequestAuthenticator | Auth.js verified session → minimal principal; provider gate ยังปิด, session resolver mock อยู่เฉพาะ tests |
+| RequestAuthenticator | Auth.js verified session → minimal principal; Credentials + verified JWT/cookie; session resolver mock อยู่เฉพาะ tests |
 | Application service / catalog | เลือก playable v2/DEFAULT, derive domain command จาก opaque public action ID; project public response |
 | Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
@@ -107,7 +108,7 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Dialogue](../src/dialogue/orchestrator.ts), [Repository port](../src/domain/training-repository.ts)
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
-HTTP/API และ Auth.js integration boundary implement แล้ว; real login/UI/Live Provider/Voice/WebSocket ยังไม่ implement
+HTTP/API และ Email/Password Credentials login implement แล้ว; UI/Live Provider/Voice/WebSocket ยังไม่ implement
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
 หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)
@@ -138,5 +139,18 @@ is removed; this is an architecture refactor, not a Domain behavior change.
 Auth.js verified session → outer RequestAuthenticator → application principal → Core ownerId.
 Core and persistence do not import Auth.js or know how the user signed in. The existing
 Core/dialogue cross-references documented above are unchanged; no blanket claim of a
-perfectly acyclic graph is made. [Provider decision and source discrepancy](authentication.md)
+perfectly acyclic graph is made. [Approved Credentials design and source attribution](authentication.md)
 remain explicit. No bypass or dependency-test exception was introduced.
+
+## Account integration (18 September 2026)
+
+Registration HTTP / Credentials authorize → AccountService → AccountRepository port
+→ PrismaAccountRepository → MySQL UserAccount; PasswordHasher port → BcryptPasswordHasher.
+Training continues through its existing independent service/Core/repository path.
+Only the verified opaque UUID crosses into Training as ownerId, never email or password.
+
+AccountService/ports have no Auth.js/HTTP/Prisma/Training imports; concrete adapters live outside.
+Architecture tests additionally prohibit Core/Domain/Dialogue from reaching account/hash/persistence
+implementations. Shared server/database.ts owns one lazy pool; training and account runtimes
+compose independent services. No HTTP or server imports enter Application.
+Published templates, scoring, Event authority, CAS and Dialogue behavior remain unchanged.

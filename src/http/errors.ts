@@ -1,7 +1,9 @@
+import { AccountError } from "../accounts/contracts.js";
 import { DomainError } from "../domain/types.js";
 import { ApplicationError } from "../application/errors.js";
 
 const errors = {
+  ACCOUNT_ALREADY_EXISTS: [409, "Account already exists."],
   INVALID_REQUEST: [400, "Invalid request."], UNAUTHENTICATED: [401, "Authentication required."],
   INVALID_ORIGIN: [403, "Request origin is not allowed."],
   SCENARIO_NOT_FOUND: [404, "Scenario not found."], SESSION_NOT_FOUND: [404, "Session not found."],
@@ -23,7 +25,7 @@ const actionErrors = new Set([
 ]);
 export function publicError(error: unknown) {
   let code: ApiErrorCode = "INTERNAL_ERROR";
-  if (error instanceof ApiError || error instanceof ApplicationError) code = error.code;
+  if (error instanceof ApiError || error instanceof ApplicationError || error instanceof AccountError) code = error.code;
   else if (error instanceof DomainError) {
     if (["SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
     else if (actionErrors.has(error.code)) code = "INVALID_ACTION";

@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { createPrismaClient } from "../persistence/prisma-client.js";
+import { getDatabase, closeDatabase } from "./database.js";
 import { PrismaTrainingRepository } from "../persistence/prisma-repository.js";
 import { AuthJsRequestAuthenticator } from "../auth/request-authenticator.js";
 import { resolveAuthJsSession } from "../auth/authjs.js";
@@ -14,30 +13,23 @@ export interface ApplicationRuntime {
 }
 function createRuntime(): ApplicationRuntime {
   let pending: Promise<TrainingApplicationService> | undefined;
-  let client: ReturnType<typeof createPrismaClient> | undefined;
+  let client: ReturnType<typeof getDatabase> | undefined;
   return {
     authenticator: new AuthJsRequestAuthenticator(resolveAuthJsSession),
     application() {
       // One pool/application per worker; rejected initialization is disposed and can retry.
       pending ??= (async () => {
-        const url = process.env.DATABASE_URL;
-        if (!url) throw new Error("Database configuration is required");
-        const caPath = process.env.DATABASE_TLS_CA_PATH;
-        const rsaPath = process.env.DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH;
-        client = createPrismaClient(url, {
-          ...(caPath ? { tlsCa: readFileSync(caPath, "utf8") } : {}),
-          ...(rsaPath ? { loopbackRsaPublicKey: rsaPath } : {}),
-        });
+        client = getDatabase();
         return createApplication(new PrismaTrainingRepository(client));
       })().catch(async error => {
-        await client?.$disconnect(); client = undefined; pending = undefined;
+        await closeDatabase(client); client = undefined; pending = undefined;
         throw error;
       });
       return pending;
     },
     async close() {
       try { await pending; } catch { /* Initialization already disposed its client. */ }
-      await client?.$disconnect(); client = undefined; pending = undefined;
+      await closeDatabase(client); client = undefined; pending = undefined;
     },
   };
 }

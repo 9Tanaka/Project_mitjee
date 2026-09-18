@@ -18,7 +18,7 @@ STATUS: PARTIAL IMPLEMENTATION FOR DEMO; NOT PRODUCTION SECURITY
 | CAS and idempotency | ป้องกัน stale/duplicate writes; Action/Event/State/Result commit ร่วมกัน |
 | Published version immutability | repository checks และ MySQL triggers ป้องกันเปลี่ยน config ย้อนหลัง |
 | Provider timeout cancellation | ส่ง AbortSignal และป้องกัน late response commit |
-| HTTP Authentication Boundary | ทุก endpoint ผ่าน RequestAuthenticator; runtime default deny, test adapter อยู่เฉพาะ tests |
+| HTTP Authentication Boundary | Training ผ่าน verified Auth.js session; invalid/missing session default deny; test adapter อยู่เฉพาะ tests |
 | HTTP owner isolation | ใช้ authenticated id; foreign/missing Session ได้ 404 เหมือนกัน |
 | Public DTO projection | ไม่ serialize aggregate/template; opaque action IDs และ explicit response fields |
 | Transport limits / errors | strict Zod, body 64 KiB, no-store, ข้อความ error คงที่ และไม่ log raw request/provider/database error |
@@ -34,9 +34,9 @@ confidence และ safety flags ที่ Provider ส่งมาไม่ใ
 | Production-grade PII detection | Planned / Not Implemented |
 | Live moderation service | Planned / Not Implemented |
 | Comprehensive prompt-injection guardrail | Planned / Not Implemented |
-| Auth.js integration boundary | Implemented; provider gate ปิด, real identity verification/login ยังไม่เปิด |
-| HTTP authorization | Implemented against verified-session adapter/test seam; actual account verifier ยังรออนุมัติ |
-| CSRF/CORS, rate limits | มี same-origin POST check เมื่อมี Origin; full cookie/CSRF policy และ rate-limit infrastructure ยัง Planned |
+| User accounts / Auth.js Credentials | Implemented for Demo; bcrypt cost 12, minimal UUID-only identity |
+| HTTP authorization | Implemented; real two-account cookie flow verifies five-endpoint owner isolation |
+| CSRF/CORS, rate limits | Auth.js built-in CSRF; existing same-origin POST check; production rate-limit/deployment review ยัง Planned |
 | Retention cleanup / scheduled deletion | Planned / Not Implemented |
 | Automated termination policy for out-of-scope content | Planned; ปัจจุบันใช้ fallback ไม่จบ Session อัตโนมัติ |
 | Production security validation / external TLS test | Not verified by current tests |
@@ -50,12 +50,12 @@ Local sanitizer ไม่ตรวจชื่อ ที่อยู่ หร�
 freeze context ไม่ใช่ sandbox แยก process; ผู้ที่เข้าถึง Core/repository/DB โดยตรงเป็น privileged code
 ownerId ต้องเป็น opaque identifier จาก authenticator ไม่ใช่ชื่อ/email ที่ client ส่งแทนการยืนยันตัวตน
 API มี DTO projection ปิด answer keys และ centralized errors ที่ไม่ส่ง raw internal error กลับผู้ใช้แล้ว
-runtime มี Auth.js session adapter แต่ configuration ยังไม่มี provider จึงปฏิเสธทุกคำขอด้วย 401 ก่อนเปิด DB
+runtime ใช้ Credentials + MySQL UserAccount; ไม่มี/ผิด session ตอบ 401 ก่อนเปิด Training service
 ไม่มี header/cookie impersonation bypass; session malformed/expired/missing ID และ auth error ปฏิเสธเช่นกัน
-แบบทดสอบ authenticated flow ใช้ Request identity หรือ server-side session resolver mock เฉพาะ test process
+unit/in-process tests ใช้ test-only resolver; live smoke ใช้ real Credentials/CSRF/Cookie ไม่มี auth bypass
 Auth adapter ส่งเฉพาะ opaque account UUID ให้ Application/Core ไม่ส่ง profile/email/access token/refresh token
 JWT/session callbacks ไม่รับ client update data มาเปลี่ยน ID และไม่สร้าง owner ID ใหม่ทุก login
-ดู [provider decision, identity source และ session limitations](authentication.md)
+ดู [account design, identity source และ session limitations](authentication.md)
 มาตรการเหล่านี้ไม่ใช่การรับรอง production identity/CSRF/PII security
 Public response ใช้ explicit fields แต่ข้อความสนทนายังพึ่ง Demo sanitizer ตามข้อจำกัดเดิม
 
@@ -86,3 +86,18 @@ RSA นี้เข้ารหัสเฉพาะ password exchange; loopback
 Evidence: [sanitizer](../src/dialogue/sanitize.ts), [persistence contract](../src/domain/persistence-contract.ts),
 [Critical rules](../src/domain/critical-failure.ts), [provider tests](../tests/dialogue.integration.test.ts),
 [Prisma client](../src/persistence/prisma-client.ts), [API plan](api.md)
+
+## Credentials-specific limits
+
+Account email is intentionally stored as the normalized login identifier; it is not a
+Dialogue message and is never copied to Training content/DTO/session. Password is only
+processed for validation/bcrypt, never persisted/logged; hashes stay in UserAccount only.
+Do not use real personal credentials in the test database. Account retention/deletion is
+not covered by the planned Dialogue retention setting.
+
+No email verification, reset/recovery, MFA, compromised-password detection, production
+abuse/rate limits or deployment review. Public registration 409 reveals account existence;
+generic login + dummy cost-12 comparison reduces obvious timing differences, not all enumeration.
+Logout clears the browser cookie, not a server revocation list; copied JWTs may outlive logout.
+Never deploy this demo openly as production identity infrastructure without these reviews.
+Auth.js logger is silent; registration errors are fixed and never echo SQL/bcrypt/raw body.

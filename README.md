@@ -5,10 +5,9 @@
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
 โค้ดปัจจุบันเป็น backend พร้อม Next.js HTTP API สำหรับ SMS / Phishing: สนทนากับ Mock Provider
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
-มี Authentication Boundary และตัวตรวจผู้ใช้สำหรับ tests; runtime ปกติปฏิเสธทุกคำขอ (401)
-จนกว่าจะเชื่อมตัวตรวจ identity จริง ยังไม่มี Frontend UI หรือระบบ login
-Auth.js boundary เตรียมแล้ว; Proposal ระบุ password/bcrypt แต่แหล่งบัญชีและ verifier ยังต้องอนุมัติ
-ดู [AUTH PROVIDER DECISION REQUIRED](docs/authentication.md) — ไม่เลือก OAuth หรือเพิ่มฐานข้อมูลรหัสผ่านเอง
+มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
+Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
+ดู [Authentication](docs/authentication.md) — Demo backend ยังไม่ใช่ production-ready และยังไม่มี Frontend
 
 ## Current implementation status
 
@@ -21,8 +20,8 @@ Auth.js boundary เตรียมแล้ว; Proposal ระบุ password/
 | Repository abstraction | Implemented |
 | Prisma/MySQL Persistence | Implemented |
 | HTTP API / Public DTO | Implemented — 8 endpoints |
-| Authentication Boundary | Implemented — injected authenticator; default deny |
-| Auth.js integration boundary | Implemented — provider configuration NOT SELECTED; real login disabled |
+| Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
+| User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Planned / Not Implemented |
 | Live AI Provider | Planned / Not Implemented |
 | Voice / playable Call Center | Planned / Not Implemented |
@@ -75,7 +74,22 @@ npm run build
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
 เมื่อมีฐานข้อมูลทดสอบพร้อม ให้ตั้ง environment แบบส่วนตัวตาม [Persistence](docs/persistence.md)
 แล้วใช้ `npm run test:mysql` ซึ่งจะ fail หากไม่มี URL
-ผลตรวจวันที่ 17 กันยายน 2026: Prisma generate/validate และ typecheck ผ่าน;
+ผลล่าสุด 18 กันยายน 2026 — User Account + Credentials:
+
+- Prisma generate/validate, additive migration deploy, typecheck และ Next.js build ผ่าน
+- npm test: 290 passed, 0 skipped รวม Core/Dialogue/Persistence/HTTP/Auth/Architecture
+- test:http: 128 passed; test:auth: 81 passed; test:mysql: 28 passed (Training 24 + Account 4)
+- test:auth:live: real Next + MySQL, registration → CSRF Credentials cookie → Training safe result
+  พร้อมตรวจสองบัญชีแยกข้อมูลครบ 5 endpoints, UUID ใน DB, session update spoof, invalid CSRF,
+  logout → 401 และ login ซ้ำยังได้ ID เดิม
+- npm audit และ npm audit --omit=dev: 0 known vulnerabilities ณ วันที่ตรวจ
+- Migration เพิ่ม UserAccount เท่านั้น; Sessions เดิม 290 และ Results เดิม 70 คงอยู่ครบก่อนทดสอบ
+
+ตั้ง private test environment แล้วใช้ npm run test:auth:live หลัง npm run build
+ใช้ canonical local origin http://localhost:<port> ให้ตรงกับ NextURL; ไม่ลด Origin/CSRF policy
+ผลชุดย่อยเป็น subset ของ npm test ไม่ใช่จำนวน tests ใหม่เพิ่มกันทั้งหมด
+
+Historical verification วันที่ 17 กันยายน 2026: Prisma generate/validate และ typecheck ผ่าน;
 Architecture/Auth boundary phase: `npm test` ผ่าน 246 tests ไม่มี skip รวม architecture 8 กรณี และ baseline MySQL 24 กรณี
 และ HTTP + MySQL เพิ่ม 1 กรณี; `npm run test:http` ผ่าน 106/106 (HTTP เดิม 64 + Auth boundary/policy 42), `npm run test:mysql` ผ่าน 24/24
 Next.js build ผ่าน และตรวจ server จริงครบ 8 endpoints ว่าคืน 401/no-store เมื่อยังไม่มี identity adapter
@@ -84,8 +98,9 @@ Next.js build ผ่าน และตรวจ server จริงครบ 8 
 อย่า commit credentials, `.env`, `.local-mysql/` หรือ `node_modules/`
 
 `npm run dev` หรือ `npm run build` แล้ว `npm start` เปิด API บน loopback
-ทุก endpoint ต้อง authenticate; ไม่มี demo header ที่ใช้ impersonate ผู้ใช้ได้
-ดู [API contract และ composition setup](docs/api.md) ก่อนเชื่อม identity adapter จริง
+Training endpoints ทุกตัวต้อง authenticate; registration และ Auth.js protocol routes เป็น public ตามหน้าที่
+ตั้ง AUTH_SECRET และ AUTH_URL ผ่าน private environment; ไม่มี demo header ที่ใช้ impersonate ผู้ใช้ได้
+ดู [API contract และ composition setup](docs/api.md) สำหรับ environment และ protocol
 
 ## Documentation
 
@@ -96,13 +111,13 @@ Next.js build ผ่าน และตรวจ server จริงครบ 8 
 - [AI Integration — Mock ทำแล้ว / Live ยังไม่ทำ](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
-- [Auth.js: identity policy, official references และ decision gate](docs/authentication.md)
+- [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)
 - [Security และข้อจำกัด](docs/security.md)
 - [Demo Assumptions](docs/demo-assumptions.md)
 
 เอกสารแยก Proposal Requirement, Demo Assumption, Implemented Technical Design
 และ Planned / Not Implemented ตาม [เกณฑ์การอ้างอิง](docs/architecture.md#reference-policy)
 มีหมายเหตุข้อขัดแย้งเรื่องชื่อ State ใน Proposal v4; ไม่แก้ Proposal หรือ `sources/`
-Phase Architecture Cleanup + Auth.js Integration Boundary ทำส่วนที่ไม่ต้องเลือก provider แล้ว
-Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO และ status; runtime ย้ายไป src/server/
-รออนุมัติ account verifier/store ก่อน real login; ยังไม่เริ่ม Frontend หรือ Live AI
+Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
+Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
+ยังไม่เริ่ม Frontend, OAuth, Live AI, Voice หรือ WebSocket; รอตรวจ backend ก่อน Phase ถัดไป

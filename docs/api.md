@@ -1,6 +1,6 @@
 # HTTP API and Authentication Boundary
 
-STATUS: IMPLEMENTED FOR DEMO — AUTH.JS BOUNDARY IMPLEMENTED; REAL LOGIN DISABLED
+STATUS: IMPLEMENTED FOR DEMO — USER ACCOUNTS / AUTH.JS CREDENTIALS ENABLED
 
 [README](../README.md) · [Architecture](architecture.md) · [Security](security.md)
 
@@ -15,27 +15,26 @@ Client → Route Handler → RequestAuthenticator → strict DTO → Application
 → TrainingCore / ScenarioDialogueOrchestrator → TrainingRepository → Prisma → MySQL
 
 RequestAuthenticator.authenticate(Request) คืน { id } หรือ null
-ทุก endpoint ต้อง authenticate; ownerId ใช้ id จาก boundary เท่านั้น
+Training endpoints ทุกตัวต้อง authenticate; ownerId ใช้ id จาก boundary เท่านั้น
 body/query ที่ส่ง ownerId ถูก reject; header/cookie ไม่มี authority โดยตัวเอง
 foreign Session และ missing Session ตอบ 404 SESSION_NOT_FOUND เหมือนกันทุก endpoint
 
 Runtime ใช้ AuthJsRequestAuthenticator ผ่าน server-side resolveAuthJsSession
-configuration ยังไม่มี provider จึงคืน null/401 โดยไม่เปิด Prisma; ไม่มี test-token header หรือ environment switch
-HTTP regression tests ใช้ WeakMap identity เฉพาะ tests; Auth tests เพิ่ม verified-session resolver mocks ผ่าน adapter จริง
-Auth.js integration boundary implemented; Identity Provider configuration: NOT SELECTED / REQUIRES DECISION
-Proposal ระบุ password/bcrypt แต่ยังไม่มี account store/verifier ที่อนุมัติ; real cookie/login flow ยังไม่เปิด
+Credentials provider ตรวจผ่าน AccountService และ MySQL account store; ไม่มี test-token header หรือ environment switch
+missing AUTH_SECRET/session ยังคง fail closed ก่อน Training initialization
+HTTP regression ใช้ test-only identity; live smoke ใช้ real Auth.js CSRF/Cookie กับสองบัญชีจริงในฐานทดสอบ
 รายละเอียด strategy, ID source, package และ official references อยู่ใน [Authentication](authentication.md)
 
-src/server/runtime.ts เป็น composition root เดียว มีหนึ่ง lazy initialization promise/pool ต่อ worker
-เรียกหลัง authentication และ transport validation เท่านั้น; initialization ล้มเหลว dispose client แล้ว retry ครั้งถัดไปได้
-เก็บ runtime ข้าม development module reload; close() ใช้ teardown เมื่อ caller ควบคุม lifecycle
-Next process ใช้ pool จน process ปิด; ยังไม่มี graceful deployment shutdown hook
-ไม่มีการสร้าง Core/Repository/Provider ใหม่ทุก request และไม่มี session aggregate cache ใน HTTP layer
+src/server/runtime.ts ประกอบ Training หลัง authentication/validation; account-runtime.ts ประกอบ AccountService
+ทั้งคู่ใช้ lazy pool ต่อ worker จาก server/database.ts; ไม่ประกอบ Core ใหม่ทุก request และไม่ cache Session aggregate
+Training initialization ล้มเหลว dispose pool และ retry ครั้งถัดไปได้; close() ใช้ teardown
+Next process ใช้ pool จน process ปิด; production graceful shutdown hook ยังไม่ทำ
 
 Configuration ผ่าน private environment:
 
-- AUTH_SECRET — private secret สำหรับ Auth.js ในอนาคต; ตั้งค่าอย่างเดียวไม่เปิด login หากยังไม่มี approved provider
-- Provider variables ยังไม่กำหนด; ไม่สร้าง credentials หรือบัญชีตัวอย่าง
+- AUTH_SECRET — private random secret ที่จำเป็นสำหรับ Auth.js; ไม่มี default
+- AUTH_URL — trusted canonical origin; loopback browser/API ใช้ http://localhost:<port> ให้ตรงกับ NextURL normalization
+- ไม่ใส่ secret หรือบัญชีตัวอย่างใน repository
 - DATABASE_URL — credentials ไม่อยู่ใน repository
 - DATABASE_TLS_CA_PATH — trusted CA file สำหรับ remote; อ่าน content ส่งให้ helper เดิม
 - DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH — optional trusted public key สำหรับ local Demo
@@ -44,7 +43,17 @@ Configuration ผ่าน private environment:
 Remote ต้องมี trusted CA, rejectUnauthorized=true; allowPublicKeyRetrieval=false ทุกกรณี
 ไม่มีการเปลี่ยน MySQL plugin, pool limits, CAS หรือ transaction policy
 
-## Endpoints
+## Account/auth endpoints
+
+POST /api/auth/register: strict JSON {email,password}, 2 KiB maximum, 201 {data:{user:{id}}}; ไม่ auto-login
+unknown fields/query ถูก reject; 400 INVALID_REQUEST / 409 ACCOUNT_ALREADY_EXISTS /
+413 PAYLOAD_TOO_LARGE / 500 INTERNAL_ERROR และ origin ต่างได้ 403 INVALID_ORIGIN
+
+GET/POST /api/auth/[...nextauth]: official Auth.js Credentials/CSRF/session/signout protocol
+ไม่มี custom /api/auth/login; protocol response ไม่ใช้ Training envelope
+ดู [Authentication](authentication.md) สำหรับ policy, CSRF flow, cookie/secret และข้อจำกัด
+
+## Training endpoints
 
 | Method / path | Input / success |
 |---|---|
@@ -128,7 +137,7 @@ concurrent duplicates อาจเรียก Provider หลายครั้
 | 401 | UNAUTHENTICATED |
 | 403 | INVALID_ORIGIN |
 | 404 | SCENARIO_NOT_FOUND / SESSION_NOT_FOUND / RESULT_NOT_FOUND |
-| 409 | REVISION_CONFLICT / IDEMPOTENCY_CONFLICT |
+| 409 | REVISION_CONFLICT / IDEMPOTENCY_CONFLICT / ACCOUNT_ALREADY_EXISTS (registration) |
 | 410 | SESSION_EXPIRED |
 | 413 | PAYLOAD_TOO_LARGE |
 | 422 | INVALID_ACTION / INVALID_STATE / SESSION_NOT_ACTIVE |
@@ -142,6 +151,10 @@ HTTP layer ไม่มี raw request/response/error logging
 
 ## Verification and limitations
 
+ผล 17 กันยายนด้านล่างเป็น historical boundary verification ก่อนเปิด Credentials
+ผลรอบบัญชี 18 กันยายนและ live authenticated smoke ดู README และ Authentication
+
+
 17 กันยายน 2026: prisma generate/validate, typecheck และ Next.js production build ผ่าน
 npm test: 246 passed, 0 skipped; npm run test:http: 106 passed; npm run test:mysql: 24 passed
 106 กรณีคือ HTTP regression 64 + Auth boundary/policy 42; architecture เพิ่ม 8 กรณีใน npm test
@@ -150,7 +163,7 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Real login/provider verification, Frontend, Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login/provider verification ทำแล้วใน Phase บัญชี; Frontend, Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 

@@ -21,6 +21,7 @@ InMemorySessionRepository เป็น alias เดิมของ InMemoryTrain
 
 | Entity | ข้อมูล / คีย์สำคัญ |
 |---|---|
+| UserAccount | UUID PK, normalized email unique, private bcrypt hash, server timestamps; immutable-ID trigger; no Training owner FK |
 | Scenario | id เป็น PK และ category; parent ของ Versions |
 | ScenarioTemplateVersion | PK(templateId, version, variant), configuration JSON, publishedAt; FK ไป Scenario |
 | TrainingSession | id เป็น PK, ownerId, State/Status/Revision/timestamps; compound FK ไป Version |
@@ -193,3 +194,20 @@ dependency overrides ปัจจุบันอยู่ใน package.json; �
 Evidence: [port](../src/domain/training-repository.ts), [InMemory](../src/domain/repository.ts),
 [Prisma adapter](../src/persistence/prisma-repository.ts), [client](../src/persistence/prisma-client.ts),
 [schema](../prisma/schema.prisma), [migration](../prisma/migrations/202609130001_persistence/migration.sql)
+
+## User accounts additive migration — 18 September 2026
+
+[202609180001_add_user_accounts](../prisma/migrations/202609180001_add_user_accounts/migration.sql)
+adds only UserAccount plus its immutable-ID trigger. Existing migration history and Training
+tables are untouched; deploy preserved all 290 existing Sessions and 70 existing Results
+before new tests ran. No reset/drop/db push/backfill. Historic owner IDs need no account FK.
+
+AccountRepository is an independent private port with create/findByNormalizedEmail only;
+PrismaAccountRepository maps P2002 to ACCOUNT_ALREADY_EXISTS. Database uniqueness, not an
+application pre-check, resolves concurrent normalized-email registrations. No auth Session,
+OAuth Account or VerificationToken tables are added; Auth.js uses JWT strategy.
+
+[Real account tests](../tests/accounts.mysql.test.ts) cover native bcrypt cost 12, unique
+concurrent registration, new-client credential lookup/stable UUID, exact columns/no plaintext,
+and direct ID-update rejection. test:mysql now runs both Training and account suites.
+Synthetic account rows persist after tests; generated passwords/secrets are not printed or saved.

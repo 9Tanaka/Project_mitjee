@@ -7,14 +7,17 @@ import { getRuntime } from "../src/server/runtime.js";
 
 beforeEach(() => {
   delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime;
+  delete (globalThis as { mitjeeDatabase?: unknown }).mitjeeDatabase;
   vi.clearAllMocks();
   mocks.disconnect.mockResolvedValue(undefined);
   mocks.create.mockReturnValue({ $disconnect: mocks.disconnect });
   mocks.assemble.mockResolvedValue({ marker: "application" });
+  vi.stubEnv("AUTH_SECRET", "");
   vi.stubEnv("DATABASE_URL", "mysql://localhost/mitjee_test");
   vi.stubEnv("DATABASE_TLS_CA_PATH", ""); vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "");
 });
-afterEach(() => { vi.unstubAllEnvs(); delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime; });
+afterEach(() => { vi.unstubAllEnvs(); delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime;
+  delete (globalThis as { mitjeeDatabase?: unknown }).mitjeeDatabase; });
 
 it("default authenticator refuses client-provided identity and does not initialize the DB", async () => {
   const runtime = getRuntime();

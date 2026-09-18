@@ -69,7 +69,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Node.js 24 เป็น tested development environment ไม่ใช่ Proposal Requirement
 - ใช้ versions/overrides ที่ล็อกใน [package.json](../package.json) และ package-lock.json
-  ไม่เพิ่มหรืออัปเกรด dependency ใน documentation phase นี้
+  bcrypt ถูกเพิ่มใน Phase บัญชี; versions อื่นคงเดิม
 - Async TrainingRepository port, detached snapshots, CAS และ append-only history เป็น technical design
 - Prisma configuration อยู่ใน JSON version พร้อม SQL triggers; MySQL 8+ ใช้ utf8mb4_0900_bin
 - MySQL 8.4.11 เป็น version ที่เคยทดสอบ ไม่ใช่ version ที่ Proposal บังคับ
@@ -80,13 +80,31 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 ## HTTP phase application choices
 
 - Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers; ไม่มี UI components
-- Authentication Boundary implement แล้ว แต่ runtime default deny จนกว่าจะมี real identity adapter
+- Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
 - SMS fixture v2/DEFAULT เป็น playable allowlist; catalog เพิ่ม public description/labels โดยไม่เปลี่ยน Template
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
 - Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)
 
-Auth.js integration boundary ทำแล้ว; real login/provider configuration, Frontend, Voice และ WebSocket ยังไม่เปิด
-การเลือก provider ไม่ใช่ Demo Assumption: Proposal มี password/bcrypt direction แต่ account store/verifier ยังต้องอนุมัติ
-Boundary ใช้ account UUID และเตรียม JWT strategy ตาม Phase request โดยไม่เพิ่ม auth tables
-ดู [Authentication decision gate](authentication.md); ไม่มีการเปลี่ยน assumption ด้าน scoring/state
+## Account / Credentials choices — approved 18 September 2026
+
+Proposal requires signup/login, Auth.js Session/Cookie, bcrypt hash/compare, Zod email/password
+validation and MySQL user data. The user approved the local account implementation for this phase.
+
+Implemented Technical Design: UserAccount, AccountRepository, AccountService, Prisma adapter,
+PasswordHasher, Credentials provider, official Auth.js routes and stable UUID→JWT→session→ownerId.
+No Training owner FK, Auth.js DB adapter or changes to scoring/state rules.
+
+Demo assumptions (not Proposal numeric requirements):
+
+- UUID v4 generated once server-side; immutable ID trigger.
+- Email trim + lowercase, Zod format, maximum 254 characters.
+- Password minimum 12 Unicode code points, maximum 72 UTF-8 bytes; no trim/character-class rules.
+- Native bcrypt 6.0.0 cost 12; same cost in real cryptographic tests.
+- Registration body 2 KiB, strict JSON, id-only 201 response; no auto-login.
+- JWT session strategy, Auth.js standard cookie/session defaults; current-browser logout only.
+- One random dummy hash per service for unknown-account compare; no claim of constant time.
+
+Planned / Not Implemented: Frontend, profile, account deletion, password reset/change, email
+verification, MFA, recovery, production abuse controls/security review, OAuth, Live AI, Voice/WebSocket.
+See [Authentication](authentication.md) and [Security](security.md) for limitations.

@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import { isStableUserId } from "./identity.js";
 
-/** Prepared JWT policy; no provider or account verifier is configured in this phase. */
+/** Minimal JWT identity from the server-verified Credentials account ID. */
 export const identityCallbacks = {
   jwt({ token, user }) {
     // user comes only from successful server-side provider verification at sign-in.

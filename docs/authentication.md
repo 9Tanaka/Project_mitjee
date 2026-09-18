@@ -1,115 +1,151 @@
-# Auth.js integration boundary
+# User accounts and Credentials authentication
 
-STATUS: BOUNDARY IMPLEMENTED; REAL LOGIN DISABLED — AUTH PROVIDER DECISION REQUIRED
+STATUS: IMPLEMENTED FOR DEMO — NOT PRODUCTION IDENTITY READINESS
 
-## Source check and decision gate
+## Source versus implementation choice
 
-Proposal v4 was checked read-only on 17 September 2026. Its **Auth.js, bcrypt and Zod**
-section explicitly describes password hashing and server-side password/hash comparison
-before creating a session, with email/password input validation. Therefore it would be
-incorrect to claim that the Proposal defines no login method at all.
+Proposal v4 was rechecked read-only on 18 September 2026. Its Backend/MySQL and
+Auth.js, bcrypt, Zod sections require signup/login APIs, MySQL user data, password
+hashing before storage, email/password validation, server-side hash comparison,
+and Auth.js Session/Cookie management. Signup precedes login/main-system access.
 
-The repository currently has no user/account store, password verifier or approved
-identity-ID mapping. The current phase prohibits adding a custom password database,
-registration system or auth migrations without review. There is no approved OAuth provider.
+The user approved a local email/password account store and Auth.js Credentials for
+this phase. The earlier provider gate is resolved; no OAuth was selected.
+Credentials implements the Proposal's password direction; the exact provider
+configuration and numeric policies are technical choices, not Proposal requirements.
 
-**Identity Provider configuration: NOT SELECTED / REQUIRES DECISION.**
-The Proposal's password-based direction is recorded, not replaced with an invented OAuth
-choice. Auth.js Credentials is a potential implementation of that direction, but no
-Credentials provider is enabled here. No demo account, hardcoded user, password comparison,
-account provisioning, login UI or `/api/auth/[...nextauth]` routes were added.
+Demo assumptions: server UUID v4; email trim + lowercase, Zod format, max 254 characters;
+password min 12 Unicode code points, max 72 UTF-8 bytes, no trimming/character-class rules;
+bcrypt cost 12; 2 KiB registration body; id-only success response; JWT strategy.
 
-Decision needed: approve the actual account verifier/store and stable identity mapping
-before enabling real login. If a local account store is chosen, it needs a separately
-reviewed account entity (immutable ID, login identifier and password hash), migration,
-credential lifecycle, access policy and retention plan. JWT avoids a session table; it
-does **not** remove the need for a trustworthy account/password verifier. No training
-Prisma schema or migration changed in this phase.
+## Implemented flow and boundaries
 
-## Implemented flow
+Registration: strict HTTP JSON → AccountService → PasswordHasher → AccountRepository
+→ PrismaAccountRepository → UserAccount in MySQL. Service owns validation, normalization
+and UUID generation. DB unique email constraint resolves concurrent duplicates.
+Registration does not sign the user in.
 
-```text
-Next server request context
-  → Auth.js auth() [gated: no configured provider, so not initialized]
-  → AuthJsRequestAuthenticator (trusted session resolver)
-  → AuthenticatedPrincipal { id }
-  → TrainingApplicationService → TrainingCore ownerId
-```
+Login: official Auth.js handlers → Credentials authorize → AccountService.verifyCredentials
+→ repository lookup + bcrypt compare → verified { id }.
 
-`src/auth/authjs.ts` contains the prepared NextAuth v5 configuration and lazy `auth()`
-resolver. The empty private provider list and missing `AUTH_SECRET` each fail closed.
-Setting a secret alone cannot enable authentication. There is no environment switch
-that installs a test identity resolver. Auth routes remain absent until configuration
-and the identity source have been reviewed.
+Stable identity:
+UserAccount.id → user.id → token.trainingUserId → session.user.id
+→ AuthJsRequestAuthenticator → AuthenticatedPrincipal.id → TrainingCore ownerId.
 
-The authenticator accepts only a server-verified, nonexpired session with an opaque
-account UUID at `session.user.id`, and returns a fresh `{ id }`. UUID syntax is an
-implementation boundary contract, not a Proposal requirement or proof of identity.
-Only the trusted resolver supplies identity; request headers/body/query/unsigned cookies
-are never interpreted as a principal. Missing/malformed/expired sessions and resolver
-exceptions return null, mapped by the training handler to fixed `401 UNAUTHENTICATED`.
-No raw auth exceptions are logged or returned.
+UUID is generated once at registration, never per login. Email is never ownerId.
+Core/Domain do not know email/password/bcrypt/login/cookies/JWT. Account ports/service
+do not import Prisma, HTTP, Auth.js or Training rules. Hasher and Prisma repository
+are injected outer adapters; architecture tests enforce the boundaries.
 
-Auth runs before lazy application/Prisma initialization. One pool/application per worker,
-failed-initialization cleanup/retry and explicit close are unchanged in `src/server/runtime.ts`.
+Shared lazy Prisma pool per worker: src/server/database.ts. Training/account runtimes
+compose independent services. AccountService caches a generated dummy hash per service,
+not accounts/passwords; Training does not cache aggregates. Failed Training initialization
+closes its pool and can retry; account runtime detects a new pool. Production graceful
+shutdown infrastructure is not added.
 
-## Prepared session strategy and ID source
+## Account schema and storage
 
-Prepared strategy: **JWT**, using supported `jwt` and `session` callbacks; no auth DB adapter.
-This is the simpler boundary preparation allowed by the phase, not a claim of a working
-credential system. Reassess it if the approved identity requirements require database
-sessions or immediate revocation.
+UserAccount contains only id (CHAR(36) PK), normalized email (VARCHAR(254), unique),
+passwordHash (CHAR(60)), createdAt, updatedAt. Additive migration adds this table and
+a trigger rejecting ID updates. No account update/delete service exists in this phase.
+Timestamps are server/DB owned. Repository accepts only cost-12 bcrypt hashes;
+plaintext/reversible-encryption columns are absent. Hashes remain private persistence data.
 
-At a future verified sign-in, the approved account verifier must return the same immutable
-account UUID as `user.id` on every login. The callback copies it into `token.trainingUserId`,
-then the session callback exposes only `{ user: { id }, expires }`. It does not generate
-a fresh owner ID at sign-in and does not fall back to email, display name, mutable username,
-profile fields or `token.sub`. The backing account-ID source is still unresolved.
+No FK from TrainingSession.ownerId to UserAccount: historical opaque owners remain valid.
+No Training migration/data/Core ownership changes. No Auth.js Prisma adapter,
+OAuth Account, Session or VerificationToken tables.
 
-JWT update data supplied by a client is ignored. Missing/invalid IDs invalidate the token;
-subsequent JWT calls preserve only the verified ID claim, with standard token timestamps
-managed by Auth.js. Provider access/refresh tokens, profile, email and name are not copied
-into this policy's token/session or passed to Application/Core. Training responses contain
-no identity fields. Tests assert both input and response minimization.
+## Registration API
 
-JWT revocation/rotation, cookie deployment configuration, real login/logout, account
-deletion and cross-device behavior have not been verified. `auth()` uses Next's current
-request context; mock tests do not prove a live cookie/OAuth/password flow. Future auth
-handlers must use Auth.js built-in security, without disabling CSRF or trusting proxy/host
-headers indiscriminately. Training POST origin checks remain unchanged.
+POST /api/auth/register accepts only JSON { email, password }. Unknown fields (including
+id/ownerId/passwordHash/role/provider/createdAt) and query parameters are rejected.
+Limit 2,048 bytes checks both declared length and actual stream; compressed bodies unsupported.
+Cross-origin POST with Origin is rejected.
 
-## Package and compatibility
+201: { data: { user: { id } } }, without email/hash/timestamps/token/cookie.
+Fixed errors: 400 INVALID_REQUEST; 409 ACCOUNT_ALREADY_EXISTS; 413 PAYLOAD_TOO_LARGE;
+500 INTERNAL_ERROR; existing origin policy additionally returns 403 INVALID_ORIGIN.
+Duplicate registration intentionally reveals account existence under this demo contract;
+this remains an enumeration limitation and no rate limiter exists.
 
-Pinned `next-auth@5.0.0-beta.32` (transitive `@auth/core@0.41.3`) in package.json/lockfile.
-The official installation guide currently documents the v5 beta and the `NextAuth` →
-`auth`/`handlers` pattern. This is explicitly a **prerelease**, not v4's latest stable tag.
-No `getServerSession` or deprecated middleware API was introduced.
+## Auth.js protocol, session and failures
 
-Package peer metadata includes Next ^16 and React ^19, covering this repository's
-Next 16.3.5 and React/React DOM 19.3.0. Node 24.19.0 and TypeScript 7.0.2 were checked
-locally with strict project typechecking/tests/build; neither is claimed as an upstream
-certification. Existing `skipLibCheck` remains unchanged. No peer-dependency override,
-framework downgrade or insecure compatibility flag was needed.
+GET/POST /api/auth/[...nextauth] delegate to official v5 handlers, fulfilling the Proposal's
+login API. No custom /api/auth/login. Registration envelopes do not alter Auth.js responses.
 
-Official references checked for this phase:
+Client uses supported CSRF flow: GET /api/auth/csrf, then POST /api/auth/callback/credentials
+with token/cookie. Signout uses GET /api/auth/csrf and POST /api/auth/signout.
+Built-in CSRF is not disabled. Live smoke follows the installed next-auth client's
+URL-encoded flow including X-Auth-Return-Redirect; no test login endpoint exists.
 
-- [Installation / current Next.js configuration](https://authjs.dev/getting-started/installation)
-- [Next.js API: auth() and handlers](https://authjs.dev/reference/nextjs)
-- [JWT/session identity callbacks](https://authjs.dev/guides/extending-the-session)
-- [JWT versus database sessions and limitations](https://authjs.dev/concepts/session-strategies)
-- [Credentials and responsibility for account/password verification](https://authjs.dev/getting-started/authentication/credentials)
+Credentials passes only validated email/password to AccountService; protocol extras
+cannot become identity. authorize returns { id } or null. Incorrect password, unknown
+account, malformed credentials and verifier errors fail generically via CredentialsSignin.
+Valid-shaped unknown credentials still compare against a random dummy bcrypt hash at
+the same cost as real accounts; no random delay. This reduces obvious timing differences,
+but does not prove constant time or protection against enumeration/distributed abuse.
 
-## Environment and verification limits
+JWT retains verified trainingUserId plus Auth.js standard metadata.
+Session exposes { user: { id }, expires }. Client update cannot replace identity.
+Passwords/hashes/email/provider tokens never enter sessions or Training DTOs.
+Missing/malformed/expired/invalid-ID sessions and resolver errors yield 401 before
+Training initialization. Headers/body/query/unsigned cookies cannot impersonate users.
 
-- `AUTH_SECRET`: private random secret supplied only through deployment environment when
-  a provider is approved; never committed, generated in source or used as a default value.
-- Provider-specific credentials/variables: **not defined**, pending the provider decision.
-- Existing database/TLS/RSA environment variables: unchanged; see [API](api.md).
-- No real OAuth secret is needed by automated tests; test markers are generated at runtime.
+Logout clears the current browser's cookie. No server-side JWT revocation list exists:
+a copied valid token may remain usable until expiry. Immediate/all-device revocation,
+account lifecycle/recovery and production cookie/deployment review remain future work.
 
-Boundary tests inject a server-side session resolver in the test process. They cover no
-session, malformed/expired session, invalid/missing stable ID, identity spoofing, owner
-isolation on five session endpoints, no initialization on auth failure, token minimization,
-safe errors, callback identity preservation and the unresolved-provider gate.
-Existing HTTP/Core/Dialogue/MySQL tests remain the regression suite. This does not claim
-production authentication readiness. Frontend, Live AI and Voice/WebSocket remain unstarted.
+## Environment and compatibility
+
+- AUTH_SECRET: private random secret, required; no default or committed value.
+  Missing/blank secret fails closed for session resolution and Auth.js handlers.
+- AUTH_URL: privately configured trusted canonical origin. Smoke uses its temporary
+  loopback origin; do not trust arbitrary forwarded hosts or disable CSRF.
+- DATABASE_URL / DATABASE_TLS_CA_PATH / DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH:
+  existing shared DB settings; TLS/certificate/RSA protections unchanged.
+- MYSQL_TEST_DATABASE_URL / MYSQL_TEST_RSA_PUBLIC_KEY_PATH: dedicated test DB only.
+
+next-auth 5.0.0-beta.32 / @auth/core 0.41.3 remains a prerelease. Next 16.3.5, React 19.3.0,
+Prisma 7.10.0 are unchanged. Native bcrypt 6.0.0 and @types/bcrypt 6.0.0 are the only new
+direct packages. Production and real cryptographic tests use cost 12.
+bcrypt upstream supports Node >=18 and Windows prebuilds. Node 24.19.0 native hash/compare
+and Next Node-runtime build/live execution are checked locally, not upstream certification.
+bcrypt is externalized in the Next server build. If a platform has no matching prebuild,
+review native install/build prerequisites; do not silently switch hash implementation.
+
+Official references checked 18 September 2026:
+
+- [Auth.js Credentials](https://authjs.dev/getting-started/authentication/credentials)
+- [NextAuth auth/handlers API](https://authjs.dev/reference/nextjs)
+- [Deployment and secrets](https://authjs.dev/getting-started/deployment)
+- [bcrypt compatibility, cost and 72-byte limit](https://github.com/kelektiv/node.bcrypt.js)
+
+## Verification and limitations
+
+Unit tests inject a test-only hasher when cryptography is not under test. Native-bcrypt/
+MySQL tests use actual cost 12. Multi-compare native/new-client tests have a 15-second test
+budget; production cost and DB timeouts are unchanged.
+Tests cover registration, normalization, duplicates/races, dummy verification, stable/
+minimal identity, byte limits, exact password whitespace, persistence and immutable ID.
+
+npm run test:auth:live requires a built app and dedicated loopback test database.
+It starts real Next with temporary port/secret and generated credentials, testing actual
+CSRF/cookies, two-account isolation on resume/message/action/quit/result, stored UUID,
+session-update rejection, safe D/W/S completion, logout→401 and repeat-login identity.
+No mock authenticator; no private values/child logs printed; synthetic rows remain.
+No reset or deletion of existing data.
+
+Verified 18 September 2026: full regression 290/290 (no skips), HTTP 128/128,
+Auth 81/81, MySQL 28/28; Prisma generate/validate/deploy, typecheck and Next build passed.
+Real loopback smoke also rejects invalid CSRF; it uses canonical localhost origin
+because NextURL normalizes loopback IPs. No origin/CSRF safeguard was weakened.
+Dependency audits (all and production-only) reported zero known advisories on this date.
+Secret audit of the phase changes found identifiers/generated test values only, no
+committed account credentials, AUTH_SECRET, private keys or real database connection URL.
+
+Demo Credentials Authentication ≠ production identity readiness.
+Absent: email verification, password reset/change, compromised-password detection,
+recovery, MFA, CAPTCHA, production rate-limit/abuse infrastructure, account deletion/
+profile/RBAC, deployment security review and verified external TLS.
+Do not expose this demo as unprotected production identity infrastructure.
+Frontend, OAuth, Live AI, Voice and WebSocket remain unimplemented.
