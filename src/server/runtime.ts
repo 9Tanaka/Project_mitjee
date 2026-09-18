@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { createPrismaClient } from "../persistence/prisma-client.js";
 import { PrismaTrainingRepository } from "../persistence/prisma-repository.js";
-import { UnconfiguredAuthenticator } from "../http/auth.js";
+import { AuthJsRequestAuthenticator } from "../auth/request-authenticator.js";
+import { resolveAuthJsSession } from "../auth/authjs.js";
 import type { RequestAuthenticator } from "../http/auth.js";
-import type { TrainingApplicationService } from "./training-service.js";
-import { createApplication } from "./composition.js";
+import type { TrainingApplicationService } from "../application/training-service.js";
+import { createApplication } from "../application/composition.js";
 
 export interface ApplicationRuntime {
   authenticator: RequestAuthenticator;
@@ -15,7 +16,7 @@ function createRuntime(): ApplicationRuntime {
   let pending: Promise<TrainingApplicationService> | undefined;
   let client: ReturnType<typeof createPrismaClient> | undefined;
   return {
-    authenticator: new UnconfiguredAuthenticator(),
+    authenticator: new AuthJsRequestAuthenticator(resolveAuthJsSession),
     application() {
       // One pool/application per worker; rejected initialization is disposed and can retry.
       pending ??= (async () => {

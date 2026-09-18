@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { getRuntime } from "../application/runtime.js";
+import { getRuntime } from "../server/runtime.js";
 import { ApiError, publicError } from "./errors.js";
 import * as dto from "./dto.js";
+import * as mapping from "./mapping.js";
 
 export const MAX_BODY_BYTES = 64 * 1024; // Includes JSON escapes for an 8,000-code-unit message.
 export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "action" | "quit" | "result";
@@ -58,17 +59,17 @@ export function route(endpoint: Endpoint) {
       const quit = endpoint === "quit" ? parse(dto.quitRequest, input) : undefined;
       const app = await runtime.application();
       switch (endpoint) {
-        case "scenarios": return success(z.array(dto.scenarioDto), app.listScenarios());
-        case "scenario": return success(dto.scenarioDto, app.scenario(scenarioId));
+        case "scenarios": return success(z.array(dto.scenarioDto), app.listScenarios().map(mapping.toScenarioDto));
+        case "scenario": return success(dto.scenarioDto, mapping.toScenarioDto(app.scenario(scenarioId)));
         case "start": {
-          const reply = await app.start(scenarioId, user, start!);
-          return success(dto.mutationDto, reply, reply.duplicate ? 200 : 201);
+          const reply = await app.start(scenarioId, user, mapping.toStartInput(start!));
+          return success(dto.mutationDto, mapping.toMutationDto(reply), reply.duplicate ? 200 : 201);
         }
-        case "resume": return success(dto.sessionDto, await app.resume(sessionId, user));
-        case "message": return success(dto.messageDto, await app.message(sessionId, user, message!));
-        case "action": return success(dto.mutationDto, await app.action(sessionId, user, action!));
-        case "quit": return success(dto.mutationDto, await app.quit(sessionId, user, quit!));
-        case "result": return success(dto.resultDto, await app.result(sessionId, user));
+        case "resume": return success(dto.sessionDto, mapping.toSessionDto(await app.resume(sessionId, user)));
+        case "message": return success(dto.messageDto, mapping.toMessageDto(await app.message(sessionId, user, mapping.toMessageInput(message!))));
+        case "action": return success(dto.mutationDto, mapping.toMutationDto(await app.action(sessionId, user, mapping.toActionInput(action!))));
+        case "quit": return success(dto.mutationDto, mapping.toMutationDto(await app.quit(sessionId, user, mapping.toQuitInput(quit!))));
+        case "result": return success(dto.resultDto, mapping.toResultDto(await app.result(sessionId, user)));
       }
     } catch (error) {
       const mapped = publicError(error);

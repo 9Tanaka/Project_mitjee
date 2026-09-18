@@ -1,10 +1,12 @@
 # HTTP API and Authentication Boundary
 
-STATUS: IMPLEMENTED FOR DEMO — AUTH.JS / REAL IDENTITY PROVIDER PLANNED
+STATUS: IMPLEMENTED FOR DEMO — AUTH.JS BOUNDARY IMPLEMENTED; REAL LOGIN DISABLED
 
 [README](../README.md) · [Architecture](architecture.md) · [Security](security.md)
 
-Baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426. Core, Dialogue และ Persistence semantics คงเดิม
+HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
+Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
+Core, Dialogue และ Persistence semantics คงเดิม
 Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ ไม่มี Frontend, streaming หรือ Live AI
 
 ## Authentication and composition
@@ -17,12 +19,14 @@ RequestAuthenticator.authenticate(Request) คืน { id } หรือ null
 body/query ที่ส่ง ownerId ถูก reject; header/cookie ไม่มี authority โดยตัวเอง
 foreign Session และ missing Session ตอบ 404 SESSION_NOT_FOUND เหมือนกันทุก endpoint
 
-Runtime ปกติใช้ UnconfiguredAuthenticator ซึ่งคืน null เสมอ จึงได้ 401 จนกว่าจะมี adapter จริง
-ไม่มี test-token header หรือ environment switch เปิด impersonation ใน deployed runtime
-tests ใช้ TestRequestAuthenticator ผูก identity กับ Request instance ผ่าน WeakMap เฉพาะ test process
-Auth.js, OAuth, session-cookie verification และ login ยัง PLANNED / NOT IMPLEMENTED
+Runtime ใช้ AuthJsRequestAuthenticator ผ่าน server-side resolveAuthJsSession
+configuration ยังไม่มี provider จึงคืน null/401 โดยไม่เปิด Prisma; ไม่มี test-token header หรือ environment switch
+HTTP regression tests ใช้ WeakMap identity เฉพาะ tests; Auth tests เพิ่ม verified-session resolver mocks ผ่าน adapter จริง
+Auth.js integration boundary implemented; Identity Provider configuration: NOT SELECTED / REQUIRES DECISION
+Proposal ระบุ password/bcrypt แต่ยังไม่มี account store/verifier ที่อนุมัติ; real cookie/login flow ยังไม่เปิด
+รายละเอียด strategy, ID source, package และ official references อยู่ใน [Authentication](authentication.md)
 
-src/application/runtime.ts เป็น composition root เดียว มีหนึ่ง lazy initialization promise/pool ต่อ worker
+src/server/runtime.ts เป็น composition root เดียว มีหนึ่ง lazy initialization promise/pool ต่อ worker
 เรียกหลัง authentication และ transport validation เท่านั้น; initialization ล้มเหลว dispose client แล้ว retry ครั้งถัดไปได้
 เก็บ runtime ข้าม development module reload; close() ใช้ teardown เมื่อ caller ควบคุม lifecycle
 Next process ใช้ pool จน process ปิด; ยังไม่มี graceful deployment shutdown hook
@@ -30,6 +34,8 @@ Next process ใช้ pool จน process ปิด; ยังไม่มี g
 
 Configuration ผ่าน private environment:
 
+- AUTH_SECRET — private secret สำหรับ Auth.js ในอนาคต; ตั้งค่าอย่างเดียวไม่เปิด login หากยังไม่มี approved provider
+- Provider variables ยังไม่กำหนด; ไม่สร้าง credentials หรือบัญชีตัวอย่าง
 - DATABASE_URL — credentials ไม่อยู่ใน repository
 - DATABASE_TLS_CA_PATH — trusted CA file สำหรับ remote; อ่าน content ส่งให้ helper เดิม
 - DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH — optional trusted public key สำหรับ local Demo
@@ -137,19 +143,29 @@ HTTP layer ไม่มี raw request/response/error logging
 ## Verification and limitations
 
 17 กันยายน 2026: prisma generate/validate, typecheck และ Next.js production build ผ่าน
-npm test: 196 passed, 0 skipped; npm run test:http: 64 passed; npm run test:mysql: 24 passed
-HTTP 64 กรณีรวม 1 กรณีเชื่อม MySQL จริงจาก Route Handlers → Service → Core → Prisma พร้อม persisted resume
+npm test: 246 passed, 0 skipped; npm run test:http: 106 passed; npm run test:mysql: 24 passed
+106 กรณีคือ HTTP regression 64 + Auth boundary/policy 42; architecture เพิ่ม 8 กรณีใน npm test
+HTTP regression รวม 1 กรณีเชื่อม MySQL จริงจาก Route Handlers → Service → Core → Prisma พร้อม persisted resume
 tests เรียก exported Route Handlers ด้วย Web Request/Response และ injected test identity ภายใน process
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Auth.js, Frontend, Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Real login/provider verification, Frontend, Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 
 Evidence: [routes](../src/app/api/scenarios/route.ts), [DTOs](../src/http/dto.ts),
 [handler](../src/http/handler.ts), [services](../src/application/training-service.ts),
-[catalog](../src/application/catalog.ts), [runtime](../src/application/runtime.ts),
+[catalog](../src/application/catalog.ts), [runtime](../src/server/runtime.ts),
 [HTTP tests](../tests/http.integration.test.ts), [lifecycle tests](../tests/http.runtime.test.ts)
 
 Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
+
+## Application / HTTP contract ownership
+
+HTTP retains strict route/query/request/response Zod schemas and envelopes in dto.ts.
+The handler maps parsed JSON through mapping.ts into application-owned plain inputs.
+Application service/catalog/projections use their own contracts and semantic errors only;
+HTTP maps ApplicationError/DomainError to the unchanged public error table above.
+Responses remain explicit public projections validated at the HTTP boundary, with no
+raw aggregate/template serialization. All eight route paths and payload contracts are unchanged.

@@ -2,9 +2,8 @@ import { z } from "zod";
 import type { ScenarioTemplate } from "../domain/schema.js";
 import type { TrainingSession } from "../domain/types.js";
 import type { ActionInput } from "../domain/training-action.js";
-import type { ActionRequest } from "../http/dto.js";
-import { publicActionDto, scenarioDto } from "../http/dto.js";
-import { ApiError } from "../http/errors.js";
+import type { PublicActionDefinition, PublicActionPayload, PublicScenario } from "./contracts.js";
+import { ApplicationError } from "./errors.js";
 import { smsPhishingDialogueFixture } from "../fixtures/sms-phishing-dialogue.js";
 
 // Presentation-only catalog for this playable version. No scores, events or guards here.
@@ -16,24 +15,24 @@ const labels: Record<string, string[]> = {
   s1: ["ตรวจสอบ ยุติการติดต่อ และรายงาน", "ยุติการติดต่อ", "ปิดข้อความ"],
 };
 type Binding = {
-  public: z.infer<typeof publicActionDto>;
+  public: PublicActionDefinition;
   state: TrainingSession["state"];
   opportunityId?: string;
-  toDomain(payload: ActionRequest["payload"]): ActionInput;
+  toDomain(payload: PublicActionPayload): ActionInput;
 };
 function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
   const result = schema.safeParse(value);
-  if (!result.success) throw new ApiError("INVALID_REQUEST");
+  if (!result.success) throw new ApplicationError("INVALID_REQUEST");
   return result.data;
 }
 const none = z.strictObject({});
-export function publicScenario(t: ScenarioTemplate) {
-  return scenarioDto.parse({ id: t.id, category: t.category, title: t.title,
+export function publicScenario(t: ScenarioTemplate): PublicScenario {
+  return { id: t.id, category: t.category, title: t.title,
     description: "ฝึกตรวจข้อความเกี่ยวกับพัสดุสมมติ และเลือกการตอบสนองในสถานการณ์ SMS / Phishing",
-    learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" });
+    learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" };
 }
 export function actionBindings(t: ScenarioTemplate): Binding[] {
-  if (t.id !== playableTemplate.id || t.version !== 2 || t.variant !== "DEFAULT") throw new ApiError("SCENARIO_NOT_FOUND");
+  if (t.id !== playableTemplate.id || t.version !== 2 || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
   const result: Binding[] = [];
   for (const [internalId, publicId] of [["d1", "a01"], ["w1", "a03"], ["d2", "a05"], ["d3", "a07"], ["s1", "a08"], ["w-extra", "a11"]]) {
     const o = t.opportunities.find(o => o.id === internalId)!;
@@ -47,13 +46,13 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
           const selected = payload(z.strictObject({ selectedEvidenceIds: z.array(z.string()).max(100) }), input).selectedEvidenceIds;
           return { kind: "WARNING_FINALIZE", opportunityId: o.id, selectedEvidenceIds: selected.map(id => {
             const index = options.findIndex(c => c.id === id);
-            if (index < 0) throw new ApiError("INVALID_ACTION");
+            if (index < 0) throw new ApplicationError("INVALID_ACTION");
             return o.evidence[index]!.id;
           }) };
         }
         const choiceId = payload(z.strictObject({ choiceId: z.string() }), input).choiceId;
         const index = options.findIndex(c => c.id === choiceId);
-        if (index < 0) throw new ApiError("INVALID_ACTION");
+        if (index < 0) throw new ApplicationError("INVALID_ACTION");
         return o.skill === "D" ? { kind: "DECISION", opportunityId: o.id, choiceId: o.choices[index]!.id }
           : { kind: "SAFE_ACTION", opportunityId: o.id, actionId: o.actions[index]!.id };
       },
@@ -80,8 +79,8 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
   }
   return result;
 }
-export function availableActions(s: TrainingSession, t: ScenarioTemplate) {
+export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
-    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null))).map(b => publicActionDto.parse(b.public));
+    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null))).map(b => b.public);
 }

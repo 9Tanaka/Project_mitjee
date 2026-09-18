@@ -34,8 +34,8 @@ confidence และ safety flags ที่ Provider ส่งมาไม่ใ
 | Production-grade PII detection | Planned / Not Implemented |
 | Live moderation service | Planned / Not Implemented |
 | Comprehensive prompt-injection guardrail | Planned / Not Implemented |
-| Auth.js / identity verification | Planned / Not Implemented |
-| HTTP authorization | Implemented against injected identity; ยังไม่มี real identity adapter |
+| Auth.js integration boundary | Implemented; provider gate ปิด, real identity verification/login ยังไม่เปิด |
+| HTTP authorization | Implemented against verified-session adapter/test seam; actual account verifier ยังรออนุมัติ |
 | CSRF/CORS, rate limits | มี same-origin POST check เมื่อมี Origin; full cookie/CSRF policy และ rate-limit infrastructure ยัง Planned |
 | Retention cleanup / scheduled deletion | Planned / Not Implemented |
 | Automated termination policy for out-of-scope content | Planned; ปัจจุบันใช้ fallback ไม่จบ Session อัตโนมัติ |
@@ -50,8 +50,12 @@ Local sanitizer ไม่ตรวจชื่อ ที่อยู่ หร�
 freeze context ไม่ใช่ sandbox แยก process; ผู้ที่เข้าถึง Core/repository/DB โดยตรงเป็น privileged code
 ownerId ต้องเป็น opaque identifier จาก authenticator ไม่ใช่ชื่อ/email ที่ client ส่งแทนการยืนยันตัวตน
 API มี DTO projection ปิด answer keys และ centralized errors ที่ไม่ส่ง raw internal error กลับผู้ใช้แล้ว
-runtime ไม่มี identity adapter ที่ใช้งานจริง จึงปฏิเสธทุกคำขอด้วย 401; ไม่มี header impersonation bypass
-แบบทดสอบ authenticated flow ผูก Request กับ identity เฉพาะใน test process
+runtime มี Auth.js session adapter แต่ configuration ยังไม่มี provider จึงปฏิเสธทุกคำขอด้วย 401 ก่อนเปิด DB
+ไม่มี header/cookie impersonation bypass; session malformed/expired/missing ID และ auth error ปฏิเสธเช่นกัน
+แบบทดสอบ authenticated flow ใช้ Request identity หรือ server-side session resolver mock เฉพาะ test process
+Auth adapter ส่งเฉพาะ opaque account UUID ให้ Application/Core ไม่ส่ง profile/email/access token/refresh token
+JWT/session callbacks ไม่รับ client update data มาเปลี่ยน ID และไม่สร้าง owner ID ใหม่ทุก login
+ดู [provider decision, identity source และ session limitations](authentication.md)
 มาตรการเหล่านี้ไม่ใช่การรับรอง production identity/CSRF/PII security
 Public response ใช้ explicit fields แต่ข้อความสนทนายังพึ่ง Demo sanitizer ตามข้อจำกัดเดิม
 

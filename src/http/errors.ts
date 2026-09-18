@@ -1,4 +1,5 @@
 import { DomainError } from "../domain/types.js";
+import { ApplicationError } from "../application/errors.js";
 
 const errors = {
   INVALID_REQUEST: [400, "Invalid request."], UNAUTHENTICATED: [401, "Authentication required."],
@@ -22,7 +23,7 @@ const actionErrors = new Set([
 ]);
 export function publicError(error: unknown) {
   let code: ApiErrorCode = "INTERNAL_ERROR";
-  if (error instanceof ApiError) code = error.code;
+  if (error instanceof ApiError || error instanceof ApplicationError) code = error.code;
   else if (error instanceof DomainError) {
     if (["SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
     else if (actionErrors.has(error.code)) code = "INVALID_ACTION";

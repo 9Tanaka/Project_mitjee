@@ -86,4 +86,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
 - Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)
 
-Auth.js real integration, Frontend, Voice และ WebSocket ยัง Planned
+Auth.js integration boundary ทำแล้ว; real login/provider configuration, Frontend, Voice และ WebSocket ยังไม่เปิด
+การเลือก provider ไม่ใช่ Demo Assumption: Proposal มี password/bcrypt direction แต่ account store/verifier ยังต้องอนุมัติ
+Boundary ใช้ account UUID และเตรียม JWT strategy ตาม Phase request โดยไม่เพิ่ม auth tables
+ดู [Authentication decision gate](authentication.md); ไม่มีการเปลี่ยน assumption ด้าน scoring/state

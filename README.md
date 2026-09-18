@@ -7,6 +7,8 @@
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มี Authentication Boundary และตัวตรวจผู้ใช้สำหรับ tests; runtime ปกติปฏิเสธทุกคำขอ (401)
 จนกว่าจะเชื่อมตัวตรวจ identity จริง ยังไม่มี Frontend UI หรือระบบ login
+Auth.js boundary เตรียมแล้ว; Proposal ระบุ password/bcrypt แต่แหล่งบัญชีและ verifier ยังต้องอนุมัติ
+ดู [AUTH PROVIDER DECISION REQUIRED](docs/authentication.md) — ไม่เลือก OAuth หรือเพิ่มฐานข้อมูลรหัสผ่านเอง
 
 ## Current implementation status
 
@@ -20,7 +22,7 @@
 | Prisma/MySQL Persistence | Implemented |
 | HTTP API / Public DTO | Implemented — 8 endpoints |
 | Authentication Boundary | Implemented — injected authenticator; default deny |
-| Auth.js / real identity provider | Planned / Not Implemented |
+| Auth.js integration boundary | Implemented — provider configuration NOT SELECTED; real login disabled |
 | Frontend UI | Planned / Not Implemented |
 | Live AI Provider | Planned / Not Implemented |
 | Voice / playable Call Center | Planned / Not Implemented |
@@ -74,8 +76,8 @@ npm run build
 เมื่อมีฐานข้อมูลทดสอบพร้อม ให้ตั้ง environment แบบส่วนตัวตาม [Persistence](docs/persistence.md)
 แล้วใช้ `npm run test:mysql` ซึ่งจะ fail หากไม่มี URL
 ผลตรวจวันที่ 17 กันยายน 2026: Prisma generate/validate และ typecheck ผ่าน;
-HTTP phase: `npm test` ผ่าน 196 tests ไม่มี skip รวม baseline MySQL 24 กรณี
-และ HTTP + MySQL เพิ่ม 1 กรณี; `npm run test:http` ผ่าน 64/64, `npm run test:mysql` ผ่าน 24/24
+Architecture/Auth boundary phase: `npm test` ผ่าน 246 tests ไม่มี skip รวม architecture 8 กรณี และ baseline MySQL 24 กรณี
+และ HTTP + MySQL เพิ่ม 1 กรณี; `npm run test:http` ผ่าน 106/106 (HTTP เดิม 64 + Auth boundary/policy 42), `npm run test:mysql` ผ่าน 24/24
 Next.js build ผ่าน และตรวจ server จริงครบ 8 endpoints ว่าคืน 401/no-store เมื่อยังไม่มี identity adapter
 แก้ [MySQL authentication issue](docs/persistence.md#resolved-verification-issue) ด้วย trusted RSA public key
 เฉพาะ loopback development/test; ผลนี้ไม่ใช่การยืนยัน production deployment
@@ -94,10 +96,13 @@ Next.js build ผ่าน และตรวจ server จริงครบ 8 
 - [AI Integration — Mock ทำแล้ว / Live ยังไม่ทำ](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
+- [Auth.js: identity policy, official references และ decision gate](docs/authentication.md)
 - [Security และข้อจำกัด](docs/security.md)
 - [Demo Assumptions](docs/demo-assumptions.md)
 
 เอกสารแยก Proposal Requirement, Demo Assumption, Implemented Technical Design
 และ Planned / Not Implemented ตาม [เกณฑ์การอ้างอิง](docs/architecture.md#reference-policy)
 มีหมายเหตุข้อขัดแย้งเรื่องชื่อ State ใน Proposal v4; ไม่แก้ Proposal หรือ `sources/`
-Phase HTTP API + Authentication Boundary implement แล้ว; รอ review ก่อน Frontend หรือ Live AI
+Phase Architecture Cleanup + Auth.js Integration Boundary ทำส่วนที่ไม่ต้องเลือก provider แล้ว
+Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO และ status; runtime ย้ายไป src/server/
+รออนุมัติ account verifier/store ก่อน real login; ยังไม่เริ่ม Frontend หรือ Live AI

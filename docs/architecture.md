@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP Boundary
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + Auth.js Integration Boundary
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -67,7 +67,7 @@ flowchart LR
 | Component | หน้าที่ / authority |
 |---|---|
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
-| RequestAuthenticator | คืน verified identity; runtime default deny, deterministic adapter อยู่เฉพาะ tests |
+| RequestAuthenticator | Auth.js verified session → minimal principal; provider gate ยังปิด, session resolver mock อยู่เฉพาะ tests |
 | Application service / catalog | เลือก playable v2/DEFAULT, derive domain command จาก opaque public action ID; project public response |
 | Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
@@ -107,7 +107,36 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Dialogue](../src/dialogue/orchestrator.ts), [Repository port](../src/domain/training-repository.ts)
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
-HTTP/API boundary implement แล้ว; UI/Auth.js/Live Provider/Voice/WebSocket ยังไม่ implement
+HTTP/API และ Auth.js integration boundary implement แล้ว; real login/UI/Live Provider/Voice/WebSocket ยังไม่ implement
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
-หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/application/runtime.ts),
+หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)
+
+## Enforced dependency direction (Architecture Cleanup)
+
+The baseline application imported HTTP request types, Zod response schemas and ApiError,
+and kept the concrete HTTP/Prisma runtime in src/application/. That reverse dependency
+is removed; this is an architecture refactor, not a Domain behavior change.
+
+- Application owns [plain contracts](../src/application/contracts.ts): AuthenticatedPrincipal,
+  StartTrainingInput, SendMessageInput, SubmitActionInput, QuitTrainingInput and public view models.
+- [ApplicationError](../src/application/errors.ts) has semantic codes only. DomainError stays
+  in Domain; [HTTP errors](../src/http/errors.ts) alone assign status/envelope/message.
+- [HTTP mapping](../src/http/mapping.ts) copies validated DTOs into application inputs and
+  validates public application views using HTTP-owned response schemas. No contract changes.
+- Catalog/projections retain opaque action/option IDs and hidden-rule protection without
+  importing HTTP. Local catalog Zod validation is application-owned payload-shape checking,
+  not reuse of transport schemas and not scoring/transition authority.
+- [Server runtime](../src/server/runtime.ts) is the outer composition root. HTTP invokes it;
+  Application does not import HTTP, Auth.js, Next or concrete Prisma adapters.
+- [Architecture tests](../tests/architecture.test.ts) scan literal imports/re-exports and
+  transitive local dependencies: Application cannot reach HTTP/Auth/server/routes; Core,
+  Domain, Dialogue and Persistence cannot reach Application or those outer layers.
+  The conservative scanner has self-tests, rejects computed imports and requires review if
+  path aliases are introduced; it is not a general-purpose TypeScript compiler.
+
+Auth.js verified session → outer RequestAuthenticator → application principal → Core ownerId.
+Core and persistence do not import Auth.js or know how the user signed in. The existing
+Core/dialogue cross-references documented above are unchanged; no blanket claim of a
+perfectly acyclic graph is made. [Provider decision and source discrepancy](authentication.md)
+remain explicit. No bypass or dependency-test exception was introduced.

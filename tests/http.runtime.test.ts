@@ -2,8 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ disconnect: vi.fn(), create: vi.fn(), assemble: vi.fn() }));
 vi.mock("../src/persistence/prisma-client.js", () => ({ createPrismaClient: mocks.create }));
 vi.mock("../src/application/composition.js", () => ({ createApplication: mocks.assemble }));
-import { getRuntime } from "../src/application/runtime.js";
-import { UnconfiguredAuthenticator } from "../src/http/auth.js";
+import { getRuntime } from "../src/server/runtime.js";
+
 
 beforeEach(() => {
   delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime;
@@ -20,7 +20,6 @@ it("default authenticator refuses client-provided identity and does not initiali
   const runtime = getRuntime();
   const request = new Request("http://localhost/api/scenarios", { headers: { "x-owner-id": "user-a", authorization: "Bearer test-only", cookie: "session=test-only" } });
   expect(await runtime.authenticator.authenticate(request)).toBeNull();
-  expect(await new UnconfiguredAuthenticator().authenticate(request)).toBeNull();
   expect(mocks.create).not.toHaveBeenCalled();
 });
 it("composition root reuses one initialization/pool across concurrent requests", async () => {

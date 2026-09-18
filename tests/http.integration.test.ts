@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import type { ApplicationRuntime } from "../src/application/runtime.js";
+import type { ApplicationRuntime } from "../src/server/runtime.js";
 const injected = vi.hoisted(() => ({ runtime: vi.fn() }));
-vi.mock("../src/application/runtime.js", () => ({ getRuntime: injected.runtime }));
+vi.mock("../src/server/runtime.js", () => ({ getRuntime: injected.runtime }));
 import { GET as scenarios } from "../src/app/api/scenarios/route.js";
 import { GET as scenario } from "../src/app/api/scenarios/[scenarioId]/route.js";
 import { POST as start } from "../src/app/api/scenarios/[scenarioId]/start/route.js";
@@ -17,7 +17,8 @@ import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import type { TrainingRepository } from "../src/domain/training-repository.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import type { ScenarioModelProvider } from "../src/dialogue/contracts.js";
-import type { RequestAuthenticator, AuthenticatedUser } from "../src/http/auth.js";
+import type { RequestAuthenticator } from "../src/http/auth.js";
+import type { AuthenticatedPrincipal } from "../src/application/contracts.js";
 import { publicError } from "../src/http/errors.js";
 import { DomainError } from "../src/domain/types.js";
 import { sessionDto, resultDto, messageDto, mutationDto } from "../src/http/dto.js";
@@ -26,7 +27,7 @@ import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.j
 
 // Only tests can bind an identity to a Request instance. No credential or owner header shortcut.
 class TestRequestAuthenticator implements RequestAuthenticator {
-  private readonly users = new WeakMap<Request, AuthenticatedUser>();
+  private readonly users = new WeakMap<Request, AuthenticatedPrincipal>();
   bind(request: Request, id: string) { this.users.set(request, { id }); }
   async authenticate(request: Request) { return this.users.get(request) ?? null; }
 }
