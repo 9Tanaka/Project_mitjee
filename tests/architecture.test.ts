@@ -5,7 +5,7 @@ import { expect, it } from "vitest";
 const root = resolve("src");
 function files(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(e => e.name === "generated" ? [] :
-    e.isDirectory() ? files(resolve(dir, e.name)) : e.name.endsWith(".ts") ? [resolve(dir, e.name)] : []);
+    e.isDirectory() ? files(resolve(dir, e.name)) : /\.tsx?$/.test(e.name) ? [resolve(dir, e.name)] : []);
 }
 // Conservative source scanner, not a compiler. Includes type imports/re-exports,
 // multiline declarations, literal dynamic imports and require. No new dependency.
@@ -20,8 +20,9 @@ function imports(source: string): string[] {
 const sources = new Map(files(root).map(file => [file, readFileSync(file, "utf8")]));
 const graph = new Map([...sources].map(([file, source]) => [file, imports(source).map(specifier => {
   if (!specifier.startsWith(".")) return specifier;
-  const candidate = resolve(dirname(file), specifier.replace(/\.js$/, ".ts"));
-  if (!existsSync(candidate)) throw new Error(`Unresolved local dependency: ${specifier} in ${file}`);
+  const plain = resolve(dirname(file), specifier);
+  const candidate = [plain.replace(/\.js$/, ".ts"), plain.replace(/\.js$/, ".tsx"), plain].find(existsSync);
+  if (!candidate) throw new Error(`Unresolved local dependency: ${specifier} in ${file}`);
   return candidate;
 })]));
 const localName = (file: string) => relative(root, file).replaceAll("\\", "/");
@@ -32,7 +33,7 @@ function reached(file: string, seen = new Set<string>()): Set<string> {
   return seen;
 }
 it.each(["application/", "core.ts", "domain/", "dialogue/", "persistence/"])("%s cannot reach forbidden outer layers, including through barrels", layer => {
-  const forbidden = layer === "application/" ? /^(http|auth|server|app)\// : /^(application|http|auth|server|app)\//;
+  const forbidden = layer === "application/" ? /^(http|auth|server|app|frontend)\// : /^(application|http|auth|server|app|frontend)\//;
   const selected = [...sources.keys()].filter(file => localName(file).startsWith(layer));
   expect(selected.length).toBeGreaterThan(0);
   for (const file of selected) for (const dependency of reached(file)) {
@@ -43,6 +44,18 @@ it.each(["application/", "core.ts", "domain/", "dialogue/", "persistence/"])("%s
 it("Application has no HTTP/Next global types or transport errors", () => {
   for (const [file, source] of sources) if (localName(file).startsWith("application/")) {
     expect(source, localName(file)).not.toMatch(/\b(Request|Response|NextRequest|NextResponse|ApiError|ApiErrorCode)\b/);
+  }
+});
+it("browser roots and public contracts cannot reach server, domain, credentials or database implementations", () => {
+  const roots = [...sources].filter(([file, source]) => localName(file).startsWith("frontend/") ||
+    localName(file).startsWith("public-api/") || /^["']use client["']/.test(source));
+  expect(roots.length).toBeGreaterThan(10);
+  for (const [file, source] of roots) {
+    for (const dependency of reached(file)) {
+      expect(localName(dependency), localName(file)).not.toMatch(/^(http|application|auth|accounts|server|domain|dialogue|persistence|generated|fixtures|security)\/|^core\.ts$/);
+      expect(dependency, localName(file)).not.toMatch(/^(node:|bcrypt|@prisma|mariadb|next-auth$|next-auth\/(?!react$))/);
+    }
+    expect(source, localName(file)).not.toMatch(/localStorage|sessionStorage|document\.cookie|process\.env|dangerouslySetInnerHTML|x-owner-id|x-user-id/);
   }
 });
 it("account ports/services stay independent of concrete persistence, hashing and Training rules", () => {

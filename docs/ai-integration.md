@@ -104,7 +104,7 @@ request คนละ turn ที่ revision เดียวกันมีเ�
 Local sanitizer ตรวจเฉพาะ patterns บางประเภท ไม่ใช่ production PII/moderation protection
 ไม่มี dynamic evidence จาก AI, automatic clarification UI หรือ live-model compatibility guarantee
 รายละเอียด boundary อยู่ใน [Security](security.md); [HTTP API boundary](api.md) implement แล้ว
-Auth.js real identity provider ยัง Planned; HTTP message ผ่าน Orchestrator เดิมโดยไม่เพิ่ม authority ให้ AI
+Auth.js Credentials identity และ Frontend ทำแล้ว; HTTP message ผ่าน Orchestrator เดิมโดยไม่เพิ่ม authority ให้ AI
 
 Evidence: [contracts](../src/dialogue/contracts.ts), [orchestrator](../src/dialogue/orchestrator.ts),
 [mock](../src/dialogue/mock-provider.ts), [sanitizer](../src/dialogue/sanitize.ts),

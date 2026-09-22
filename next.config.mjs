@@ -1,8 +1,8 @@
-/** API-only application; keep the generated Prisma client and driver on the Node runtime. */
+/** Keep database and native hashing dependencies on the server runtime. */
 export default {
   serverExternalPackages: ["@prisma/client", "bcrypt", "@prisma/adapter-mariadb", "mariadb"],
   webpack(config) {
-    config.resolve.extensionAlias = { ...config.resolve.extensionAlias, ".js": [".ts", ".js"] };
+    config.resolve.extensionAlias = { ...config.resolve.extensionAlias, ".js": [".ts", ".tsx", ".js"] };
     return config;
   },
 };

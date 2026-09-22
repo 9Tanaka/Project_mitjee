@@ -3,11 +3,11 @@
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น backend พร้อม Next.js HTTP API สำหรับ SMS / Phishing: สนทนากับ Mock Provider
+โค้ดปัจจุบันเป็น Frontend MVP พร้อม Next.js HTTP API สำหรับ SMS / Phishing: สนทนากับ Mock Provider
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
 Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
-ดู [Authentication](docs/authentication.md) — Demo backend ยังไม่ใช่ production-ready และยังไม่มี Frontend
+ดู [Authentication](docs/authentication.md) และ [Frontend](docs/frontend.md) — เป็น Demo ไม่ใช่ production-ready
 
 ## Current implementation status
 
@@ -22,7 +22,7 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | HTTP API / Public DTO | Implemented — 8 endpoints |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
-| Frontend UI | Planned / Not Implemented |
+| Frontend UI | Implemented — registration/login, catalog, playable SMS / Phishing, result/logout |
 | Live AI Provider | Planned / Not Implemented |
 | Voice / playable Call Center | Planned / Not Implemented |
 | WebSocket | Planned / Not Implemented |
@@ -33,7 +33,7 @@ Training API รับ UUID จาก verified session เท่านั้น;
 ## Architecture summary
 
 ```text
-Client [FUTURE]
+Browser / React UI [IMPLEMENTED; public DTOs only]
   → Next.js Route Handler → Authentication → Strict DTO
     → Application / Dialogue Layer
     → TrainingCore
@@ -72,9 +72,24 @@ npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
+ผลล่าสุด 22 กันยายน 2026 — Frontend MVP:
+
+- Prisma generate/validate, typecheck และ production build ผ่าน
+- npm test: 343 passed, 0 skipped; Frontend subset: 52 passed
+- test:http: 128 passed; test:auth: 81 passed; test:mysql: 28 passed
+- test:e2e: 3 passed — real Chromium + production Next + dedicated MySQL:
+  register/login → multi-turn safe result → logout, critical/quit และ two-tab revision conflict
+- test:auth:live ผ่าน; ไม่มีการลด Origin/CSRF/ownership checks
+- Client audit: 43 JavaScript artifacts ผ่าน; architecture tests ตรวจ transitive imports
+- ตรวจภาพมือถือ 375px / tablet 768px / desktop 1440px และ horizontal overflow ผ่าน
+- npm audit ทั้งหมดและ production-only: 0 known vulnerabilities ณ วันที่ตรวจ
+
+ดูคำสั่ง `test:frontend`, `test:e2e`, `audit:client` และข้อจำกัดใน [Frontend](docs/frontend.md)
+Browser E2E แยกจาก npm test; screenshots/traces ไม่ถูก commit; ผลนี้ไม่ใช่ production certification
+
 เมื่อมีฐานข้อมูลทดสอบพร้อม ให้ตั้ง environment แบบส่วนตัวตาม [Persistence](docs/persistence.md)
 แล้วใช้ `npm run test:mysql` ซึ่งจะ fail หากไม่มี URL
-ผลล่าสุด 18 กันยายน 2026 — User Account + Credentials:
+ผลก่อนหน้า 18 กันยายน 2026 — User Account + Credentials:
 
 - Prisma generate/validate, additive migration deploy, typecheck และ Next.js build ผ่าน
 - npm test: 290 passed, 0 skipped รวม Core/Dialogue/Persistence/HTTP/Auth/Architecture
@@ -112,6 +127,7 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
 - [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)
+- [Frontend: routes, UX, retry/revision และ browser verification](docs/frontend.md)
 - [Security และข้อจำกัด](docs/security.md)
 - [Demo Assumptions](docs/demo-assumptions.md)
 
@@ -120,4 +136,6 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 มีหมายเหตุข้อขัดแย้งเรื่องชื่อ State ใน Proposal v4; ไม่แก้ Proposal หรือ `sources/`
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
-ยังไม่เริ่ม Frontend, OAuth, Live AI, Voice หรือ WebSocket; รอตรวจ backend ก่อน Phase ถัดไป
+Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
+ยังไม่เริ่ม Profile, อีก 8 fixtures, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Live AI, Voice หรือ WebSocket
+หยุดรอ review ก่อน Phase ถัดไป

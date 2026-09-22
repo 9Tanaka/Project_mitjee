@@ -7,7 +7,7 @@ STATUS: IMPLEMENTED FOR DEMO — USER ACCOUNTS / AUTH.JS CREDENTIALS ENABLED
 HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
-Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ ไม่มี Frontend, streaming หรือ Live AI
+Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว ไม่มี streaming หรือ Live AI
 
 ## Authentication and composition
 
@@ -163,7 +163,7 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Credentials login/provider verification ทำแล้วใน Phase บัญชี; Frontend, Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login/provider verification และ Frontend MVP ทำแล้ว; Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 
@@ -176,9 +176,19 @@ Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/gettin
 
 ## Application / HTTP contract ownership
 
-HTTP retains strict route/query/request/response Zod schemas and envelopes in dto.ts.
+Browser-safe strict route/query/request/response Zod schemas and envelopes live in
+src/public-api/contracts.ts; src/http/dto.ts re-exports the identical schema instances.
 The handler maps parsed JSON through mapping.ts into application-owned plain inputs.
 Application service/catalog/projections use their own contracts and semantic errors only;
 HTTP maps ApplicationError/DomainError to the unchanged public error table above.
 Responses remain explicit public projections validated at the HTTP boundary, with no
 raw aggregate/template serialization. All eight route paths and payload contracts are unchanged.
+
+## Frontend consumer
+
+The implemented browser helper uses same-origin cookies, no-store and the identical public
+response schemas. Opaque action IDs carry no client-side score/event/state meaning.
+Success replaces the session snapshot. Uncertain retries retain the full original
+ID/revision/payload; 409 refreshes current data and asks the user to decide again.
+401 routes to login; raw backend errors are never displayed.
+No API path or payload extension was needed for this phase. See [Frontend](frontend.md).

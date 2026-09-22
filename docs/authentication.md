@@ -107,7 +107,8 @@ account lifecycle/recovery and production cookie/deployment review remain future
 
 next-auth 5.0.0-beta.32 / @auth/core 0.41.3 remains a prerelease. Next 16.3.5, React 19.3.0,
 Prisma 7.10.0 are unchanged. Native bcrypt 6.0.0 and @types/bcrypt 6.0.0 are the only new
-direct packages. Production and real cryptographic tests use cost 12.
+direct packages added in the account phase (frontend tooling is listed in frontend.md).
+Production and real cryptographic tests use cost 12.
 bcrypt upstream supports Node >=18 and Windows prebuilds. Node 24.19.0 native hash/compare
 and Next Node-runtime build/live execution are checked locally, not upstream certification.
 bcrypt is externalized in the Next server build. If a platform has no matching prebuild,
@@ -148,4 +149,16 @@ Absent: email verification, password reset/change, compromised-password detectio
 recovery, MFA, CAPTCHA, production rate-limit/abuse infrastructure, account deletion/
 profile/RBAC, deployment security review and verified external TLS.
 Do not expose this demo as unprotected production identity infrastructure.
-Frontend, OAuth, Live AI, Voice and WebSocket remain unimplemented.
+Frontend MVP is implemented; OAuth, Live AI, Voice and WebSocket remain unimplemented.
+
+## Frontend authentication boundary
+
+The Thai /register and /login pages now call the real registration endpoint and official
+next-auth/react v5 signIn/signOut. SessionProvider exposes status only to presentation;
+AuthGate redirects anonymous visitors without replacing backend authorization.
+Password confirmation is client-only; submitted password fields clear immediately.
+The exact shared 12-code-point/72-byte policy remains authoritative on the backend.
+Registration redirects to login with a success notice, never auto-login.
+No account UUID/JWT/cookie is rendered or stored in custom browser storage.
+Backend security backlog above is unchanged; no production-ready claim.
+Browser end-to-end tests now exercise this against real Next/MySQL; see [Frontend](frontend.md).

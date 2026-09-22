@@ -85,7 +85,7 @@ resume ไม่ต่อเวลา idle แต่สามารถบัน�
 refresh ในอนาคตใช้ resume คืน State/Version/Revision/history ที่เก็บไว้ ไม่เริ่มใหม่
 InMemory ต้องใช้ repository instance เดิม; Prisma โหลดผ่าน client/process ใหม่ได้
 HTTP GET /api/training/:sessionId เรียก resume ผ่าน authenticated application service แล้ว
-Frontend refresh UI ยัง Planned; HTTP boundary คืน 410 สำหรับ EXPIRED ตาม lifecycle เดิม
+Frontend refresh โหลด Session เดิมจาก API แล้ว; HTTP boundary คืน 410 สำหรับ EXPIRED ตาม lifecycle เดิม
 
 Evidence: [State Machine](../src/domain/state-machine.ts), [Core](../src/core.ts),
 [Template Validator](../src/domain/template-validator.ts), [concurrency tests](../tests/core-hardening.test.ts)

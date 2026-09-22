@@ -15,7 +15,10 @@
     "db:deploy": "prisma migrate deploy",
     "test:mysql": "node scripts/test-mysql.mjs",
     "test:auth": "vitest run tests/accounts.test.ts tests/accounts.http.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts",
-    "test:auth:live": "node scripts/test-auth-live.mjs"
+    "test:auth:live": "node scripts/test-auth-live.mjs",
+    "test:frontend": "vitest run tests/frontend.api.test.ts tests/frontend.ui.test.tsx",
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "audit:client": "node scripts/audit-client.mjs"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.0",
@@ -34,11 +37,17 @@
     "deepmerge-ts": "8.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@testing-library/react": "16.3.3",
     "@types/bcrypt": "6.0.0",
     "@types/node": "22.20.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "jsdom": "30.1.1",
+    "postcss": "8.5.28",
     "prisma": "7.10.0",
+    "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vitest": "5.0.0"
   }

@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + User Accounts / Auth.js Credentials
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend MVP
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -46,7 +46,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP + User
 
 ```mermaid
 flowchart LR
-    futureClient["User / Frontend - PLANNED"] -.-> http["Next.js Route Handlers"]
+    browser["Browser / React UI - IMPLEMENTED"] --> http["Next.js Route Handlers"]
     http --> auth["RequestAuthenticator / Strict DTO / Public Projection"]
     auth --> entry["Application Services"]
     tests["Tests / trusted caller"] --> entry
@@ -67,6 +67,7 @@ flowchart LR
 
 | Component | หน้าที่ / authority |
 |---|---|
+| Next.js Server pages + interactive Client Components | Thai presentation, auth UX, public DTO fetch/mutations; no state/scoring/identity authority |
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
 | RequestAuthenticator | Auth.js verified session → minimal principal; Credentials + verified JWT/cookie; session resolver mock อยู่เฉพาะ tests |
 | Application service / catalog | เลือก playable v2/DEFAULT, derive domain command จาก opaque public action ID; project public response |
@@ -97,6 +98,10 @@ Message → Orchestrator validation/sanitize → resume + version/state context
 → Core.commitDialogueTurn → candidate inspection + FREE_TEXT validation → atomic save
 
 Domain ไม่ import PrismaClient; port ใช้ types ของระบบเอง
+Frontend/public contracts ถูกตรวจ transitive imports ใน architecture tests เพิ่มแล้ว:
+ห้ามเข้าถึง Core, templates, server Auth, Prisma, bcrypt หรือข้อมูล environment
+Public Zod DTO และ account policy ใช้ schema เดียวกับ Backend ผ่าน module ที่ browser-safe
+ดูรายละเอียด Server/Client Components, retry และหน้าเว็บใน [Frontend](frontend.md)
 อย่างไรก็ตาม Core อ้าง dialogue response schema และ persistence contract ใช้ sanitizer จาก dialogue
 จึงไม่อ้างว่า package แยกขาดจากกันทุกทิศทาง ประเด็นที่แยกชัดคือไม่มี Prisma dependency ใน Core
 Provider context ไม่มี transitions, answer keys หรือ scoring rules และถูก freeze แบบลึก
@@ -108,7 +113,7 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Dialogue](../src/dialogue/orchestrator.ts), [Repository port](../src/domain/training-repository.ts)
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
-HTTP/API และ Email/Password Credentials login implement แล้ว; UI/Live Provider/Voice/WebSocket ยังไม่ implement
+HTTP/API, Email/Password Credentials และ Frontend MVP implement แล้ว; Live Provider/Voice/WebSocket ยังไม่ implement
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
 หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)

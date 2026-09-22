@@ -38,7 +38,7 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 |---|---|---|
 | Idle timeout | 30 นาที ตรวจเมื่อ resume/submit ไม่มี background timer | Implemented |
 | Session completion | Safe resolution → calculate result; Critical → fail; quit → ABANDONED; idle → EXPIRED | Implemented |
-| Resume | ACTIVE อ่าน State/history เดิม ไม่รีเซ็ต idle | Implemented ใน library; UI refresh Planned |
+| Resume | ACTIVE อ่าน State/history เดิม ไม่รีเซ็ต idle | Implemented ใน library และ Frontend refresh ผ่าน API |
 | Provider timeout | default 20 วินาทีต่อ attempt; constructor inject ค่าอื่นเพื่อ test ได้ | Implemented |
 | Retry | retry once; รวมสอง attempts ยกเว้น SAFETY_BLOCKED ไม่ retry | Implemented |
 | Cancellation | AbortSignal ต่อ attempt และ requestId=sessionId:turnId:attempt | Implemented; real network forwarding Planned |
@@ -105,6 +105,6 @@ Demo assumptions (not Proposal numeric requirements):
 - JWT session strategy, Auth.js standard cookie/session defaults; current-browser logout only.
 - One random dummy hash per service for unknown-account compare; no claim of constant time.
 
-Planned / Not Implemented: Frontend, profile, account deletion, password reset/change, email
+Planned / Not Implemented: profile, account deletion, password reset/change, email
 verification, MFA, recovery, production abuse controls/security review, OAuth, Live AI, Voice/WebSocket.
 See [Authentication](authentication.md) and [Security](security.md) for limitations.

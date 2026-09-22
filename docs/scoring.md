@@ -48,7 +48,7 @@ earned ต้องเป็นค่าจำกัด ไม่ติดลบ
 STATE_ENTRY เป็นนโยบายเปิด opportunity ของ Demo: เข้า State แล้วเปิดรายการของ State นั้นครั้งเดียว
 ไม่ผ่าน create_pressure จึงไม่นับ w-extra ในตัวหาร
 แต่ถ้าผ่านแล้วไม่ตอบ optional opportunity จะยังอยู่ในตัวหารและ earned=0
-นี่เป็น eligibility ของ Backend ไม่ใช่หลักฐานว่า UI แสดงหลักฐานแล้ว เพราะยังไม่มี UI
+นี่เป็น eligibility ของ Backend ไม่ใช่ telemetry ยืนยันว่าผู้ใช้อ่านหลักฐานจริง แม้ Frontend จะแสดง Public Actions แล้ว
 
 ทุก Safe Resolution path ที่จะสร้าง Official Result ต้องมี eligible D, W และ S ครบ
 Template Validator ตรวจล่วงหน้า และ Scoring Engine ตรวจซ้ำตอนจบ
