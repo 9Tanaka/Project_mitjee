@@ -82,7 +82,7 @@ resume ไม่ต่อเวลา idle แต่สามารถบัน�
 ข้อยกเว้นคือ idempotent retry ของรายการเดิม: คืนผลที่ commit แล้วแทนการคิดคะแนนซ้ำ
 ดูรายละเอียด [Persistence](persistence.md)
 
-refresh ในอนาคตใช้ resume คืน State/Version/Revision/history ที่เก็บไว้ ไม่เริ่มใหม่
+refresh ใช้ resume คืน State/Version/Revision/history ที่เก็บไว้ ไม่เริ่มใหม่
 InMemory ต้องใช้ repository instance เดิม; Prisma โหลดผ่าน client/process ใหม่ได้
 HTTP GET /api/training/:sessionId เรียก resume ผ่าน authenticated application service แล้ว
 Frontend refresh โหลด Session เดิมจาก API แล้ว; HTTP boundary คืน 410 สำหรับ EXPIRED ตาม lifecycle เดิม

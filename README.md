@@ -3,11 +3,12 @@
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น Frontend MVP พร้อม Next.js HTTP API สำหรับ SMS / Phishing: สนทนากับ Mock Provider
+โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับ SMS / Phishing
+สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
 Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
-ดู [Authentication](docs/authentication.md) และ [Frontend](docs/frontend.md) — เป็น Demo ไม่ใช่ production-ready
+ดู [Authentication](docs/authentication.md) และ [Frontend](docs/frontend.md) — ยังไม่ใช่ production-ready
 
 ## Current implementation status
 
@@ -23,7 +24,7 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — registration/login, catalog, playable SMS / Phishing, result/logout |
-| Live AI Provider | Planned / Not Implemented |
+| Live AI Provider | Implemented — OpenAI Responses API adapter; explicit Mock/OpenAI selection; **network verification NOT RUN** |
 | Voice / playable Call Center | Planned / Not Implemented |
 | WebSocket | Planned / Not Implemented |
 
@@ -43,7 +44,7 @@ Browser / React UI [IMPLEMENTED; public DTOs only]
 
 ScenarioDialogueOrchestrator → ScenarioModelProvider
                               ├─ Mock Provider [IMPLEMENTED]
-                              └─ Live Provider [PLANNED]
+                              └─ OpenAI Responses API Provider [IMPLEMENTED; network NOT VERIFIED]
 ```
 
 ดูขอบเขตหน้าที่และ Mermaid ใน [Architecture](docs/architecture.md)
@@ -72,7 +73,19 @@ npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
-ผลล่าสุด 22 กันยายน 2026 — Frontend MVP:
+ผลล่าสุด 22 กันยายน 2026 — Live AI Provider Integration:
+
+- Prisma generate/validate, typecheck, production build และ client audit ผ่าน
+- npm test: **415 passed, 0 skipped**; test:ai: 68 (provider 35, dialogue 24, HTTP 9)
+- Dialogue เดิม 28; HTTP เดิม+runtime 131; Auth 81; Frontend 52; MySQL 28 — เป็น subsets ที่ทับซ้อนกัน
+- Real Auth.js/MySQL smoke ผ่าน; browser E2E 3 ผ่านโดยใช้ Mock เพื่อคง deterministic regression
+- Client audit: 43 JavaScript artifacts ผ่าน; npm audit ทั้งหมด/production-only: 0 known vulnerabilities
+- **Real OpenAI network: NOT RUN** เพราะไม่มี private API key; ไม่อ้างว่า model/latency ผ่านจริง
+- Core/Domain/Dialogue contract, State Machine, Scoring, Critical rules และ DB schema ไม่เปลี่ยน
+
+ดู [รายงาน Phase และไฟล์ที่แก้](docs/live-ai-verification.md)
+
+ผลก่อนหน้า 22 กันยายน 2026 — Frontend MVP (ก่อนเพิ่ม OpenAI adapter):
 
 - Prisma generate/validate, typecheck และ production build ผ่าน
 - npm test: 343 passed, 0 skipped; Frontend subset: 52 passed
@@ -115,6 +128,14 @@ Next.js build ผ่าน และตรวจ server จริงครบ 8 
 `npm run dev` หรือ `npm run build` แล้ว `npm start` เปิด API บน loopback
 Training endpoints ทุกตัวต้อง authenticate; registration และ Auth.js protocol routes เป็น public ตามหน้าที่
 ตั้ง AUTH_SECRET และ AUTH_URL ผ่าน private environment; ไม่มี demo header ที่ใช้ impersonate ผู้ใช้ได้
+ตั้ง `AI_PROVIDER=mock` อย่างชัดเจนเพื่อพัฒนาโดยไม่เรียก OpenAI; ไม่มี implicit Mock default อีกต่อไป
+หากใช้ `AI_PROVIDER=openai` ต้องมี `OPENAI_API_KEY` และ `OPENAI_MODEL` ใน private server environment
+Proposal v4 ระบุ `gpt-5.4-mini` และ final-test snapshot `gpt-5.4-mini-2026-03-17`;
+ไม่มีการเปลี่ยน model ให้เอง ไม่มี browser selector และไม่มี arbitrary proxy URL
+OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โดย fake client ไม่เรียกเครือข่าย
+`npm run test:ai:live` แยกต่างหากสำหรับข้อมูลสมมติหนึ่ง turn สูงสุดสอง requests
+รอบนี้ไม่มี private API key: **Real OpenAI network verification: NOT RUN; model used: none**
+ดู [AI integration](docs/ai-integration.md) สำหรับขอบเขตข้อมูล, timeout/retry และข้อจำกัด
 ดู [API contract และ composition setup](docs/api.md) สำหรับ environment และ protocol
 
 ## Documentation
@@ -123,7 +144,7 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 - [Scenario Engine และ domain model](docs/scenario-engine.md)
 - [State Machine และ lifecycle](docs/state-machine.md)
 - [Scoring และคำแนะนำ](docs/scoring.md)
-- [AI Integration — Mock ทำแล้ว / Live ยังไม่ทำ](docs/ai-integration.md)
+- [AI Integration — Mock/OpenAI adapter ทำแล้ว; live network ยังไม่ตรวจ](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
 - [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)
@@ -137,5 +158,5 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
 Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
-ยังไม่เริ่ม Profile, อีก 8 fixtures, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Live AI, Voice หรือ WebSocket
+ยังไม่เริ่ม Profile, อีก 8 fixtures, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Voice หรือ WebSocket
 หยุดรอ review ก่อน Phase ถัดไป

@@ -1,6 +1,6 @@
 # Frontend Foundation + Authentication UI + Playable Training Flow
 
-STATUS: IMPLEMENTED DEMO — SMS / Phishing only. Backend remains authoritative.
+STATUS: IMPLEMENTED SCENARIO SIMULATION UI — SMS / Phishing only. Backend remains authoritative.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.
 
 ## Architecture and routes
@@ -94,7 +94,9 @@ synchronization and offline durable retry are not implemented.
 
 Messages display sanitized public history only; a local unsent draft remains on error.
 Use fictional data only; the UI explicitly warns against real OTP/password/PII.
-Mock Provider is current backend behavior; no browser AI/network-provider integration.
+Server selects Mock/OpenAI explicitly; browser uses the same public DTO with no model/provider selector.
+OpenAI adapter is implemented; real network verification NOT RUN. Footer now describes Scenario Simulation
+without claiming a specific provider. No UI redesign or direct browser AI integration.
 
 Public action inputs:
 
@@ -126,7 +128,8 @@ No polling or real-time subscription. Shared contracts are safe to bundle.
 Use private environment per authentication.md and persistence.md. Start with npm ci,
 Prisma generation and a migrated dedicated test DB. Never commit environment values.
 For local app use npm run dev, or npm run build then npm start with private AUTH_SECRET,
-AUTH_URL and database configuration; origin must match the browser URL.
+AUTH_URL, database configuration and explicit AI_PROVIDER=mock (or private OpenAI configuration);
+origin must match the browser URL. Test launchers force mock for deterministic, no-OpenAI-cost regression.
 
 Commands:
 
@@ -157,7 +160,7 @@ Artifact scan complements these checks; it is not a full secret-security certifi
 
 ## Known limitations and remaining scope
 
-Verified 22 September 2026: Prisma generate/validate, strict typecheck and production
+Historical Frontend verification before OpenAI adapter, 22 September 2026: Prisma generate/validate, strict typecheck and production
 build passed. npm test 343/343 without skips; frontend subset 52, HTTP subset 128,
 Auth subset 81, MySQL subset 28 (subsets overlap; do not add them together).
 Three real Chromium E2E tests passed; existing live Auth.js smoke passed.
@@ -168,7 +171,8 @@ All/production npm audits reported 0 known vulnerabilities on this date.
 No migration/reset/schema modification was required; test data remains synthetic.
 
 Demo Credentials implemented. Playable scenario: SMS / Phishing only.
-Live AI, Voice/Call Center, Profile, remaining 8 scenario fixtures, Pre/Post-test,
+OpenAI text adapter is implemented; real OpenAI network verification NOT RUN.
+Voice/Call Center, Profile, remaining 8 scenario fixtures, Pre/Post-test,
 Review Quiz, Investigation Game, Knowledge Base and Dashboard: NOT IMPLEMENTED.
 No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,

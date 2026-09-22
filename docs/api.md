@@ -7,7 +7,8 @@ STATUS: IMPLEMENTED FOR DEMO — USER ACCOUNTS / AUTH.JS CREDENTIALS ENABLED
 HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
-Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว ไม่มี streaming หรือ Live AI
+Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว
+Server เลือก Mock/OpenAI adapter โดย contract เดิม; ไม่มี streaming และยังไม่ verify OpenAI network จริง
 
 ## Authentication and composition
 
@@ -38,6 +39,8 @@ Configuration ผ่าน private environment:
 - DATABASE_URL — credentials ไม่อยู่ใน repository
 - DATABASE_TLS_CA_PATH — trusted CA file สำหรับ remote; อ่าน content ส่งให้ helper เดิม
 - DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH — optional trusted public key สำหรับ local Demo
+- AI_PROVIDER — ต้องเลือก mock หรือ openai อย่างชัดเจน ไม่มี implicit Mock
+- OPENAI_API_KEY / OPENAI_MODEL — private server-only ค่าบังคับเมื่อเลือก openai; ห้ามส่งผ่าน browser
 - MySQL tests ยังคงใช้ MYSQL_TEST_DATABASE_URL / MYSQL_TEST_RSA_PUBLIC_KEY_PATH ตาม [Persistence](persistence.md)
 
 Remote ต้องมี trusted CA, rejectUnauthorized=true; allowPublicKeyRetrieval=false ทุกกรณี
@@ -141,12 +144,14 @@ concurrent duplicates อาจเรียก Provider หลายครั้
 | 410 | SESSION_EXPIRED |
 | 413 | PAYLOAD_TOO_LARGE |
 | 422 | INVALID_ACTION / INVALID_STATE / SESSION_NOT_ACTIVE |
-| 503 | PROVIDER_UNAVAILABLE (reserved; current Mock fallback ไม่สร้าง error นี้) |
+| 503 | PROVIDER_UNAVAILABLE (reserved; current State fallback ไม่สร้าง error นี้) |
 | 500 | INTERNAL_ERROR |
 
 Known action/transition/lifecycle errors map ตามหมวด; unexpected errors ใช้ข้อความคงที่
 ไม่ echo Zod issues, raw input, SQL, Prisma errors, stack trace หรือ provider raw output
-Mock failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
+Mock/OpenAI failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
+Invalid server provider configuration เป็น generic 500; public response ไม่มี model ID, usage,
+request context/ID, raw output/refusal/error หรือ provider configuration
 HTTP layer ไม่มี raw request/response/error logging
 
 ## Verification and limitations
@@ -163,7 +168,8 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Credentials login/provider verification และ Frontend MVP ทำแล้ว; Live AI, Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login และ Frontend ทำแล้ว; OpenAI adapter ทำแล้วแต่ network NOT VERIFIED
+Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 

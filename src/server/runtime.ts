@@ -5,6 +5,7 @@ import { resolveAuthJsSession } from "../auth/authjs.js";
 import type { RequestAuthenticator } from "../http/auth.js";
 import type { TrainingApplicationService } from "../application/training-service.js";
 import { createApplication } from "../application/composition.js";
+import { createScenarioProvider } from "./scenario-provider.js";
 
 export interface ApplicationRuntime {
   authenticator: RequestAuthenticator;
@@ -19,8 +20,9 @@ function createRuntime(): ApplicationRuntime {
     application() {
       // One pool/application per worker; rejected initialization is disposed and can retry.
       pending ??= (async () => {
+        const provider = createScenarioProvider();
         client = getDatabase();
-        return createApplication(new PrismaTrainingRepository(client));
+        return createApplication(new PrismaTrainingRepository(client), provider);
       })().catch(async error => {
         await closeDatabase(client); client = undefined; pending = undefined;
         throw error;

@@ -41,14 +41,14 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 | Resume | ACTIVE อ่าน State/history เดิม ไม่รีเซ็ต idle | Implemented ใน library และ Frontend refresh ผ่าน API |
 | Provider timeout | default 20 วินาทีต่อ attempt; constructor inject ค่าอื่นเพื่อ test ได้ | Implemented |
 | Retry | retry once; รวมสอง attempts ยกเว้น SAFETY_BLOCKED ไม่ retry | Implemented |
-| Cancellation | AbortSignal ต่อ attempt และ requestId=sessionId:turnId:attempt | Implemented; real network forwarding Planned |
+| Cancellation | AbortSignal ต่อ attempt และ internal requestId=sessionId:turnId:attempt | Implemented; SDK signal forwarding + opaque HMAC correlation; real network NOT VERIFIED |
 | Recent context | ล่าสุด 12 messages; ข้อความเก่าตัดที่ 2,000 code units | Implemented |
 | Current text / response | สูงสุด 8,000 code units; Dialogue ต้องไม่ว่างหลัง trim/sanitize | Implemented |
 | Mock echo | อ้างข้อความปัจจุบันสูงสุด 160 code units | Implemented; เป็น mock behavior ไม่ใช่ semantic model |
 | Role length | characterRole สูงสุด 1,000 code units | Implemented schema |
 | IDs / selections | Template IDs สูงสุด 120 พร้อม allowlist; turnId สูงสุด 100; warning selection สูงสุด 100 IDs | Implemented schema ไม่ใช่ Proposal numbers |
 | Numeric confidence | finite number หรือ null; ไม่ fix 0–1 และไม่ใช้ threshold เพื่อยอมรับ Event | Implemented |
-| Fault behavior | refusal/error/invalid/timeout/fallback ใช้ mock ไม่มี network | Implemented |
+| Fault behavior | refusal/error/invalid/timeout/fallback ใช้ mock/fake Responses client | Implemented; real network NOT VERIFIED |
 
 ความยาวข้างต้นเป็น JavaScript string/code-unit limits ไม่ใช่จำนวนคำ ตัวอักษรที่ผู้ใช้มองเห็น หรือ tokens
 FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่เก็บ text และไม่ใช้ข้อความเป็น fingerprint
@@ -63,13 +63,17 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 | AI interaction target | <10 วินาทีใน test environment | Target เท่านั้น; Mock ไม่พิสูจน์ live latency |
 | Concurrent demo | 20 active sessions | Functional isolation test มีแล้ว; ไม่ใช่ production/load benchmark |
 | Demo retention | DEMO_DATA_RETENTION_DAYS=30 แบบ configurable | Planned; ไม่มีการอ่านค่านี้หรือ cleanup job ใน code ปัจจุบัน |
-| Live AI | เปลี่ยน provider ผ่าน port ในอนาคต | Planned; ยังไม่มี OpenAI adapter |
+| Live network verification | Proposal model ผ่าน Responses API | Adapter implemented; network NOT RUN (ไม่มี private key) |
 
 ## Implemented platform choices
 
 - Node.js 24 เป็น tested development environment ไม่ใช่ Proposal Requirement
 - ใช้ versions/overrides ที่ล็อกใน [package.json](../package.json) และ package-lock.json
-  bcrypt ถูกเพิ่มใน Phase บัญชี; versions อื่นคงเดิม
+  bcrypt ถูกเพิ่มใน Phase บัญชี; OpenAI SDK 7.21.0 ใน Phase Live Provider; framework versions คงเดิม
+- OpenAI adapter: explicit AI_PROVIDER, required private key/model, fixed official endpoint,
+  store=false, non-streaming, max_output_tokens=1200; SDK retry=0 และ timeout 20 วินาที
+  ตัวเลข token cap เป็น technical choice ยังไม่ verify กับ real model; ไม่ใช่ Proposal Requirement
+- Adapter derives strict JSON schema จาก contract และ HMAC request ID; ไม่เพิ่ม Core authority หรือ business rules ใน prompt
 - Async TrainingRepository port, detached snapshots, CAS และ append-only history เป็น technical design
 - Prisma configuration อยู่ใน JSON version พร้อม SQL triggers; MySQL 8+ ใช้ utf8mb4_0900_bin
 - MySQL 8.4.11 เป็น version ที่เคยทดสอบ ไม่ใช่ version ที่ Proposal บังคับ
@@ -79,7 +83,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 รายละเอียด implementation อยู่ใน [Persistence](persistence.md) และ [Security](security.md)
 ## HTTP phase application choices
 
-- Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers; ไม่มี UI components
+- Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
 - SMS fixture v2/DEFAULT เป็น playable allowlist; catalog เพิ่ม public description/labels โดยไม่เปลี่ยน Template
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
@@ -106,5 +110,5 @@ Demo assumptions (not Proposal numeric requirements):
 - One random dummy hash per service for unknown-account compare; no claim of constant time.
 
 Planned / Not Implemented: profile, account deletion, password reset/change, email
-verification, MFA, recovery, production abuse controls/security review, OAuth, Live AI, Voice/WebSocket.
+verification, MFA, recovery, production abuse controls/security review, OAuth, Voice/WebSocket.
 See [Authentication](authentication.md) and [Security](security.md) for limitations.

@@ -1,6 +1,6 @@
 # AI / Dialogue Integration
 
-STATUS: MOCK PROVIDER IMPLEMENTED; LIVE AI PROVIDER PLANNED / NOT IMPLEMENTED
+STATUS: MOCK + LIVE PROVIDER IMPLEMENTED / REAL OPENAI NETWORK NOT VERIFIED
 
 [กลับ README](../README.md) · [Security](security.md)
 
@@ -18,7 +18,43 @@ interface ScenarioModelProvider {
 MockScenarioModelProvider ใช้ข้อความ deterministic ตาม State และประวัติใน context
 จำลอง normal, refusal, invalid output, error, timeout หรือคืน response fixture ได้
 ไม่มี network client และไม่มี callback เข้า Core
-ยังไม่มี Live OpenAI Provider, SDK integration, streaming หรือการทดสอบกับโมเดลจริง
+OpenAIScenarioModelProvider เป็น outer adapter ที่ inject thin ResponsesClient ได้
+ใช้ official SDK openai@7.21.0 กับ Responses API non-streaming เท่านั้น
+Core/Domain/Dialogue ไม่มี SDK import; Provider ไม่มี Core/repository reference
+Server composition เลือก provider แล้วส่งให้ createApplication(repository, provider); ไม่มี implicit Mock
+ยังไม่มี streaming, Voice หรือการทดสอบกับโมเดลผ่านเครือข่ายจริง
+
+## Configuration and model
+
+- `AI_PROVIDER=mock`: deterministic local provider; ไม่มี OpenAI call
+- `AI_PROVIDER=openai`: ต้องกำหนด `OPENAI_API_KEY` และ `OPENAI_MODEL` ผ่าน private server environment
+- ค่าว่าง/ผิดหรือขาด key/model ทำให้ initialization fail ก่อนเปิด Training DB; ไม่เปลี่ยนเป็น Mock เงียบ ๆ
+- HTTP คืน generic INTERNAL_ERROR ไม่คืนชื่อ config/key; ห้ามใช้ NEXT_PUBLIC_* สำหรับค่าเหล่านี้
+- Endpoint ตรึงที่ https://api.openai.com/v1; ไม่อ่าน OPENAI_BASE_URL ไปเปลี่ยนปลายทาง
+- SDK logging off; ไม่ส่ง organization/project จาก implicit environment และไม่มี browser configuration
+
+ตรวจ Proposal v4 ซ้ำวันที่ 22 กันยายน 2026: runtime `gpt-5.4-mini`,
+final-test snapshot `gpt-5.4-mini-2026-03-17`. Official model page ยังระบุ Responses API,
+Structured Outputs และ snapshot นี้ ณ วันที่ตรวจ แต่ไม่ได้ยืนยันสิทธิ์เข้าถึงของบัญชี
+ไม่มี default model หรือ silent substitution; tests ใช้ชื่อสมมติ ไม่ผูกกับ real model
+หาก model ใช้ไม่ได้ ให้รายงานและขออนุมัติก่อนเปลี่ยน ไม่ implement provider สำรองอื่นใน phase นี้
+
+## Request construction
+
+instructions แบบคงที่กำหนดบทบาทตัวละครสมมติ ภาษาไทย current-state-only และ dialogue-only
+developer message มีเฉพาะ allowlisted scenario id/version/category/variant/title, currentState,
+characterRole, allowedBehaviors และ forbiddenBehaviors; user message เป็น JSON ของ sanitized
+recent messages กับ current message ทั้งหมดถือเป็น untrusted dialogue ไม่ใช่คำสั่งระบบ
+ไม่ส่ง message IDs, ownerId, account/email/hash, JWT/cookie/token, answer keys, weights,
+decision mappings, critical rules, transition graph, guards, hidden opportunities หรือ recommendation internals
+ไม่ serialize runtime context extras; adapter sanitize ซ้ำและคง limits 12/2,000/8,000
+
+ไม่มี tools, external actions, previous_response_id หรือ full-history storage;
+`store:false`, `stream:false`, `max_output_tokens:1200` เป็น technical cost bound ไม่ใช่ Proposal Requirement
+Token cap รวม output budget ของ API; ความเพียงพอ/latency ยังไม่ได้ยืนยันกับโมเดลจริง
+Incomplete output ถูก reject แล้วใช้ retry/fallback; ไม่เพิ่ม token budget เอง
+`store:false` ไม่ใช่คำรับรอง Zero Data Retention หรือว่าผู้ให้บริการไม่เก็บ abuse-monitoring data
+Prompt ไม่มี score/transition logic และไม่ใช่ production-grade prompt-injection protection
 
 ## Immutable context
 
@@ -47,6 +83,14 @@ AICharacterResponse เป็น strict schema:
 
 NONE ต้องคู่กับ event_code=null; candidate ที่ไม่ใช่ NONE ต้องมี code
 schema ไม่ยอมให้เพิ่ม field เช่น next_state หรือ score
+Responses `text.format` ใช้ strict json_schema ที่ derive จาก aiCharacterResponseSchema
+จากนั้น parse output_text ทั้งก้อนด้วย JSON.parse (ไม่ใช้ regex ดึง JSON จาก prose)
+และ validate schema/refinements ซ้ำทั้ง adapter และ Orchestrator
+Refusal content part map เป็น ProviderRefusal ด้วยข้อความคงที่ ไม่ส่ง raw refusal ต่อ
+Incomplete/failed envelope, tool output, หลาย text parts, malformed JSON หรือ field เกิน ถูก reject
+Adapter-side invalid output/SDK error ใช้ OpenAIProviderError ข้อความคงที่ → existing ERROR category;
+ไม่เพิ่ม error contract หรือเปลี่ยน Core. INVALID_OUTPUT เดิมยังใช้กรณี provider คืน invalid value ถึง Orchestrator
+Raw output/error/refusal/usage/model request metadata ไม่ถูกเก็บหรือส่งออก public DTO
 Core นำ event_code/confidence ไปสร้าง AICandidateEvent projection โดยกำหนด sourceMessageId เอง
 และใช้ opportunityId=null ใน Dialogue path; candidate_event/observed_intent ไม่ถูกใช้เป็น authoritative action
 candidate ถูกตรวจแล้วได้ NO_EVENT / REJECTED / CLARIFICATION_REQUIRED โดยไม่สร้าง TrainingEvent
@@ -73,7 +117,11 @@ candidate ถูกตรวจแล้วได้ NO_EVENT / REJECTED / CLARI
 แต่ละครั้งมี AbortController และ requestId รูปแบบ sessionId:turnId:attempt
 ใช้ opaque IDs เท่านั้น ห้ามใส่ข้อมูลส่วนบุคคลใน identifiers
 Orchestrator abort เมื่อ timeout; Mock รองรับทั้ง signal ที่ abort ไปแล้วและการ abort ระหว่าง timeout simulation
-Live Provider ในอนาคตต้องส่ง signal ต่อให้ network client เอง
+OpenAI adapter ส่ง signal เดิมให้ SDK และตรวจ abort ทั้งก่อน/หลัง await
+SDK timeout เป็น backup 20 วินาที และ maxRetries=0 ทั้ง client/request (SDK default retry ถูกปิด)
+Correlation ที่ออกไปเป็น HMAC แบบ opaque ใน X-Client-Request-Id ด้วย random per-process key
+ไม่ส่ง raw sessionId/turnId หรือ PII; เปลี่ยน worker แล้ว correlation key เปลี่ยน
+SDK cancellation เป็น best effort ต่อ transport ไม่รับประกันหยุด server-side generation หรือ billing
 แม้ provider เพิกเฉยต่อ abort คำตอบที่ช้าก็ไม่มีช่องทาง commit หลัง deadline/fallback
 
 REFUSAL, INVALID_OUTPUT, TIMEOUT และ ERROR ลองซ้ำหนึ่งครั้งแล้ว fallback หากยังล้มเหลว
@@ -96,6 +144,9 @@ Mock อาจสะท้อนข้อความล่าสุดไม่
 turnId เดิมและ sanitized input เดิมคืน receipt โดยไม่เรียก Provider เพิ่ม หาก receipt มีอยู่แล้ว
 turnId เดิมแต่ input ต่างกันได้ IDEMPOTENCY_CONFLICT
 concurrent retries อาจเรียก Provider มากกว่าหนึ่งครั้ง แต่ commit ได้เพียงหนึ่ง receipt
+เพดานคือสอง network attempts ต่อ Orchestrator invocation ของ turn ใหม่ (SAFETY_BLOCKED หนึ่งครั้ง)
+ไม่มี retry เพิ่มใน SDK; committed replay ศูนย์ requests
+คำขอ concurrent ที่ยังไม่มี receipt จำนวน N อาจเรียกรวมถึง 2N ครั้ง; ยังไม่มี distributed in-flight coalescing
 receipt เดิมไม่ทำให้ Session ที่จบแล้วกลับ ACTIVE
 request คนละ turn ที่ revision เดียวกันมีเพียงหนึ่งรายการชนะ; stale response ไม่มีสิทธิ์เขียนข้อความ
 
@@ -109,3 +160,27 @@ Auth.js Credentials identity และ Frontend ทำแล้ว; HTTP message
 Evidence: [contracts](../src/dialogue/contracts.ts), [orchestrator](../src/dialogue/orchestrator.ts),
 [mock](../src/dialogue/mock-provider.ts), [sanitizer](../src/dialogue/sanitize.ts),
 [integration tests](../tests/dialogue.integration.test.ts)
+
+## Verification
+
+`npm run test:ai`: real adapter + fake Responses client, รวมการใช้ official SDK ผ่าน fake fetch
+ตรวจ request/schema/refusal/error/abort/retry count, untrusted prompt, all candidate types,
+timeout late-response, CAS stale rejection, duplicate HTTP retry และ safe D/W/S path
+ชุดปกติไม่เรียก OpenAI; MySQL/Auth/browser smoke บังคับ AI_PROVIDER=mock
+
+`npm run test:ai:live`: opt-in synthetic in-memory session หนึ่ง turn ไม่ต้องใช้บัญชีหรือ DB จริง
+ต้องกำหนด private env ทั้งสามตัว; cap สอง attempts ตาม Orchestrator เดิม ไม่มี outer retry/load test
+ตรวจ nonempty/schema, committed receipt, unchanged State/score/events/opportunities และ no Critical Failure
+ไม่ assert exact wording/confidence; รายงานเฉพาะ model, attempts, schema result, latency ไม่ log prompt/response
+Fallback ไม่ถือว่าผ่าน live verification; missing config exit nonzero พร้อม NOT RUN
+
+**รอบนี้: adapter tests ผ่าน; Real OpenAI network verification NOT RUN — ไม่มี API key ใน environment.
+Model used for live test: none.** ไม่อ้างว่า prompt injection/production moderation/PII detection สมบูรณ์
+
+Official sources checked 22 September 2026:
+
+- [Official TypeScript SDK: retries, timeouts, cancellation](https://developers.openai.com/api/reference/typescript)
+- [Responses create API](https://developers.openai.com/api/reference/typescript/resources/responses/methods/create)
+- [Structured Outputs and refusal](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [Proposal model and snapshot](https://developers.openai.com/api/docs/models/gpt-5.4-mini)
+- [Client request correlation](https://developers.openai.com/api/reference/overview)

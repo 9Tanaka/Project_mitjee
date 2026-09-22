@@ -13,6 +13,7 @@ beforeEach(() => {
   mocks.create.mockReturnValue({ $disconnect: mocks.disconnect });
   mocks.assemble.mockResolvedValue({ marker: "application" });
   vi.stubEnv("AUTH_SECRET", "");
+  vi.stubEnv("AI_PROVIDER", "mock");
   vi.stubEnv("DATABASE_URL", "mysql://localhost/mitjee_test");
   vi.stubEnv("DATABASE_TLS_CA_PATH", ""); vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "");
 });
@@ -41,6 +42,11 @@ it("missing DB configuration does not allocate a pool", async () => {
   vi.stubEnv("DATABASE_URL", "");
   await expect(getRuntime().application()).rejects.toThrow("Database configuration is required");
   expect(mocks.create).not.toHaveBeenCalled();
+});
+it.each(["", "invalid", "openai"])("invalid provider configuration (%s) fails before DB allocation", async provider => {
+  vi.stubEnv("AI_PROVIDER", provider); vi.stubEnv("OPENAI_API_KEY", ""); vi.stubEnv("OPENAI_MODEL", "");
+  await expect(getRuntime().application()).rejects.toThrow(/AI_PROVIDER|OPENAI_API_KEY/);
+  expect(mocks.create).not.toHaveBeenCalled(); expect(mocks.assemble).not.toHaveBeenCalled();
 });
 it("loopback RSA path remains an explicit composition-root option", async () => {
   vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "/trusted/local-public.pem");

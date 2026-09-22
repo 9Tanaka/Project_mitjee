@@ -9,6 +9,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <a href="#main-content" className="skip-link">ข้ามไปยังเนื้อหา</a>
     <header className="app-header"><div className="shell header-inner"><Brand /><AuthNavigation /></div></header>
     <main id="main-content" tabIndex={-1} className="shell main-content">{children}</main>
-    <footer className="app-footer"><div className="shell footer-inner"><p><strong>MITJEE</strong> · ฝึกคิดก่อนคลิก</p><p>โครงงานเพื่อการเรียนรู้ · Demo ใช้บทสนทนาจำลอง ยังไม่เชื่อม Live AI</p></div></footer>
+    <footer className="app-footer"><div className="shell footer-inner"><p><strong>MITJEE</strong> · ฝึกคิดก่อนคลิก</p><p>โหมดสถานการณ์จำลอง · ใช้ข้อมูลสมมติเท่านั้น · ผลประเมินกำหนดโดยระบบ</p></div></footer>
   </AuthProvider></body></html>;
 }

@@ -16,7 +16,7 @@ async function run() {
   const origin = "http://localhost:" + port;
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(port)], {
     windowsHide: true, stdio: "ignore",
-    env: { ...process.env, NODE_ENV: "production", AUTH_SECRET: randomBytes(48).toString("base64url"), AUTH_URL: origin,
+    env: { ...process.env, AI_PROVIDER: "mock", NODE_ENV: "production", AUTH_SECRET: randomBytes(48).toString("base64url"), AUTH_URL: origin,
       AUTH_TRUST_HOST: "", DATABASE_URL: raw, DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH: process.env.MYSQL_TEST_RSA_PUBLIC_KEY_PATH ?? "" },
   });
   const exited = new Promise(resolve => { server.once("exit", resolve); server.once("error", resolve); });

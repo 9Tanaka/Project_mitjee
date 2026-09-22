@@ -6,6 +6,7 @@ import { route } from "../src/http/handler.js";
 import type { Endpoint } from "../src/http/handler.js";
 import { AuthJsRequestAuthenticator } from "../src/auth/request-authenticator.js";
 import { createApplication } from "../src/application/composition.js";
+import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { TrainingCore } from "../src/core.js";
 import { ApplicationError } from "../src/application/errors.js";
@@ -17,7 +18,7 @@ const verified = (id = userA) => ({ user: { id }, expires: new Date(60_000).toIS
 afterEach(() => vi.restoreAllMocks());
 async function harness() {
   const repository = new InMemoryTrainingRepository();
-  const app = await createApplication(repository, undefined, () => 1000);
+  const app = await createApplication(repository, new MockScenarioModelProvider(), () => 1000);
   const resolver = vi.fn<() => Promise<unknown>>();
   const authenticator = new AuthJsRequestAuthenticator(resolver, () => 1000);
   const application = vi.fn(async () => app);

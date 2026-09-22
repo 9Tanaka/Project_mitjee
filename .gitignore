@@ -3,6 +3,7 @@ coverage/
 *.tsbuildinfo
 .local-mysql/
 .env
+.env.*
 src/generated/
 .next/
 next-env.d.ts

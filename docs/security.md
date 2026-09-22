@@ -1,6 +1,6 @@
 # Security Boundaries and Limitations
 
-STATUS: PARTIAL IMPLEMENTATION FOR DEMO; NOT PRODUCTION SECURITY
+STATUS: PARTIAL CONTROLS FOR SCENARIO SIMULATION; NOT PRODUCTION SECURITY
 
 [กลับ README](../README.md) · [Reference policy](architecture.md#reference-policy)
 
@@ -18,6 +18,8 @@ STATUS: PARTIAL IMPLEMENTATION FOR DEMO; NOT PRODUCTION SECURITY
 | CAS and idempotency | ป้องกัน stale/duplicate writes; Action/Event/State/Result commit ร่วมกัน |
 | Published version immutability | repository checks และ MySQL triggers ป้องกันเปลี่ยน config ย้อนหลัง |
 | Provider timeout cancellation | ส่ง AbortSignal และป้องกัน late response commit |
+| OpenAI adapter | fixed official endpoint, server-only key/model, logging off, SDK retries=0, strict Responses output |
+| Provider information boundary | explicit context projection; ไม่ส่ง owner/account/answer keys; raw response/error/refusal ไม่ออก public DTO |
 | HTTP Authentication Boundary | Training ผ่าน verified Auth.js session; invalid/missing session default deny; test adapter อยู่เฉพาะ tests |
 | HTTP owner isolation | ใช้ authenticated id; foreign/missing Session ได้ 404 เหมือนกัน |
 | Public DTO projection | ไม่ serialize aggregate/template; opaque action IDs และ explicit response fields |
@@ -79,6 +81,13 @@ RSA นี้เข้ารหัสเฉพาะ password exchange; loopback
 ไม่ได้ครอบ secret filename ทุกรูปแบบ จึงต้องตรวจ git status/diff และ staged files ก่อน commit ทุกครั้ง
 ห้าม commit credentials, private keys, API keys หรือไฟล์ฐานข้อมูล แม้บางไฟล์ไม่ถูก ignore
 หากพบ secret ต้องหยุด commit/push และรายงานเพื่อจัดการก่อน ไม่แอบแก้ข้อมูลหรือ rewrite history
+เพิ่ม ignore .env.* แต่ยังต้องตรวจ staged files. OpenAI key อ่านจาก private server environment เท่านั้น
+Client audit ตรวจ SDK/provider/prompt/config markers; architecture tests ตรวจ transitive imports
+User/history text เป็น untrusted input; prompt ช่วยจำกัดบทสนทนา แต่ Core authority เป็นหลักประกัน State/Score
+Safety flags เป็น model self-report ไม่ใช่ moderation service; sanitizer ไม่ครอบคลุม PII ทุกแบบ
+ส่งข้อมูลสมมติเท่านั้น แม้ store:false ก็ไม่ใช่ Zero Data Retention guarantee
+ไม่มี raw conversation/provider logs; HMAC request correlation ไม่ส่ง raw owner/session/turn IDs
+ดู [AI integration](ai-integration.md) สำหรับ retry, cancellation และ real-network NOT RUN
 
 ไม่มี retention job แม้เลือกใช้ DEMO_DATA_RETENTION_DAYS=30 เป็น planned assumption
 จึงไม่อ้างว่าข้อมูลถูกลบหลัง 30 วันแล้ว และไม่ควรเก็บข้อมูลจริงในฐานทดสอบ

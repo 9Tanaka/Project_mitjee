@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend MVP
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend / OpenAI adapter (network NOT VERIFIED)
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -26,7 +26,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Cred
 | Backend กำกับลำดับและ AI ไม่มีสิทธิ์สร้าง State/ข้ามขั้นตอนเอง | 5.3.4 | Implemented ด้วย Demo State Model |
 | แนะนำเนื้อหาจากทักษะต่ำสุด โดยไม่ปรับความยากอัตโนมัติ | 4.1.4 และ 5.3.6 | คืน recommendation metadata แล้ว; เนื้อหาเต็มยัง Planned |
 | แนวโน้มคะแนนย้อนหลังไม่เกิน 3 ครั้ง | 4.1.4 และ 5.3.6 | Planned; Core คิดผลของ Session ปัจจุบันเท่านั้น |
-| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | 4.1.5 และขอบเขตโครงงาน | ทำเฉพาะ SMS fixture + Mock; ส่วนอื่น Planned |
+| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | 4.1.5 และขอบเขตโครงงาน | ทำเฉพาะ SMS fixture + Mock/OpenAI text adapter; ส่วนอื่น Planned |
 | Signup/login, Auth.js Session/Cookie, bcrypt hash/compare, Zod email/password, MySQL user data | Backend/MySQL และ Auth.js, bcrypt, Zod | Implemented; exact policy values เป็น Demo Assumptions |
 | Moderation, การปิดบังข้อมูลและการทดสอบ Prompt Injection | 5.3.5 | มี local redaction/authority boundary บางส่วน ไม่ใช่ production implementation |
 
@@ -54,7 +54,7 @@ flowchart LR
     entry --> core["TrainingCore"]
     dialogue --> provider["ScenarioModelProvider port"]
     provider --> mock["Mock Provider - IMPLEMENTED"]
-    provider -.-> live["Live Provider - PLANNED"]
+    provider --> live["OpenAI Responses adapter - IMPLEMENTED / network NOT VERIFIED"]
     dialogue --> core
     core --> validator["EventValidator / Critical rules"]
     core --> stateMachine["State Machine"]
@@ -79,6 +79,7 @@ flowchart LR
 | Scoring Engine | คำนวณ D/W/S, outcome, weakestSkills และ recommendation |
 | Dialogue Orchestrator | ตรวจ request/session, สร้าง context, รอ Provider, validate/sanitize/fallback แล้วส่งให้ Core commit |
 | Model Provider | คืน AICharacterResponse เท่านั้น ไม่ได้รับ callback หรือ reference ไป Core |
+| OpenAI outer adapter | allowlisted context → Responses API non-streaming → strict schema; ไม่มี state/event/score authority |
 | TrainingRepository | asynchronous port สำหรับ published versions และ Session aggregate |
 | InMemory / Prisma adapters | คง ownership, identity, history และ atomic persistence semantics |
 
@@ -100,6 +101,7 @@ Message → Orchestrator validation/sanitize → resume + version/state context
 Domain ไม่ import PrismaClient; port ใช้ types ของระบบเอง
 Frontend/public contracts ถูกตรวจ transitive imports ใน architecture tests เพิ่มแล้ว:
 ห้ามเข้าถึง Core, templates, server Auth, Prisma, bcrypt หรือข้อมูล environment
+รวมถึง OpenAI SDK, provider implementation และ prompt; ตรวจ source dependency graph และ production client artifacts
 Public Zod DTO และ account policy ใช้ schema เดียวกับ Backend ผ่าน module ที่ browser-safe
 ดูรายละเอียด Server/Client Components, retry และหน้าเว็บใน [Frontend](frontend.md)
 อย่างไรก็ตาม Core อ้าง dialogue response schema และ persistence contract ใช้ sanitizer จาก dialogue
@@ -113,7 +115,8 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Dialogue](../src/dialogue/orchestrator.ts), [Repository port](../src/domain/training-repository.ts)
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
-HTTP/API, Email/Password Credentials และ Frontend MVP implement แล้ว; Live Provider/Voice/WebSocket ยังไม่ implement
+HTTP/API, Email/Password Credentials, Frontend และ OpenAI adapter implement แล้ว (network NOT VERIFIED)
+Voice/WebSocket ยังไม่ implement
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
 หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)

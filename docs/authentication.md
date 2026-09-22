@@ -149,7 +149,8 @@ Absent: email verification, password reset/change, compromised-password detectio
 recovery, MFA, CAPTCHA, production rate-limit/abuse infrastructure, account deletion/
 profile/RBAC, deployment security review and verified external TLS.
 Do not expose this demo as unprotected production identity infrastructure.
-Frontend MVP is implemented; OAuth, Live AI, Voice and WebSocket remain unimplemented.
+Frontend and OpenAI dialogue adapter are implemented (OpenAI network NOT VERIFIED);
+OAuth, Voice and WebSocket remain unimplemented.
 
 ## Frontend authentication boundary
 
