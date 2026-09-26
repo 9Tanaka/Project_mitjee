@@ -213,3 +213,7 @@ OAuth Account or VerificationToken tables are added; Auth.js uses JWT strategy.
 concurrent registration, new-client credential lookup/stable UUID, exact columns/no plaintext,
 and direct ID-update rejection. test:mysql now runs both Training and account suites.
 Synthetic account rows persist after tests; generated passwords/secrets are not printed or saved.
+
+## Quiz additive migration — 26 September 2026
+
+`202609260001_quiz` adds QuizAttempt and QuizReceipt only. A frozen question/baseline JSON snapshot is written at start; later CAS transactions atomically update answers, result, status, completion timestamp and revision with one request receipt. Completed results are immutable through the service. Existing Training and account rows are untouched. See [Quiz](quiz.md). `test:mysql` now includes all three persistence suites. Four new native transaction/rollback/concurrency tests are conditional and were skipped in this workspace without a dedicated database; no migration was deployed to a real database here.

@@ -180,6 +180,10 @@ Evidence: [routes](../src/app/api/scenarios/route.ts), [DTOs](../src/http/dto.ts
 
 Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
 
+## Quiz API — 26 September 2026
+
+Five authenticated Quiz routes are implemented alongside the eight Training routes. They support publication/history, start, resume/result, save and submit. See [Quiz HTTP contract](quiz.md#http-and-storage) for strict requests, idempotency, CAS and frozen result behavior. Quiz scoring never changes Scenario decision outcomes.
+
 ## Application / HTTP contract ownership
 
 Browser-safe strict route/query/request/response Zod schemas and envelopes live in

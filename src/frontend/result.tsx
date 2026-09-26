@@ -34,7 +34,7 @@ export function Result({ sessionId }: { sessionId: string }) {
     <section className="panel recommendation"><p className="eyebrow">ก้าวต่อไปของคุณ</p><h2>คำแนะนำสำหรับการฝึกครั้งถัดไป</h2><p className="mt-4 font-semibold">{recommendations[result.recommendation.recommendationType]}</p><p className="mt-2 muted">{result.recommendation.reason}</p>
       {result.weakestSkills.length > 0 && <p className="mt-4 text-sm">ทักษะที่ระบบแนะนำให้พัฒนา: {result.weakestSkills.map(skill => skills[skill]).join(" · ")}</p>}
       <details className="field-hint mt-4"><summary>รหัสอ้างอิงคำแนะนำ</summary><p>{result.recommendation.recommendationKey}</p></details>
-      <p className="field-hint mt-4">ขณะนี้แสดงคำแนะนำจากผลฝึกเท่านั้น บทเรียนและแบบทดสอบเพิ่มเติมยังไม่เปิดใช้งาน</p></section>
+      <p className="field-hint mt-4">ทบทวนความรู้ 7 หมวดและเปรียบเทียบผลก่อน/หลังฝึกได้ใน Quiz</p><Link className="text-link mt-3" href="/quiz">ไปหน้า Quiz →</Link></section>
     <Link className="button" href="/scenarios">กลับไปเลือกสถานการณ์ <span aria-hidden="true">→</span></Link>
   </div>;
 }

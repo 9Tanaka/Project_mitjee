@@ -7,7 +7,7 @@
     "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build --webpack",
     "start": "next start --hostname 127.0.0.1",
-    "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts tests/accounts.http.test.ts",
+    "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts tests/accounts.http.test.ts tests/quiz.http.test.ts",
     "test": "vitest run",
     "test:ai": "vitest run tests/openai.provider.test.ts tests/openai.dialogue.test.ts tests/openai.http.test.ts",
     "test:ai:live": "node scripts/test-ai-live.mjs",
@@ -18,7 +18,8 @@
     "test:mysql": "node scripts/test-mysql.mjs",
     "test:auth": "vitest run tests/accounts.test.ts tests/accounts.http.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts",
     "test:auth:live": "node scripts/test-auth-live.mjs",
-    "test:frontend": "vitest run tests/frontend.api.test.ts tests/frontend.ui.test.tsx",
+    "test:frontend": "vitest run tests/frontend.api.test.ts tests/frontend.ui.test.tsx tests/quiz.ui.test.tsx",
+    "test:quiz": "vitest run tests/quiz.test.ts tests/quiz.http.test.ts tests/quiz.ui.test.tsx tests/quiz.mysql.test.ts",
     "test:e2e": "node scripts/test-e2e.mjs",
     "audit:client": "node scripts/audit-client.mjs"
   },

@@ -163,3 +163,32 @@ model UserAccount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Separate Quiz history: no numeric fields are added to categorical Scenario evaluation.
+model QuizAttempt {
+  id String @id @db.VarChar(100)
+  ownerId String @db.VarChar(120)
+  mode String @db.VarChar(20)
+  bankVersion String @db.VarChar(80)
+  blueprint String @db.VarChar(80)
+  status String @db.VarChar(20)
+  revision Int
+  startedAt DateTime
+  completedAt DateTime?
+  snapshot Json
+  answers Json
+  result Json?
+  receipts QuizReceipt[]
+  @@index([ownerId, startedAt, id])
+  @@index([ownerId, mode, bankVersion, blueprint, completedAt])
+}
+
+model QuizReceipt {
+  attemptId String @db.VarChar(100)
+  requestId String @db.Char(36)
+  fingerprint String @db.Char(64)
+  revision Int
+  attempt QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  @@id([attemptId, requestId])
+  @@unique([attemptId, revision])
+}

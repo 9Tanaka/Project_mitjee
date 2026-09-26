@@ -12,6 +12,7 @@ export default function Home() {
       ["02", "ลองตัดสินใจ", "โต้ตอบผ่านข้อความและเลือกการกระทำจำลอง"],
       ["03", "ทบทวนสิ่งที่ได้เรียนรู้", "ดูผลประเมินและคำแนะนำหลังสิ้นสุดรอบฝึก"],
     ].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h2>{title}</h2><p>{description}</p></div>)}</section>
-    <div className="scope-note"><span className="status-dot" /> เวอร์ชันสาธิต: เปิดฝึกข้อความ 9 ประเภท ระบบเสียง Call Center ยังอยู่ระหว่างพัฒนา</div>
+    <section className="panel mt-6"><p className="eyebrow">QUIZ · PRE-TEST / POST-TEST</p><h2 className="section-heading mt-3">วัดความรู้ก่อนและหลังฝึก</h2><p className="muted mt-3">ทำข้อสอบ 20 ข้อจาก 7 หมวด ดูเฉลย และเปรียบเทียบผลหลังฝึกกับผลเริ่มต้น</p><Link className="button button-secondary mt-5" href="/quiz">ไปหน้า Quiz →</Link></section>
+    <div className="scope-note"><span className="status-dot" /> เปิดฝึกข้อความ 9 ประเภท และ Quiz ก่อน/หลังฝึก ระบบเสียง Call Center ยังอยู่ระหว่างพัฒนา</div>
   </div>;
 }

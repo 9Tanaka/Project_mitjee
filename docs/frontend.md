@@ -172,8 +172,8 @@ No migration/reset/schema modification was required; test data remains synthetic
 
 Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Catalog](scenario-catalog.md).
 OpenAI text adapter is implemented; real OpenAI network verification NOT RUN.
-Voice Call Center, Profile, Pre/Post-test,
-Review Quiz, Investigation Game, Knowledge Base and Dashboard: NOT IMPLEMENTED.
+Quiz Pre-test/Post-test is now implemented at `/quiz` and `/quiz/:attemptId`; see [Quiz](quiz.md) for current content, persistence, comparison and verification.
+Voice Call Center, Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented; the latest user scope limits other modes to Pre-test/Post-test.
 No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.

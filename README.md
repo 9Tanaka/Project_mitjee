@@ -4,6 +4,7 @@
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
 โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ข้อความ 9 ประเภท
+เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
 ผลเก่าของ template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่
 สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
@@ -22,13 +23,14 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
 | Prisma/MySQL Persistence | Implemented |
-| HTTP API / Public DTO | Implemented — 8 endpoints |
+| HTTP API / Public DTO | Implemented — 8 Training endpoints + 5 Quiz endpoints |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — registration/login, nine playable text scenarios, result/logout |
 | Live AI Provider | Implemented — OpenAI Responses API adapter; explicit Mock/OpenAI selection; **network verification NOT RUN** |
 | Call Center text | Implemented — scam-call text variant; normal-call selection and voice pending |
 | Voice Call Center | Planned / Not Implemented |
+| Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
 | WebSocket | Planned / Not Implemented |
 
 Call Center เล่นผ่านข้อความได้แล้ว แต่ยังไม่มีระบบเสียงจริงหรือการสุ่มสายปกติ/สายหลอกลวง
@@ -76,6 +78,16 @@ npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
+ผลล่าสุด 26 กันยายน 2026 — Quiz Pre-test/Post-test และ scenario decision rules:
+
+- Full tests: **454 passed, 34 skipped**, 488 รวม; ข้ามกรณีที่ต้องใช้ฐาน MySQL เพราะไม่มี `MYSQL_TEST_DATABASE_URL`
+- Prisma generate/validate, typecheck, production build และ client audit ผ่าน
+- Migration ของ Quiz เป็น additive; ยังไม่ได้ deploy ฐานจริง
+- Browser+MySQL E2E ใหม่ยัง **NOT RUN**; ไม่เรียก Live OpenAI
+- ขอบเขตโหมดอื่นของรอบนี้จำกัดที่ Pre-test/Post-test ตามคำขอล่าสุด ไม่รวม Review Quiz, บทเรียน 16 เรื่องหรือ Investigation Game
+
+ผลด้านล่างเป็นประวัติการตรวจรุ่นก่อนหน้า ไม่ใช่ผลการรันรอบนี้:
+
 ผลล่าสุด 22 กันยายน 2026 — Live AI Provider Integration:
 
 - Prisma generate/validate, typecheck, production build และ client audit ผ่าน
