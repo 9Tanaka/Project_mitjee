@@ -12,6 +12,13 @@ function guardSatisfied(session: TrainingSession, t: ScenarioTemplate, edge: Edg
     && edge.requiresEvents.every(code => session.events.some(e => e.code === code));
 }
 
+/** Read-only availability hint; advanceState repeats the authoritative guard. */
+export function transitionAvailable(session: TrainingSession, t: ScenarioTemplate, transitionId: string): boolean {
+  if (session.status !== "ACTIVE") return false;
+  const edge = t.states.find(state => state.id === session.state)?.transitions.find(tr => tr.id === transitionId);
+  return !!edge && guardSatisfied(session, t, edge);
+}
+
 export function advanceState(session: TrainingSession, t: ScenarioTemplate, transitionId: string): { state: ScenarioState; safeResolution: boolean } {
   if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
   const current = t.states.find(s => s.id === session.state)!;

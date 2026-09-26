@@ -4,6 +4,7 @@ import type { TrainingSession } from "../domain/types.js";
 import type { ActionInput } from "../domain/training-action.js";
 import type { PublicActionDefinition, PublicActionPayload, PublicScenario } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
+import { transitionAvailable } from "../domain/state-machine.js";
 import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js";
 import { additionalScamScenarios } from "../fixtures/scam-scenarios.js";
 
@@ -20,6 +21,7 @@ type Binding = {
   public: PublicActionDefinition;
   state: TrainingSession["state"];
   opportunityId?: string;
+  transitionId?: string;
   toDomain(payload: PublicActionPayload): ActionInput;
 };
 function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
@@ -117,7 +119,7 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
   }
   let next = t.opportunities.length + 1;
   for (const state of t.states) for (const edge of state.transitions) {
-    result.push({ state: state.id, public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
+    result.push({ state: state.id, transitionId: edge.id, public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
       toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: edge.id }; } });
   }
   for (const rule of t.criticalFailureRules) {
@@ -131,5 +133,6 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
 export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
-    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null))).map(b => b.public);
+    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null)) &&
+    (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId))).map(b => b.public);
 }

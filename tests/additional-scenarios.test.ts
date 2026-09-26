@@ -60,7 +60,9 @@ describe("additional playable scam scenarios", () => {
     expect(stop).toBeDefined();
     early = (await app.action(early.sessionId, learner, { actionId: randomUUID(), expectedRevision: early.revision,
       actionDefinitionId: stop!.id, payload: {} })).session;
-    expect((await app.result(early.sessionId, learner)).decisionSummary?.encountered).toBe(0);
+    const earlyResult = await app.result(early.sessionId, learner);
+    expect(earlyResult.outcome).toBe("PASSED");
+    expect(earlyResult.decisionSummary?.encountered).toBe(0);
 
     let review = await start(app, template.id);
     review = await act(app, review, "ตรวจสอบผู้ติดต่อ", { choiceId: "o3" });
@@ -84,6 +86,19 @@ describe("additional playable scam scenarios", () => {
     expect(criticalResult.outcome).toBe("CRITICAL_FAILURE");
     expect(criticalResult.decisionSummary?.critical).toBe(1);
     expect(criticalResult.decisionSummary?.checkpoints?.at(-1)?.assessment).toBe("CRITICAL");
+  });
+
+  it("shows progression only after required checkpoints while allowing the early safe stop", async () => {
+    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider());
+    let session = await start(app, "investment-scam");
+    expect(session.availableActions.map(a => a.label)).toContain("ยุติการติดต่ออย่างปลอดภัย");
+    expect(session.availableActions.map(a => a.label)).not.toContain("พิจารณาข้ออ้างต่อ");
+    session = await act(app, session, "ตรวจสอบผู้ติดต่อ", { choiceId: "o1" });
+    expect(session.availableActions.map(a => a.label)).toContain("พิจารณาข้ออ้างต่อ");
+    session = await act(app, session, "พิจารณาข้ออ้างต่อ", {});
+    expect(session.availableActions.map(a => a.label)).not.toContain("พิจารณาคำขอ");
+    session = await act(app, session, "สัญญาณเตือนในข้ออ้าง", { selectedEvidenceIds: ["o1", "o2"] });
+    expect(session.availableActions.map(a => a.label)).toContain("พิจารณาคำขอ");
   });
 
   it("mock dialogue uses the selected scenario context instead of parcel SMS copy", async () => {
