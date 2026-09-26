@@ -22,7 +22,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Cred
 
 | สาระจาก Proposal v4 | ตำแหน่ง | สถานะใน MVP |
 |---|---|---|
-| D/W/S, น้ำหนัก 50/30/20, ผ่านตั้งแต่ 70, Critical Failure override | 4.1.4 และ 5.3.6 | Implemented |
+| D/W/S, น้ำหนัก 50/30/20, ผ่านตั้งแต่ 70, Critical Failure override | Proposal v6 4.1.4 และ 5.3.6 | เก็บไว้เฉพาะผล template รุ่น 1–2; รุ่นใหม่ใช้กฎ categorical ตาม [Decision Evaluation](decision-evaluation.md) |
 | Backend กำกับลำดับและ AI ไม่มีสิทธิ์สร้าง State/ข้ามขั้นตอนเอง | 5.3.4 | Implemented ด้วย Demo State Model |
 | แนะนำเนื้อหาจากทักษะต่ำสุด โดยไม่ปรับความยากอัตโนมัติ | 4.1.4 และ 5.3.6 | คืน recommendation metadata แล้ว; เนื้อหาเต็มยัง Planned |
 | แนวโน้มคะแนนย้อนหลังไม่เกิน 3 ครั้ง | 4.1.4 และ 5.3.6 | Planned; Core คิดผลของ Session ปัจจุบันเท่านั้น |
@@ -76,7 +76,7 @@ flowchart LR
 | Template Validator | ตรวจ schema, graph, score mappings และ D/W/S บนทุก Safe Resolution path |
 | EventValidator + Critical rules | ตรวจ explicit actions; candidate เป็น hint ไม่มีสิทธิ์สร้าง Event |
 | State Machine | ตรวจ transition ID, required checkpoints และ event guards |
-| Scoring Engine | คำนวณ D/W/S, outcome, weakestSkills และ recommendation |
+| Evaluation Engine | รุ่น 3 ตัดสิน categorical outcome จาก checkpoint ที่พบจริง; รุ่นเก่าคง D/W/S และ weakestSkills ตามประวัติ |
 | Dialogue Orchestrator | ตรวจ request/session, สร้าง context, รอ Provider, validate/sanitize/fallback แล้วส่งให้ Core commit |
 | Model Provider | คืน AICharacterResponse เท่านั้น ไม่ได้รับ callback หรือ reference ไป Core |
 | OpenAI outer adapter | allowlisted context → Responses API non-streaming → strict schema; ไม่มี state/event/score authority |

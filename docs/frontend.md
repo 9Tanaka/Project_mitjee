@@ -69,7 +69,7 @@ in presentation is not a security mechanism.
 
 Catalog comes exclusively from GET /api/scenarios. Only backend-returned playable
 cards exist. Public opaque IDs are passed through, not interpreted as safe/critical.
-D/W/S, total, weakest skills and outcome come exclusively from result DTO.
+D/W/S, total, weakest skills and outcome come exclusively from result DTO for legacy results. Version 3 displays categorical outcome and decision summary from the same backend DTO; it does not calculate a score in the browser.
 UI formats numbers and maps display labels; it never computes scores or pass/fail.
 
 Each explicit start/message/action/quit creates a UUID once and snapshots a serialized

@@ -90,7 +90,7 @@ POST ที่ส่ง Origin ต่างจาก request origin ถูก re
 ## Public scenario and action projection
 
 Scenario มี id/category/title/description/learningObjectives/communicationMode=TEXT เท่านั้น
-Backend กำหนด SMS / Phishing version 2, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
+Backend กำหนด SMS / Phishing version 3, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
 Catalog เพิ่ม label/description สำหรับ presentation เพราะ published Template เดิมไม่มีข้อความตัวเลือก D/S
 ไม่เพิ่ม score, Event, State guard หรือกฎใหม่ใน catalog
 
@@ -110,7 +110,7 @@ progress control อาจแสดงก่อน checkpoint ครบ แล�
 ไม่มี endpoint สำหรับ direct transition/scoring/Event CRUD/Opportunity CRUD/Result creation
 ไม่คืน scores ก่อนตอบ, answer flags, event codes, rule IDs, target State, hidden opportunities/transitions,
 prompts, fallback configuration, candidate confidence หรือ provider error metadata
-Terminal result คืน D/W/S normalized, Training Score, Outcome, weakestSkills และ recommendation type/key/reason เท่านั้น
+ผล version 3 คืน categorical Outcome, `evaluationMode=DECISION_RULES_V1`, `decisionSummary` และ recommendation; D/W/S และ trainingScore เป็น null ส่วนผล version 1–2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response
 ไม่มี internal event/rule mapping หรือเฉลยของ Session ที่ยังเล่นอยู่
 
 ## Revision, retry and lifecycle

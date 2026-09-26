@@ -78,6 +78,7 @@ model SessionOpportunity {
   finalizedByActionId String? @db.VarChar(120)
   correctWarningSignIds Json
   incorrectEvidenceIds Json
+  assessment String? @db.VarChar(20)
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   action TrainingAction? @relation(fields: [sessionId, finalizedByActionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
   events TrainingEvent[]
@@ -149,6 +150,8 @@ model TrainingResult {
   weakestSkills Json
   recommendation Json
   calculatedAt DateTime
+  evaluationMode String @default("LEGACY_WEIGHTED_V1") @db.VarChar(30)
+  decisionSummary Json?
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 

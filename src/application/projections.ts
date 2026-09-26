@@ -19,5 +19,6 @@ export function projectResult(s: TrainingSession): PublicTrainingResult {
   const r = s.result;
   return { sessionId: s.id, revision: s.revision, D: r.scores.D.normalized, W: r.scores.W.normalized,
     S: r.scores.S.normalized, trainingScore: r.trainingScore, outcome: r.outcome, weakestSkills: [...r.weakestSkills],
-    recommendation: { recommendationType: r.recommendation.recommendationType, recommendationKey: r.recommendation.recommendationKey, reason: r.recommendation.reason } };
+    recommendation: { recommendationType: r.recommendation.recommendationType, recommendationKey: r.recommendation.recommendationKey, reason: r.recommendation.reason },
+    ...(r.evaluationMode === "DECISION_RULES_V1" ? { evaluationMode: r.evaluationMode, decisionSummary: r.decisionSummary } : {}) };
 }

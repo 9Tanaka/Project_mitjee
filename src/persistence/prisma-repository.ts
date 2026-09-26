@@ -37,7 +37,8 @@ function decode(row: AggregateRow): TrainingSession {
     opportunities: row.opportunities.map(o => ({ definitionId: o.definitionId, skill: o.skill, state: o.state,
       eligibleMaximum: o.eligibleMaximum, earned: o.earned, openedAt: o.openedAt.getTime(),
       finalizedAt: o.finalizedAt?.getTime() ?? null, finalizedByActionId: o.finalizedByActionId,
-      correctWarningSignIds: o.correctWarningSignIds, incorrectEvidenceIds: o.incorrectEvidenceIds })),
+      correctWarningSignIds: o.correctWarningSignIds, incorrectEvidenceIds: o.incorrectEvidenceIds,
+      ...(row.templateVersion >= 3 ? { assessment: o.assessment } : {}) })),
     events: row.events.map(e => ({ id: e.id, sessionId: e.sessionId, actionId: e.actionId, opportunityId: e.opportunityId,
       code: e.code, state: e.state, ruleId: e.ruleId, authority: e.authority, critical: e.critical, at: e.at.getTime() })),
     messages: row.messages.map(m => ({ id: m.id, turnId: m.turnId, role: m.role, text: m.text, state: m.state, at: m.at.getTime() })),
@@ -47,7 +48,10 @@ function decode(row: AggregateRow): TrainingSession {
     result: row.result ? { sessionId: row.result.sessionId, templateId: row.result.templateId, templateVersion: row.result.templateVersion,
       scores: row.result.scores, trainingScore: row.result.trainingScore, outcome: row.result.outcome,
       criticalEventIds: row.result.criticalEventIds, weakestSkills: row.result.weakestSkills,
-      recommendation: row.result.recommendation, calculatedAt: row.result.calculatedAt.getTime() } : null,
+      recommendation: row.result.recommendation, calculatedAt: row.result.calculatedAt.getTime(),
+      ...(row.result.evaluationMode === "DECISION_RULES_V1" ? {
+        evaluationMode: "DECISION_RULES_V1", decisionSummary: row.result.decisionSummary,
+      } : {}) } : null,
   } as TrainingSession;
 }
 
@@ -149,7 +153,8 @@ export class PrismaTrainingRepository implements TrainingRepository {
       if (before && canonical(before) === canonical(o)) continue;
       const data = { sessionId: s.id, definitionId: o.definitionId, position, skill: o.skill, state: o.state,
         eligibleMaximum: o.eligibleMaximum, earned: o.earned, openedAt: new Date(o.openedAt), finalizedAt: date(o.finalizedAt),
-        finalizedByActionId: o.finalizedByActionId, correctWarningSignIds: json(o.correctWarningSignIds), incorrectEvidenceIds: json(o.incorrectEvidenceIds) };
+        finalizedByActionId: o.finalizedByActionId, correctWarningSignIds: json(o.correctWarningSignIds), incorrectEvidenceIds: json(o.incorrectEvidenceIds),
+        assessment: o.assessment ?? null };
       if (before) await tx.sessionOpportunity.update({ where: { sessionId_definitionId: { sessionId: s.id, definitionId: o.definitionId } }, data });
       else await tx.sessionOpportunity.create({ data });
     }
@@ -171,7 +176,8 @@ export class PrismaTrainingRepository implements TrainingRepository {
       const r = s.result;
       await tx.trainingResult.create({ data: { sessionId: s.id, templateId: r.templateId, templateVersion: r.templateVersion,
         scores: json(r.scores), trainingScore: r.trainingScore, outcome: r.outcome, criticalEventIds: json(r.criticalEventIds),
-        weakestSkills: json(r.weakestSkills), recommendation: json(r.recommendation), calculatedAt: new Date(r.calculatedAt) } });
+        weakestSkills: json(r.weakestSkills), recommendation: json(r.recommendation), calculatedAt: new Date(r.calculatedAt),
+        evaluationMode: r.evaluationMode ?? "LEGACY_WEIGHTED_V1", decisionSummary: r.decisionSummary ? json(r.decisionSummary) : Prisma.DbNull } });
     }
   }
 }

@@ -13,7 +13,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN
 | TrainingEvent | Backend validated event; อ้าง Action/Opportunity/Rule, State, code, critical และ authority BACKEND_VALIDATED |
 | SessionOpportunity | โอกาสที่เปิดจริงใน path; definitionId, skill, eligibleMaximum, earned, เวลาเปิด/finalize และคำตอบ W |
 | TrainingSession | aggregate รวม identity/owner/version/variant, State/Status/Revision, actions/events/opportunities/messages/receipts/result |
-| TrainingResult | Scoring Engine output; D/W/S, trainingScore, outcome, weakestSkills และ recommendation |
+| TrainingResult | Backend evaluation output; รุ่นใหม่มี categorical outcome/decisionSummary ส่วนผลเก่าคง D/W/S/trainingScore/weakestSkills |
 | ScenarioTemplateVersion | configuration ของ Template ที่ publish ด้วย id/version/variant; แก้ย้อนหลังไม่ได้ |
 
 ใน TypeScript ใช้ `ScenarioTemplate` สำหรับ configuration ตาม version

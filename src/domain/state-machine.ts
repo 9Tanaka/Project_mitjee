@@ -6,7 +6,7 @@ import type { ScenarioState, TrainingSession } from "./types.js";
 type Edge = ScenarioTemplate["states"][number]["transitions"][number];
 
 function guardSatisfied(session: TrainingSession, t: ScenarioTemplate, edge: Edge): boolean {
-  const requiredHere = t.opportunities.filter(o => o.state === session.state && o.required).map(o => o.id);
+  const requiredHere = edge.earlySafeResolution ? [] : t.opportunities.filter(o => o.state === session.state && o.required).map(o => o.id);
   const required = new Set([...requiredHere, ...edge.requiresFinalized]);
   return [...required].every(id => session.opportunities.some(o => o.definitionId === id && o.finalizedAt !== null))
     && edge.requiresEvents.every(code => session.events.some(e => e.code === code));

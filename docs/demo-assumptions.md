@@ -6,7 +6,7 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 
 รายการนี้รวบรวมรายละเอียดที่ผู้ใช้อนุมัติเพิ่มสำหรับ MVP และ implementation choices
 แยกสถานะการทำแล้วออกจาก target/planned; ไม่เพิ่ม feature หรือเปลี่ยนกฎใน documentation phase
-น้ำหนัก D/W/S = 50/30/20, เกณฑ์ >=70 และ Critical Failure override ไม่ใช่รายการ assumption
+น้ำหนัก D/W/S = 50/30/20 และเกณฑ์ >=70 ใช้กับผลเดิมของ template รุ่น 1–2 เท่านั้น; รุ่นใหม่ใช้ [Decision Evaluation](decision-evaluation.md) ตามข้อกำหนดที่อนุมัติภายหลัง
 เพราะตรวจพบใน Proposal v4 ดู [Scoring](scoring.md)
 
 ## Scenario and scoring decisions

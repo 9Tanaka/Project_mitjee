@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
+import { Prisma } from "../src/generated/prisma/client.js";
 import { TrainingCore } from "../src/core.js";
 import { createPrismaClient } from "../src/persistence/prisma-client.js";
 import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.js";
 import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { repositoryContract, repositoryHarness, safeActions } from "./repository-contract.js";
 import { smsPhishingDialogueFixture as fixture } from "../src/fixtures/sms-phishing-dialogue.js";
+import { smsPhishingDecisionRulesFixture } from "../src/fixtures/sms-phishing-decision-rules.js";
 
 const url = process.env.MYSQL_TEST_DATABASE_URL;
 if (url && !/^mitjee_test(?:_[a-z0-9_]+)?$/.test(new URL(url).pathname.slice(1))) {
@@ -18,6 +20,22 @@ afterAll(async () => { await client?.$disconnect(); });
 
 describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
   repositoryContract("Prisma repository port", () => new PrismaTrainingRepository(client!));
+
+  it("persists version 3 categorical result and resumes it without rewriting legacy history", async () => {
+    const id = randomUUID();
+    const repository = new PrismaTrainingRepository(client!);
+    const core = await TrainingCore.create([fixture, smsPhishingDecisionRulesFixture], repository, () => 1000);
+    await core.start(id, "test-owner", smsPhishingDecisionRulesFixture.id, 3);
+    await core.submit({ sessionId: id, ownerId: "test-owner", actionId: "early-safe-stop", expectedRevision: 0,
+      action: { kind: "PROGRESS", transitionId: "end-contact-early" } });
+    const row = await client!.trainingResult.findUniqueOrThrow({ where: { sessionId: id } });
+    expect(row.evaluationMode).toBe("DECISION_RULES_V1");
+    expect(row.trainingScore).toBeNull();
+    expect(row.decisionSummary).toEqual({ encountered: 0, safe: 0, review: 0, unassessed: 0 });
+    const reopened = await TrainingCore.create([], new PrismaTrainingRepository(client!), () => 1000);
+    expect((await reopened.resume(id, "test-owner")).result?.outcome).toBe("PASSED");
+    expect((await reopened.getSessionTemplate(id, "test-owner")).evaluationMode).toBe("DECISION_RULES_V1");
+  });
 
   it("complete aggregate is identical to InMemory after every action and dialogue turn", async () => {
     const id = randomUUID();
@@ -82,7 +100,7 @@ describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
     await expect(client!.trainingAction.create({ data: { ...action, sessionId: "missing-session" } })).rejects.toThrow();
     for (const action of safeActions) await h.act(action);
     const result = await client!.trainingResult.findUniqueOrThrow({ where: { sessionId: h.id } });
-    await expect(client!.trainingResult.create({ data: { ...result, scores: {}, criticalEventIds: [], weakestSkills: [], recommendation: {} } })).rejects.toThrow();
+    await expect(client!.trainingResult.create({ data: { ...result, scores: {}, criticalEventIds: [], weakestSkills: [], recommendation: {}, decisionSummary: Prisma.DbNull } })).rejects.toThrow();
     expect(await client!.trainingResult.count({ where: { sessionId: h.id } })).toBe(1);
   });
 

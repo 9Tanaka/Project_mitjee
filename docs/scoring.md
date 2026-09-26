@@ -1,6 +1,8 @@
-# Rule-Based Scoring
+# Legacy Weighted Scoring
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN
+STATUS: HISTORICAL RESULT POLICY FOR PUBLISHED SCENARIO VERSIONS 1 AND 2
+
+New SMS / Phishing sessions use [Decision Evaluation](decision-evaluation.md). This page documents the original rule for historical sessions and results. Proposal v6 still describes weighted scoring; the user's later approved chat requirement supersedes it for new scenario versions.
 
 [กลับ README](../README.md) · [Reference policy](architecture.md#reference-policy)
 

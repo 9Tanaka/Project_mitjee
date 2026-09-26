@@ -6,7 +6,9 @@ export type ScenarioCategory = typeof CATEGORIES[number];
 export type EventCode = typeof EVENT_CODES[number];
 export type Skill = "D" | "W" | "S";
 export type SessionStatus = "ACTIVE" | "COMPLETED" | "FAILED" | "ABANDONED" | "EXPIRED";
-export type Outcome = "PASSED" | "NOT_PASSED" | "CRITICAL_FAILURE";
+export type Outcome = "PASSED" | "NOT_PASSED" | "CRITICAL_FAILURE" | "NEEDS_PRACTICE" | "UNASSESSED";
+export type DecisionAssessment = "SAFE" | "REVIEW" | "UNASSESSED";
+export type EvaluationMode = "LEGACY_WEIGHTED_V1" | "DECISION_RULES_V1";
 export type ValidationStatus = "ACCEPTED" | "NO_EVENT" | "CLARIFICATION_REQUIRED" | "REJECTED";
 
 // AI interpretation has no authority. No score or state-change command belongs here.
@@ -40,6 +42,7 @@ export interface SessionOpportunity {
   finalizedByActionId: string | null;
   correctWarningSignIds: string[];
   incorrectEvidenceIds: string[];
+  assessment?: DecisionAssessment | null;
 }
 
 // Only created from a backend-validated plan; never imported from an AI DTO.
@@ -63,7 +66,7 @@ export interface SkillScore {
 }
 
 export interface Recommendation {
-  recommendationType: "DECISION_PRACTICE" | "WARNING_SIGN_LESSON" | "WARNING_SIGN_QUIZ" | "SAFE_ACTION_CONTENT" | "CRITICAL_FAILURE_REVIEW";
+  recommendationType: "DECISION_PRACTICE" | "WARNING_SIGN_LESSON" | "WARNING_SIGN_QUIZ" | "SAFE_ACTION_CONTENT" | "CRITICAL_FAILURE_REVIEW" | "PATH_REFLECTION";
   recommendationKey: string;
   reason: string;
 }
@@ -80,6 +83,8 @@ export interface TrainingResult {
   weakestSkills: Skill[];
   recommendation: Recommendation;
   calculatedAt: number;
+  evaluationMode?: EvaluationMode;
+  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number } | null;
 }
 
 export interface TrainingSession {

@@ -174,7 +174,18 @@ it("result renders server outcome/nullable scores without deriving pass or weake
   fetcher.mockResolvedValue(reply({ sessionId: "public-session", revision: 9, D: 1, W: null, S: 2, trainingScore: null, outcome: "PASSED", weakestSkills: ["S"], recommendation: { recommendationType: "DECISION_PRACTICE", recommendationKey: "public-key", reason: "คำแนะนำจากระบบ" } }));
   render(<Result sessionId="public-session" />); await screen.findByText("ผ่านการฝึก"); await screen.findByText("คำแนะนำจากระบบ");
   expect(screen.getByText("ยังไม่มีคะแนนรวม")).toBeTruthy(); expect(screen.queryByText("ยังไม่ผ่านเกณฑ์")).toBeNull();
+  expect(document.body.textContent).toContain("คุณผ่านเกณฑ์ในรอบฝึกนี้");
   expect(document.body.textContent).not.toContain("ownerId"); expect(document.body.textContent).not.toContain("EventCode");
+});
+it("decision result shows path scope and no legacy score", async () => {
+  fetcher.mockResolvedValue(reply({ sessionId: "public-session", revision: 1, D: null, W: null, S: null,
+    trainingScore: null, outcome: "PASSED", weakestSkills: [], evaluationMode: "DECISION_RULES_V1",
+    decisionSummary: { encountered: 0, safe: 0, review: 0, unassessed: 0 },
+    recommendation: { recommendationType: "PATH_REFLECTION", recommendationKey: "encountered-path", reason: "ลองฝึกเส้นทางอื่น" } }));
+  render(<Result sessionId="public-session" />); await screen.findByText("ผ่านการฝึก");
+  expect(document.body.textContent).toContain("คุณผ่านเส้นทางที่พบในรอบนี้");
+  expect(document.body.textContent).toContain("ไม่ได้หมายถึงเชี่ยวชาญทุกประเภท");
+  expect(document.body.textContent).not.toContain("คะแนนรวม");
 });
 it("unknown/missing session gives safe error instead of hidden fields", async () => {
   fetcher.mockResolvedValue(failure("SESSION_NOT_FOUND", 404)); render(<Training sessionId="public-session" />);

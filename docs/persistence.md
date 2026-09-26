@@ -1,5 +1,7 @@
 # Prisma / MySQL Persistence
 
+The additive `202609250001_decision_rules` migration adds checkpoint assessment and result evaluation-mode/decision-summary columns. Existing `TrainingResult` rows receive the database default `LEGACY_WEIGHTED_V1`; no historical result is recalculated. New version 3 records keep legacy numeric columns for storage compatibility with zero opportunity values and null aggregate score. See [Decision Evaluation](decision-evaluation.md). Real migration deployment still requires a dedicated MySQL environment and has not been verified in this branch.
+
 STATUS: IMPLEMENTED TECHNICAL DESIGN
 
 [กลับ README](../README.md) · [Architecture](architecture.md)

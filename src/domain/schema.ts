@@ -4,6 +4,7 @@ import { CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js"
 const id = z.string().min(1).max(120).regex(/^[a-zA-Z0-9_-]+$/);
 const event = z.enum(EVENT_CODES);
 const points = z.number().finite().nonnegative();
+const assessment = z.enum(["SAFE", "REVIEW", "UNASSESSED"]);
 
 const common = {
   id,
@@ -15,29 +16,32 @@ const common = {
 
 export const opportunitySchema = z.discriminatedUnion("skill", [
   z.strictObject({
-    ...common, skill: z.literal("D"), maxScore: z.literal(10),
+    ...common, skill: z.literal("D"), maxScore: z.literal(10).optional(),
     choices: z.array(z.strictObject({
       id, rating: z.enum(["safe", "partially_safe", "risky"]),
-      score: z.union([z.literal(0), z.literal(5), z.literal(10)]),
+      score: z.union([z.literal(0), z.literal(5), z.literal(10)]).optional(),
+      assessment: assessment.optional(),
       eventCodes: z.array(event),
     })).min(1),
   }),
   z.strictObject({
     ...common, skill: z.literal("W"),
+    assessmentRule: z.literal("ALL_WARNINGS_NO_FALSE_POSITIVES").optional(),
     evidence: z.array(z.strictObject({
       id, text: z.string().min(1), warningSignId: id.nullable(),
     })).min(1),
   }),
   z.strictObject({
-    ...common, skill: z.literal("S"), maxScore: points.positive(),
+    ...common, skill: z.literal("S"), maxScore: points.positive().optional(),
     actions: z.array(z.strictObject({
-      id, score: points, eventCodes: z.array(event),
+      id, score: points.optional(), assessment: assessment.optional(), eventCodes: z.array(event),
     })).min(1),
   }),
 ]);
 
 export const scenarioTemplateSchema = z.strictObject({
   id, version: z.number().int().positive(),
+  evaluationMode: z.literal("DECISION_RULES_V1").optional(),
   category: z.enum(CATEGORIES),
   variant: z.enum(["DEFAULT", "NORMAL_CALL", "SCAM_CALL"]),
   title: z.string().min(1), learningObjectives: z.array(z.string().min(1)).min(1),
@@ -53,6 +57,7 @@ export const scenarioTemplateSchema = z.strictObject({
       id, target: z.enum(STATES),
       requiresFinalized: z.array(id), requiresEvents: z.array(event),
       safeResolution: z.boolean(),
+      earlySafeResolution: z.boolean().optional(),
     })),
   })).min(2),
   opportunities: z.array(opportunitySchema).min(1),

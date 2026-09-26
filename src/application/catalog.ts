@@ -4,10 +4,10 @@ import type { TrainingSession } from "../domain/types.js";
 import type { ActionInput } from "../domain/training-action.js";
 import type { PublicActionDefinition, PublicActionPayload, PublicScenario } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { smsPhishingDialogueFixture } from "../fixtures/sms-phishing-dialogue.js";
+import { smsPhishingDecisionRulesFixture } from "../fixtures/sms-phishing-decision-rules.js";
 
 // Presentation-only catalog for this playable version. No scores, events or guards here.
-export const playableTemplate = smsPhishingDialogueFixture;
+export const playableTemplate = smsPhishingDecisionRulesFixture;
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -32,7 +32,7 @@ export function publicScenario(t: ScenarioTemplate): PublicScenario {
     learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" };
 }
 export function actionBindings(t: ScenarioTemplate): Binding[] {
-  if (t.id !== playableTemplate.id || t.version !== 2 || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
+  if (t.id !== playableTemplate.id || ![2, 3].includes(t.version) || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
   const result: Binding[] = [];
   for (const [internalId, publicId] of [["d1", "a01"], ["w1", "a03"], ["d2", "a05"], ["d3", "a07"], ["s1", "a08"], ["w-extra", "a11"]]) {
     const o = t.opportunities.find(o => o.id === internalId)!;
@@ -66,6 +66,10 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
     const state = t.states.find(s => s.transitions.some(edge => edge.id === internalId))!;
     result.push({ state: state.id, public: { id: publicId!, label: label!, input: "NONE", options: [] },
       toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: internalId! }; } });
+  }
+  if (t.evaluationMode === "DECISION_RULES_V1") {
+    result.push({ state: "contact", public: { id: "a15", label: "ยุติการติดต่ออย่างปลอดภัย", input: "NONE", options: [] },
+      toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: "end-contact-early" }; } });
   }
   for (const [ruleId, publicId, label] of [
     ["confirm-simulated-otp", "a12", "ยืนยันการส่งรหัส OTP จำลอง (ไม่ใช้รหัสจริง)"],
