@@ -43,4 +43,41 @@ describe.skipIf(!client)("Quiz real MySQL transactions (no database mock)",()=>{
     const replies=await Promise.all([h.service.write(a.id,h.owner,"SUBMIT",input),h.service.write(a.id,h.owner,"SUBMIT",input)]);
     expect(replies.map(r=>r.duplicate).sort()).toEqual([false,true]); expect((await h.repository.get(a.id,h.owner))!.revision).toBe(1);
   });
+  it("concurrent reads never combine a revision with receipts from a different commit",async()=>{
+    const h=harness(); const a=await h.begin(); const q=a.questions[0]!;
+    const reopened=new PrismaQuizRepository(client!);
+    for(let revision=0;revision<8;revision++) {
+      const reads=Array.from({length:4},()=>reopened.get(a.id,h.owner));
+      const write=h.service.write(a.id,h.owner,"SAVE",{requestId:randomUUID(),expectedRevision:revision,
+        answers:[{questionId:q.id,optionId:q.options[revision%4]!.id}]});
+      const snapshots=await Promise.all(reads); await write;
+      for(const snapshot of snapshots) {
+        expect(snapshot!.receipts).toHaveLength(snapshot!.revision);
+        expect([revision,revision+1]).toContain(snapshot!.revision);
+      }
+    }
+    expect((await reopened.get(a.id,h.owner))!.revision).toBe(8);
+  });
+  it("a fresh client preserves the frozen Pre-test baseline after a later Pre-test completes",async()=>{
+    const h=harness(); const pre=await h.begin();
+    const answers=async(id:string)=>(await h.repository.get(id,h.owner))!.questions.map(q=>({questionId:q.id,optionId:q.correctOptionId}));
+    await h.service.write(pre.id,h.owner,"SUBMIT",{requestId:randomUUID(),expectedRevision:0,answers:await answers(pre.id)});
+    const post=(await h.service.start(h.owner,{mode:"POST_TEST",requestId:randomUUID()})).attempt; created.push(post.id);
+    const later=await h.begin();
+    const laterRaw=(await h.repository.get(later.id,h.owner))!;
+    await h.service.write(later.id,h.owner,"SUBMIT",{requestId:randomUUID(),expectedRevision:0,
+      answers:laterRaw.questions.map(q=>({questionId:q.id,optionId:q.options.find(o=>o.id!==q.correctOptionId)!.id}))});
+    const fresh=createPrismaClient(url!,key ? {loopbackRsaPublicKey:key} : {});
+    try {
+      const repository=new PrismaQuizRepository(fresh), service=new QuizService(repository);
+      const raw=(await repository.get(post.id,h.owner))!;
+      expect(raw.baseline?.attemptId).toBe(pre.id);
+      await service.write(post.id,h.owner,"SUBMIT",{requestId:randomUUID(),expectedRevision:0,
+        answers:raw.questions.map(q=>({questionId:q.id,optionId:q.correctOptionId}))});
+      const result=(await service.resume(post.id,h.owner)).result!;
+      expect(result.baseline?.attemptId).toBe(pre.id); expect(result.baseline?.score.percentage).toBe(100);
+      expect(result.changePercentagePoints).toBe(0);
+      expect((await service.resume(post.id,h.owner)).questions.every(q=>"review" in q)).toBe(true);
+    } finally { await fresh.$disconnect(); }
+  });
 });

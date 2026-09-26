@@ -24,17 +24,25 @@ export class PrismaQuizRepository implements QuizRepository {
     } catch (error) { if (uniqueConflict(error)) return false; throw error; }
   }
   async get(id: string, ownerId: string) {
-    const row = await this.client.quizAttempt.findFirst({ where: { id, ownerId }, include });
-    return row ? decode(row) : null;
+    // Prisma may fetch included receipts in another SELECT. Pin both reads to
+    // one snapshot so a concurrent submit cannot mix an old revision with a new receipt.
+    return this.client.$transaction(async tx => {
+      const row = await tx.quizAttempt.findFirst({ where: { id, ownerId }, include });
+      return row ? decode(row) : null;
+    }, { isolationLevel: "RepeatableRead" });
   }
   async recent(ownerId: string) {
-    const rows = await this.client.quizAttempt.findMany({ where: { ownerId }, include, orderBy: [{ startedAt: "desc" }, { id: "desc" }], take: 50 });
-    return rows.map(decode);
+    return this.client.$transaction(async tx => {
+      const rows = await tx.quizAttempt.findMany({ where: { ownerId }, include, orderBy: [{ startedAt: "desc" }, { id: "desc" }], take: 50 });
+      return rows.map(decode);
+    }, { isolationLevel: "RepeatableRead" });
   }
   async latestPreTest(ownerId: string, bankVersion: string, blueprint: string, before: number) {
-    const row = await this.client.quizAttempt.findFirst({ where: { ownerId, bankVersion, blueprint, mode: "PRE_TEST", status: "COMPLETED", completedAt: { lte: new Date(before) } }, include,
-      orderBy: [{ completedAt: "desc" }, { id: "desc" }] });
-    return row ? decode(row) : null;
+    return this.client.$transaction(async tx => {
+      const row = await tx.quizAttempt.findFirst({ where: { ownerId, bankVersion, blueprint, mode: "PRE_TEST", status: "COMPLETED", completedAt: { lte: new Date(before) } }, include,
+        orderBy: [{ completedAt: "desc" }, { id: "desc" }] });
+      return row ? decode(row) : null;
+    }, { isolationLevel: "RepeatableRead" });
   }
   async commit(a: QuizAttempt, expectedRevision: number) {
     try {

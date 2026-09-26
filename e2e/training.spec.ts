@@ -113,6 +113,45 @@ test("two real tabs reject stale revision, refetch and never automatically resub
   await other.close();
 });
 
+test("investment safe path preserves finalized assessments across browser refreshes and real MySQL", async ({ page }) => {
+  await account(page);
+  await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "ข้อเสนอการลงทุนผลตอบแทนสูง", exact: true }) })
+    .getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
+  await expect(page).toHaveURL(/\/training\/[^/]+$/);
+  const apiPath = "/api" + new URL(page.url()).pathname;
+  await expect(page.getByRole("radio", { name: "ตรวจสอบจากช่องทางอื่น", exact: true })).toBeVisible();
+  const before = (await (await page.request.get(apiPath)).json()).data;
+  await page.getByLabel("ข้อความของคุณ").fill("ขอตรวจสอบข้อมูลผ่านช่องทางอิสระก่อน");
+  await page.getByRole("button", { name: "ส่งข้อความ", exact: true }).click();
+  await expect(page.getByLabel("ข้อความของคุณ")).toHaveValue("");
+  const afterDialogue = (await (await page.request.get(apiPath)).json()).data;
+  expect(afterDialogue.currentStatePublicLabel).toBe(before.currentStatePublicLabel);
+  expect(afterDialogue.availableActions).toEqual(before.availableActions);
+
+  await choice(page, "ตรวจสอบจากช่องทางอื่น");
+  await page.reload();
+  await page.getByRole("button", { name: "พิจารณาข้ออ้างต่อ", exact: true }).click();
+  await page.getByRole("checkbox", { name: "หน้าจอยอดกำไรจำลองแสดงผลตอบแทนสูงผิดปกติ", exact: true }).check();
+  await page.getByRole("checkbox", { name: "เร่งให้โอนค่าปลดล็อกก่อนถอนกำไร", exact: true }).check();
+  await page.getByRole("button", { name: "ยืนยันหลักฐาน", exact: true }).click();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: "พิจารณาคำขอ", exact: true }).click();
+  await choice(page, "ปฏิเสธคำขอและตรวจสอบ");
+  await page.reload();
+  await page.getByRole("button", { name: "เลือกวิธีรับมือ", exact: true }).click();
+  await choice(page, "ตรวจสอบ ยุติ และรายงาน");
+  await page.reload();
+  await page.getByRole("button", { name: "จบสถานการณ์", exact: true }).click();
+  await page.getByRole("link", { name: "ดูผลการฝึก" }).click();
+  await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
+  const result = (await (await page.request.get(apiPath + "/result")).json()).data;
+  expect(result).toMatchObject({ outcome: "PASSED", evaluationMode: "DECISION_RULES_V1", trainingScore: null,
+    decisionSummary: { encountered: 4, safe: 4, review: 0, unassessed: 0 } });
+  expect(result.decisionSummary.checkpoints.map((c: { assessment: string }) => c.assessment)).toEqual(["SAFE", "SAFE", "SAFE", "SAFE"]);
+  expect(JSON.stringify(result)).not.toMatch(/ruleId|ownerId|criticalFailureRules|eventCodes/);
+});
+
 test("real Quiz Pre/Post saves, resumes, submits and compares the frozen baseline", async ({ page }) => {
   await account(page); await page.getByRole("link", { name: "Quiz", exact: true }).click();
   await expect(page.getByRole("heading", { name: "ลองวัดความรู้ก่อนและหลังฝึก" })).toBeVisible();

@@ -9,6 +9,7 @@ import { repositoryContract, repositoryHarness, safeActions } from "./repository
 import { smsPhishingDialogueFixture as fixture } from "../src/fixtures/sms-phishing-dialogue.js";
 import { smsPhishingDecisionRulesFixture } from "../src/fixtures/sms-phishing-decision-rules.js";
 import { smsPhishingFeedbackFixture } from "../src/fixtures/sms-phishing-feedback.js";
+import { smsPhishingFixture } from "../src/fixtures/sms-phishing.js";
 import { additionalScamScenarios } from "../src/fixtures/scam-scenarios.js";
 import type { ActionInput } from "../src/domain/training-action.js";
 
@@ -23,6 +24,24 @@ afterAll(async () => { await client?.$disconnect(); });
 
 describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
   repositoryContract("Prisma repository port", () => new PrismaTrainingRepository(client!));
+
+  it.each([smsPhishingFixture, fixture])("SMS legacy v$version keeps its weighted aggregate across a fresh client", async template => {
+    const id = randomUUID(), owner = "legacy-" + randomUUID();
+    const core = await TrainingCore.create([template], new PrismaTrainingRepository(client!), () => 1000);
+    await core.start(id, owner, template.id, template.version);
+    for (const [index, action] of safeActions.entries()) {
+      const before = await core.resume(id, owner);
+      await core.submit({ sessionId: id, ownerId: owner, expectedRevision: before.revision, actionId: "legacy-step-" + index, action });
+    }
+    const before = await core.resume(id, owner), fresh = createPrismaClient(url!, connectionOptions);
+    try {
+      const reopened = await TrainingCore.create([], new PrismaTrainingRepository(fresh), () => 1000);
+      expect(await reopened.resume(id, owner)).toEqual(before);
+      expect(before.result).toMatchObject({ outcome: "PASSED", trainingScore: 100 });
+      expect(before.result).not.toHaveProperty("evaluationMode");
+      expect(before.opportunities.every(o => !("assessment" in o))).toBe(true);
+    } finally { await fresh.$disconnect(); }
+  });
 
   it.each([...additionalScamScenarios, smsPhishingDecisionRulesFixture, smsPhishingFeedbackFixture])(
     "$id v$version: categorical assessments survive every write and fresh-client reload", async template => {

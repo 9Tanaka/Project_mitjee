@@ -16,6 +16,9 @@ UNASSESSED and unanswered null; legacy versions 1, 2 and 30 keep their old shape
 fake read client and are not MySQL verification. Ten conditional real-MySQL cases cover all eight
 additional scenarios plus SMS v3/v4, recreate a client after every explicit action, compare entire
 aggregates and require PASSED with review=0, unassessed=0 and trainingScore=null.
+Two additional native tests preserve legacy SMS v1/v2 aggregates and weighted score 100
+through a fresh client without introducing categorical fields. Quiz now has six conditional
+native tests; its reads use coherent repeatable-read snapshots, documented in [Quiz](quiz.md).
 Current external status: NOT RUN — MYSQL_TEST_DATABASE_URL unavailable.
 
 STATUS: IMPLEMENTED TECHNICAL DESIGN
@@ -232,4 +235,4 @@ Synthetic account rows persist after tests; generated passwords/secrets are not 
 
 ## Quiz additive migration — 26 September 2026
 
-`202609260001_quiz` adds QuizAttempt and QuizReceipt only. A frozen question/baseline JSON snapshot is written at start; later CAS transactions atomically update answers, result, status, completion timestamp and revision with one request receipt. Completed results are immutable through the service. Existing Training and account rows are untouched. See [Quiz](quiz.md). `test:mysql` now includes all three persistence suites. Four new native transaction/rollback/concurrency tests are conditional and were skipped in this workspace without a dedicated database; no migration was deployed to a real database here.
+`202609260001_quiz` adds QuizAttempt and QuizReceipt only. A frozen question/baseline JSON snapshot is written at start; later CAS transactions atomically update answers, result, status, completion timestamp and revision with one request receipt. Completed results are immutable through the service. Existing Training and account rows are untouched. See [Quiz](quiz.md). `test:mysql` includes all three persistence suites. Six native transaction/rollback/concurrency/baseline tests are conditional and skipped without a dedicated database; no migration was deployed in recovery.

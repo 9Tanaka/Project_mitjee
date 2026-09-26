@@ -49,6 +49,13 @@ Additive migration `202609260001_quiz` creates `QuizAttempt` and `QuizReceipt`. 
 
 Apply committed migrations with `npm run db:deploy` against the intended database before opening Quiz. This phase did **not** deploy a migration to an existing or production database.
 
+Persistence hardening on 26 September: get/history/baseline reads now use repeatable-read
+transactions, matching the Training adapter's snapshot guarantee. Attempt fields and included
+receipts cannot come from different concurrent commits. Three adapter contract tests cover all
+read paths; conditional real-MySQL tests additionally check concurrent snapshot coherence and
+frozen Pre/Post baseline persistence through a fresh client. External verification remains
+NOT RUN — MYSQL_TEST_DATABASE_URL unavailable.
+
 ## Primary sources checked on 26 September 2026
 
 These support the prevention principles; institutions have not reviewed or endorsed these authored questions. Local scenarios avoid transplanting foreign legal deadlines, reporting numbers or statutory rights.
@@ -71,6 +78,12 @@ These support the prevention principles; institutions have not reviewed or endor
 
 ## Verification
 
-26 September 2026: Prisma generate/validate and strict typecheck pass. Full Vitest: **454 passed, 34 skipped**, 488 total. Skips include the four new real-MySQL Quiz transaction tests and existing MySQL-dependent suites because `MYSQL_TEST_DATABASE_URL` is absent. Production build and client artifact audit pass. Browser E2E discovery includes the new authenticated Pre/Post flow; actual browser+MySQL execution was **not run** without its dedicated database. No live OpenAI request was made.
+Initial Quiz delivery on 26 September 2026: **454 passed, 34 skipped**, 488 total;
+these are historical counts, not the recovery result. Recovery: **475 passed, 48 skipped**,
+523 total; Quiz subset **46 passed, 6 skipped**. Prisma generate/validate, strict typecheck,
+production build and client artifact audit pass. Browser E2E discovery includes the
+authenticated Pre/Post flow; actual browser+MySQL execution was NOT RUN —
+MYSQL_TEST_DATABASE_URL unavailable. No live OpenAI request was made in recovery.
+See [Current verification](recovery-verification.md); skips are not passes.
 
 New deterministic tests cover bank integrity, selection/option permutation, server scoring at 0/7/20 correct, immutable resume, partial saves/corrections, invalid answers with no partial writes, exact concurrent retry and stale-write conflicts, ownership, frozen Pre/Post baseline and start-time cutoff, active-answer-key omission, input/origin/body validation, full 20-question UI completion, uncertain save retry and multi-window reconciliation. The UI reads saved answers directly until a local edit; delayed initialization cannot overwrite the first selection. Conditional MySQL tests exercise restart, native transactions/rollback and concurrent submissions without a mocked database.
