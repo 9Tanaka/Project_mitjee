@@ -30,6 +30,7 @@ export function AuthNavigation() {
   return <nav aria-label="เมนูหลัก" className="nav">
     {status === "authenticated" ? <>
       <Link href="/scenarios" className="nav-link">สถานการณ์ฝึก</Link>
+      <Link href="/quiz" className="nav-link">Quiz</Link>
       <button className="nav-logout" onClick={() => void logout()} disabled={busy}>{busy ? "กำลังออก…" : "ออกจากระบบ"}</button>
       {error && <span role="alert" className="field-error">ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง</span>}
     </> : <><Link href="/login" className="nav-link">เข้าสู่ระบบ</Link><Link href="/register" className="button button-small">สมัครสมาชิก</Link></>}

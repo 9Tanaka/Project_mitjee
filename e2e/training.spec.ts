@@ -17,10 +17,10 @@ async function account(page: Page) {
   await page.getByLabel("รหัสผ่าน", { exact: true }).fill(secret);
   await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
   await expect(page).toHaveURL(/\/scenarios$/);
-  await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toHaveCount(9);
 }
 async function start(page: Page) {
-  await page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
+  await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "SMS แจ้งพัสดุจากผู้ส่งสมมติ" }) }).getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
   await expect(page).toHaveURL(/\/training\/[^/]+$/);
   await expect(page.getByLabel("ข้อความของคุณ")).toBeVisible();
 }
@@ -54,7 +54,7 @@ test("real register/login, resumed multi-turn safe path, result, logout, respons
   await capture(page, "landing-desktop", 1440); await capture(page, "landing-mobile", 375);
   await page.goto("/login"); await capture(page, "login-mobile", 375);
   await account(page);
-  await page.reload(); await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toBeVisible();
+  await page.reload(); await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toHaveCount(9);
   await capture(page, "scenarios-tablet", 768); await start(page);
   const sessionPath = new URL(page.url()).pathname;
   await page.reload(); await expect(page.getByLabel("ข้อความของคุณ")).toBeVisible();
@@ -74,7 +74,7 @@ test("real register/login, resumed multi-turn safe path, result, logout, respons
   await page.getByRole("link", { name: "ดูผลการฝึก" }).click();
   await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
   const result = (await (await page.request.get("/api" + sessionPath + "/result")).json()).data;
-  expect(result).toMatchObject({ D: 100, W: 100, S: 100, trainingScore: 100, outcome: "PASSED" });
+  expect(result).toMatchObject({ D: null, W: null, S: null, trainingScore: null, outcome: "PASSED", evaluationMode: "DECISION_RULES_V1", decisionSummary: { safe: 5, review: 0, unassessed: 0 } });
   await capture(page, "result-mobile", 375); await capture(page, "result-desktop", 1440);
   expect(await page.locator("body").innerText()).not.toMatch(/DISCLOSE_OTP|ownerId|AUTH_SECRET|JWT|passwordHash/);
   await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click();
@@ -111,4 +111,82 @@ test("two real tabs reject stale revision, refetch and never automatically resub
   const data = (await (await page.request.get(path)).json()).data;
   expect(data.revision).toBe(1);
   await other.close();
+});
+
+test("investment safe path preserves finalized assessments across browser refreshes and real MySQL", async ({ page }) => {
+  await account(page);
+  await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "ข้อเสนอการลงทุนผลตอบแทนสูง", exact: true }) })
+    .getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
+  await expect(page).toHaveURL(/\/training\/[^/]+$/);
+  const apiPath = "/api" + new URL(page.url()).pathname;
+  await expect(page.getByRole("radio", { name: "ตรวจสอบจากช่องทางอื่น", exact: true })).toBeVisible();
+  const before = (await (await page.request.get(apiPath)).json()).data;
+  await page.getByLabel("ข้อความของคุณ").fill("ขอตรวจสอบข้อมูลผ่านช่องทางอิสระก่อน");
+  await page.getByRole("button", { name: "ส่งข้อความ", exact: true }).click();
+  await expect(page.getByLabel("ข้อความของคุณ")).toHaveValue("");
+  const afterDialogue = (await (await page.request.get(apiPath)).json()).data;
+  expect(afterDialogue.currentStatePublicLabel).toBe(before.currentStatePublicLabel);
+  expect(afterDialogue.availableActions).toEqual(before.availableActions);
+
+  await choice(page, "ตรวจสอบจากช่องทางอื่น");
+  await page.reload();
+  await page.getByRole("button", { name: "พิจารณาข้ออ้างต่อ", exact: true }).click();
+  await page.getByRole("checkbox", { name: "หน้าจอยอดกำไรจำลองแสดงผลตอบแทนสูงผิดปกติ", exact: true }).check();
+  await page.getByRole("checkbox", { name: "เร่งให้โอนค่าปลดล็อกก่อนถอนกำไร", exact: true }).check();
+  await page.getByRole("button", { name: "ยืนยันหลักฐาน", exact: true }).click();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: "พิจารณาคำขอ", exact: true }).click();
+  await choice(page, "ปฏิเสธคำขอและตรวจสอบ");
+  await page.reload();
+  await page.getByRole("button", { name: "เลือกวิธีรับมือ", exact: true }).click();
+  await choice(page, "ตรวจสอบ ยุติ และรายงาน");
+  await page.reload();
+  await page.getByRole("button", { name: "จบสถานการณ์", exact: true }).click();
+  await page.getByRole("link", { name: "ดูผลการฝึก" }).click();
+  await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
+  const result = (await (await page.request.get(apiPath + "/result")).json()).data;
+  expect(result).toMatchObject({ outcome: "PASSED", evaluationMode: "DECISION_RULES_V1", trainingScore: null,
+    decisionSummary: { encountered: 4, safe: 4, review: 0, unassessed: 0 } });
+  expect(result.decisionSummary.checkpoints.map((c: { assessment: string }) => c.assessment)).toEqual(["SAFE", "SAFE", "SAFE", "SAFE"]);
+  expect(JSON.stringify(result)).not.toMatch(/ruleId|ownerId|criticalFailureRules|eventCodes/);
+});
+
+test("real Quiz Pre/Post saves, resumes, submits and compares the frozen baseline", async ({ page }) => {
+  await account(page); await page.getByRole("link", { name: "Quiz", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "ลองวัดความรู้ก่อนและหลังฝึก" })).toBeVisible();
+  async function round(mode: "Pre-test" | "Post-test") {
+    await page.getByRole("button", { name: "เริ่ม " + mode, exact: true }).click();
+    await expect(page).toHaveURL(/\/quiz\/q-[a-f0-9]+$/);
+    const path = "/api/quiz/attempts/" + new URL(page.url()).pathname.split("/").at(-1);
+    const active = (await (await page.request.get(path)).json()).data;
+    expect(JSON.stringify(active)).not.toMatch(/correctOptionId|explanation|source|ownerId|receipts/);
+    const selected: Record<string,string> = {};
+    for (let i=0;i<20;i++) {
+      await page.getByRole("button", { name: new RegExp(`^ไปข้อ ${i+1} `) }).click();
+      await expect(page.locator("fieldset legend")).toHaveText(active.questions[i].prompt);
+      const radio = page.getByRole("radio").first(); selected[active.questions[i].id] = (await radio.getAttribute("value"))!;
+      await radio.check();
+      const acknowledgement = page.waitForResponse(response => response.url().endsWith(path + "/save") && response.request().method() === "POST");
+      await page.getByRole("button", { name: i===19 ? "บันทึกคำตอบ" : "บันทึกและไปข้อต่อไป", exact: true }).click();
+      expect((await acknowledgement).status()).toBe(200);
+      if (i===0) {
+        await page.reload(); await expect(page.getByRole("radio").first()).toBeChecked();
+        await capture(page, "quiz-" + mode.toLowerCase() + "-mobile", 375);
+      }
+    }
+    await page.getByRole("button", { name: "ส่งคำตอบและดูผล", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "ผล Quiz ของคุณ" })).toBeVisible();
+    const final = (await (await page.request.get(path)).json()).data;
+    expect(final.status).toBe("COMPLETED"); expect(final.answers).toEqual(selected);
+    expect(final.result.correct).toBe(final.questions.filter((q: {id:string;review:{correctOptionId:string}})=>selected[q.id]===q.review.correctOptionId).length);
+    await expect(page.getByRole("link", { name: /อ่านแนวทางเพิ่มเติม/ })).toHaveCount(20);
+    await page.reload(); await expect(page.getByRole("heading", { name: "ผล Quiz ของคุณ" })).toBeVisible();
+    await page.getByRole("link", { name: "กลับไปหน้า Quiz", exact: true }).click();
+    return final;
+  }
+  const pre = await round("Pre-test"); const post = await round("Post-test");
+  expect(post.result.baseline.attemptId).toBe(pre.id);
+  expect(post.result.changePercentagePoints).toBe(post.result.percentage-pre.result.percentage);
+  await expect(page.getByRole("link", { name: "ดูผลและเฉลย →", exact: true })).toHaveCount(2);
 });

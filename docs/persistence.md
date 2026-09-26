@@ -1,5 +1,26 @@
 # Prisma / MySQL Persistence
 
+The additive `202609250001_decision_rules` migration adds checkpoint assessment and result evaluation-mode/decision-summary columns. Existing `TrainingResult` rows receive the database default `LEGACY_WEIGHTED_V1`; no historical result is recalculated. Categorical templates (SMS v3/v4 and eight other scenarios at v1) keep legacy numeric columns for storage compatibility with zero opportunity values and null aggregate score. Public feedback lives in the decision-summary JSON column. See [Decision Evaluation](decision-evaluation.md). Real migration deployment still requires a dedicated MySQL environment and has not been verified in this branch.
+
+### Assessment round-trip recovery — 26 September 2026
+
+The adapter previously discarded checkpoint assessments for every template version below 3.
+Version numbers are scenario-local and do not identify evaluation semantics: all eight additional
+categorical templates are version 1. Reads now include the pinned immutable template configuration,
+use its explicit evaluationMode to preserve unanswered assessment:null, and always preserve a
+non-null persisted assessment. Legacy null assessments remain omitted to retain the original
+aggregate shape. No historical rows, scoring policy, schema or migration files are rewritten.
+
+Decoder regression tests exercise categorical versions 1, 2, 3, 4 and 30 with SAFE, REVIEW,
+UNASSESSED and unanswered null; legacy versions 1, 2 and 30 keep their old shape. These use a
+fake read client and are not MySQL verification. Ten conditional real-MySQL cases cover all eight
+additional scenarios plus SMS v3/v4, recreate a client after every explicit action, compare entire
+aggregates and require PASSED with review=0, unassessed=0 and trainingScore=null.
+Two additional native tests preserve legacy SMS v1/v2 aggregates and weighted score 100
+through a fresh client without introducing categorical fields. Quiz now has six conditional
+native tests; its reads use coherent repeatable-read snapshots, documented in [Quiz](quiz.md).
+Current external status: NOT RUN — MYSQL_TEST_DATABASE_URL unavailable.
+
 STATUS: IMPLEMENTED TECHNICAL DESIGN
 
 [กลับ README](../README.md) · [Architecture](architecture.md)
@@ -211,3 +232,7 @@ OAuth Account or VerificationToken tables are added; Auth.js uses JWT strategy.
 concurrent registration, new-client credential lookup/stable UUID, exact columns/no plaintext,
 and direct ID-update rejection. test:mysql now runs both Training and account suites.
 Synthetic account rows persist after tests; generated passwords/secrets are not printed or saved.
+
+## Quiz additive migration — 26 September 2026
+
+`202609260001_quiz` adds QuizAttempt and QuizReceipt only. A frozen question/baseline JSON snapshot is written at start; later CAS transactions atomically update answers, result, status, completion timestamp and revision with one request receipt. Completed results are immutable through the service. Existing Training and account rows are untouched. See [Quiz](quiz.md). `test:mysql` includes all three persistence suites. Six native transaction/rollback/concurrency/baseline tests are conditional and skipped without a dedicated database; no migration was deployed in recovery.

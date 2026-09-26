@@ -82,7 +82,7 @@ async function harness(provider: ScenarioModelProvider = new MockScenarioModelPr
     setTime: (time: number) => { now = time; } };
 }
 const safeSteps: [string, unknown][] = [
-  ["a01", { choiceId: "o1" }], ["a02", {}], ["a03", { selectedEvidenceIds: ["o1", "o2", "o3"] }],
+  ["a01", { choiceId: "o1" }], ["a02", {}], ["a03", { selectedEvidenceIds: ["o1", "o2"] }],
   ["a04", {}], ["a05", { choiceId: "o1" }], ["a06", {}], ["a07", { choiceId: "o1" }],
   ["a08", { choiceId: "o1" }], ["a09", {}],
 ];
@@ -117,9 +117,26 @@ describe("HTTP Route Handler integration", () => {
     expect(replies.map(r => r.status).sort()).toEqual([200, 201]);
     const [first, second] = await Promise.all(replies.map(async r => mutationDto.parse((await r.json()).data)));
     expect(first!.session.sessionId).toBe(second!.session.sessionId);
-    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(2);
+    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(4);
     expect(first!.session.revision).toBe(0);
     const other = await h.begin("user-b", input.startId); expect(other.sessionId).not.toBe(first!.session.sessionId);
+  });
+  it("lists nine playable categories and starts another scenario through the same authenticated API", async () => {
+    const h = await harness();
+    const catalog = (await (await h.request("scenarios")).json()).data as { id: string; category: string }[];
+    expect(catalog).toHaveLength(9);
+    expect(new Set(catalog.map(item => item.category)).size).toBe(9);
+    const response = await h.request("start", "investment-scam", { startId: randomUUID(), expectedRevision: 0 });
+    expect(response.status).toBe(201);
+    const started = mutationDto.parse((await response.json()).data).session;
+    expect(started.scenario.id).toBe("investment-scam");
+    const stop = started.availableActions.find(action => action.label === "ยุติการติดต่ออย่างปลอดภัย");
+    expect(stop).toBeDefined();
+    const completed = await h.step(started, stop!.id);
+    expect(completed.status).toBe("COMPLETED");
+    const result = resultDto.parse((await (await h.request("result", completed.sessionId)).json()).data);
+    expect(result.outcome).toBe("PASSED");
+    expect(result.decisionSummary?.encountered).toBe(0);
   });
   it.each(["ownerId", "score", "targetState", "version", "variant"])("rejects spoofed start field %s", async field => {
     const h = await harness();
@@ -133,7 +150,7 @@ describe("HTTP Route Handler integration", () => {
     expect(foreign.status).toBe(404); expect(await foreign.json()).toEqual(await missing.json());
     expect(await h.raw(s, "user-b")).toEqual(before);
   });
-  it("resumes and completes a multi-turn safe path with public D/W/S and one result", async () => {
+  it("resumes and completes a multi-turn safe path with categorical result", async () => {
     const h = await harness(); let s = await h.begin();
     expect(sessionDto.parse((await (await h.request("resume", s.sessionId)).json()).data)).toEqual(s);
     expect((await h.request("result", s.sessionId)).status).toBe(404);
@@ -144,9 +161,17 @@ describe("HTTP Route Handler integration", () => {
     }
     expect(s.status).toBe("COMPLETED"); expect(s.availableActions).toEqual([]);
     const r = resultDto.parse((await (await h.request("result", s.sessionId)).json()).data);
-    expect([r.D, r.W, r.S, r.trainingScore]).toEqual([100, 100, 100, 100]); assertPublic(r);
+    expect(r.evaluationMode).toBe("DECISION_RULES_V1");
+    expect(r.outcome).toBe("PASSED");
+    expect(r.decisionSummary).toMatchObject({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(r.decisionSummary?.checkpoints).toHaveLength(5);
+    expect(r.decisionSummary?.checkpoints?.[0]?.ruleRef).toMatch(/^R-[a-f0-9]{16}$/);
+    expect(JSON.stringify(r)).not.toContain('"ruleId"');
+    expect(JSON.stringify(r)).not.toContain('"checkpointId"');
+    expect(JSON.stringify(r)).not.toContain("d1:trust-display-name");
+    expect([r.D, r.W, r.S, r.trainingScore]).toEqual([null, null, null, null]); assertPublic(r);
     const raw = await h.raw(s); expect(raw.opportunities.some(o => o.definitionId === "w-extra")).toBe(false);
-    expect(raw.opportunities.find(o => o.definitionId === "w1")!.incorrectEvidenceIds).toEqual(["logo"]);
+    expect(raw.opportunities.find(o => o.definitionId === "w1")!.incorrectEvidenceIds).toEqual([]);
     expect((await h.act(s, "a01", { choiceId: "o1" })).status).toBe(422);
     expect((await h.say(s)).status).toBe(422);
   });
@@ -207,14 +232,15 @@ describe("HTTP Route Handler integration", () => {
     const retry = await h.act(s, "a09", {}, "finish-once"); expect(retry.status).toBe(200);
     expect((await retry.json()).data.duplicate).toBe(true); expect(await h.raw(s)).toEqual(before);
   });
-  it("risky choices can complete below threshold without critical failure", async () => {
+  it("risky choices request further practice without critical failure", async () => {
     const h = await harness(); let s = await h.begin();
     for (const [id, p] of safeSteps) {
       const payload = id === "a03" ? { selectedEvidenceIds: [] } : "choiceId" in (p as object) ? { choiceId: "o3" } : p;
       s = await h.step(s, id, payload);
     }
     const r = resultDto.parse((await (await h.request("result", s.sessionId)).json()).data);
-    expect(r.outcome).toBe("NOT_PASSED"); expect(r.trainingScore).toBe(0);
+    expect(r.outcome).toBe("NEEDS_PRACTICE"); expect(r.trainingScore).toBeNull();
+    expect(r.decisionSummary?.review).toBeGreaterThan(0);
   });
   it("two requests at one revision have one winner and no partial loser", async () => {
     const h = await harness(); const s = await h.begin();

@@ -90,7 +90,7 @@ POST ที่ส่ง Origin ต่างจาก request origin ถูก re
 ## Public scenario and action projection
 
 Scenario มี id/category/title/description/learningObjectives/communicationMode=TEXT เท่านั้น
-Backend กำหนด SMS / Phishing version 2, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
+Backend เลือก template ที่เผยแพร่แล้วจาก catalog เก้าประเภท; SMS / Phishing ใช้ version 4 และอีกแปดประเภทใช้ version 1; client เลือก version/variant เองไม่ได้
 Catalog เพิ่ม label/description สำหรับ presentation เพราะ published Template เดิมไม่มีข้อความตัวเลือก D/S
 ไม่เพิ่ม score, Event, State guard หรือกฎใหม่ใน catalog
 
@@ -106,11 +106,12 @@ public definition มี id, label, input, options เท่านั้น; IDs
 
 ตัวอย่าง initial action: actionDefinitionId=a01, payload={choiceId:"o1"}; ต้องใช้ actionId ใหม่และ revision ที่อ่านมา
 NONE เป็นคำขอไปต่อ ไม่รับ target State; Core ยังบังคับ checkpoints/event guards
-progress control อาจแสดงก่อน checkpoint ครบ แล้ว Core ตอบ 422 INVALID_STATE เมื่อยังไปต่อไม่ได้
+อีกแปด scenario ที่ใช้ publicActionBindings ซ่อน progress จน checkpoints/event guards ครบ
+SMS ที่ใช้ catalog bindings เดิมอาจแสดง progress ก่อนครบ; Core ยังคงตอบ 422 INVALID_STATE และห้ามข้าม checkpoint
 ไม่มี endpoint สำหรับ direct transition/scoring/Event CRUD/Opportunity CRUD/Result creation
 ไม่คืน scores ก่อนตอบ, answer flags, event codes, rule IDs, target State, hidden opportunities/transitions,
 prompts, fallback configuration, candidate confidence หรือ provider error metadata
-Terminal result คืน D/W/S normalized, Training Score, Outcome, weakestSkills และ recommendation type/key/reason เท่านั้น
+ผลที่ template กำหนด `evaluationMode=DECISION_RULES_V1` คืน categorical Outcome และ decisionSummary; SMS v4 และอีกแปดประเภท v1 มี feedback ของจุดที่พบจริงและรหัสอ้างอิงกฎแบบ opaque; SMS v3 มีจำนวนสรุปแต่ไม่มี feedback รายจุด ทั้งหมดมี D/W/S และ trainingScore เป็น null ส่วน historical SMS v1/v2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response เลข version เพียงอย่างเดียวไม่กำหนด semantics
 ไม่มี internal event/rule mapping หรือเฉลยของ Session ที่ยังเล่นอยู่
 
 ## Revision, retry and lifecycle
@@ -179,6 +180,10 @@ Evidence: [routes](../src/app/api/scenarios/route.ts), [DTOs](../src/http/dto.ts
 [HTTP tests](../tests/http.integration.test.ts), [lifecycle tests](../tests/http.runtime.test.ts)
 
 Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
+
+## Quiz API — 26 September 2026
+
+Five authenticated Quiz routes are implemented alongside the eight Training routes. They support publication/history, start, resume/result, save and submit. See [Quiz HTTP contract](quiz.md#http-and-storage) for strict requests, idempotency, CAS and frozen result behavior. Quiz scoring never changes Scenario decision outcomes.
 
 ## Application / HTTP contract ownership
 

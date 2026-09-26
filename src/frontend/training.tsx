@@ -25,7 +25,7 @@ export function Training({ sessionId }: { sessionId: string }) {
   if (!s) return <Notice>ยังไม่มีข้อมูลรอบฝึก</Notice>;
   if (s.status === "ABANDONED" || s.status === "EXPIRED") return <div className="panel terminal-panel">
     <p className="eyebrow">สถานะรอบฝึก</p><h1>{s.status === "ABANDONED" ? "ออกจากรอบฝึกแล้ว" : "รอบฝึกหมดอายุแล้ว"}</h1>
-    <p className="muted mt-4">รอบนี้ไม่มีผลประเมินอย่างเป็นทางการ คุณสามารถเลือกเริ่มสถานการณ์ใหม่ได้</p><Link className="button mt-6" href="/scenarios">กลับไปเลือกสถานการณ์ →</Link></div>;
+    <p className="muted mt-4">รอบนี้ยังประเมินไม่ได้เพราะยังไม่จบด้วยการกระทำที่ประเมินได้ คุณสามารถเลือกเริ่มสถานการณ์ใหม่ได้</p><Link className="button mt-6" href="/scenarios">กลับไปเลือกสถานการณ์ →</Link></div>;
   if (s.status === "COMPLETED" || s.status === "FAILED") return <div className="panel terminal-panel">
     <span className="tag">สิ้นสุดรอบฝึก</span><h1 className="mt-5">พร้อมทบทวนผลการฝึก</h1>
     <p className="muted mt-4">ระบบบันทึกรอบฝึกแล้ว ดูผลประเมินและคำแนะนำจากการตัดสินใจของคุณ</p>

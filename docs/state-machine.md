@@ -26,6 +26,8 @@ Proposal Requirement ที่ยืนยันแล้วใน milestone น
 
 ## Transition graph of the fixture
 
+New published version 3 also offers `end-contact-early` from `contact` to `end_scenario`. This explicit safe action can bypass the current state's unanswered checkpoint. It cannot be used after leaving `contact`. Opened checkpoints on other entered states remain part of [Decision Evaluation](decision-evaluation.md), even when optional and unanswered. The table below describes the original progression retained in versions 1 and 2 and the remaining version 3 route.
+
 | From | transitionId | To |
 |---|---|---|
 | contact | review-sms | build_trust |
@@ -64,7 +66,7 @@ Critical Failure เป็นเส้นทางจบที่ Core กำห
 | เหตุการณ์ | Status / ผล |
 |---|---|
 | start | ACTIVE, revision 0, initial opportunities |
-| safe resolution | COMPLETED, Official TrainingResult อาจ PASSED หรือ NOT_PASSED |
+| safe resolution | COMPLETED; Official TrainingResult ตาม explicit evaluationMode ของ pinned template; DECISION_RULES_V1 ใช้ PASSED, NEEDS_PRACTICE หรือ UNASSESSED |
 | explicit critical action ผ่าน validation | FAILED, outcome CRITICAL_FAILURE, state=end_scenario |
 | QUIT_SESSION | ABANDONED, result=null |
 | ไม่มีกิจกรรมครบ 30 นาทีเมื่อ resume ตรวจพบ | EXPIRED, result=null |
