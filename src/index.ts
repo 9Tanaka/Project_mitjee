@@ -18,3 +18,4 @@ export { aiCharacterResponseSchema, ProviderRefusal } from "./dialogue/contracts
 export type * from "./dialogue/contracts.js";
 export { smsPhishingDialogueFixture } from "./fixtures/sms-phishing-dialogue.js";
 export { smsPhishingDecisionRulesFixture } from "./fixtures/sms-phishing-decision-rules.js";
+export { smsPhishingFeedbackFixture } from "./fixtures/sms-phishing-feedback.js";

@@ -117,7 +117,7 @@ describe("HTTP Route Handler integration", () => {
     expect(replies.map(r => r.status).sort()).toEqual([200, 201]);
     const [first, second] = await Promise.all(replies.map(async r => mutationDto.parse((await r.json()).data)));
     expect(first!.session.sessionId).toBe(second!.session.sessionId);
-    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(3);
+    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(4);
     expect(first!.session.revision).toBe(0);
     const other = await h.begin("user-b", input.startId); expect(other.sessionId).not.toBe(first!.session.sessionId);
   });
@@ -146,7 +146,12 @@ describe("HTTP Route Handler integration", () => {
     const r = resultDto.parse((await (await h.request("result", s.sessionId)).json()).data);
     expect(r.evaluationMode).toBe("DECISION_RULES_V1");
     expect(r.outcome).toBe("PASSED");
-    expect(r.decisionSummary).toEqual({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(r.decisionSummary).toMatchObject({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(r.decisionSummary?.checkpoints).toHaveLength(5);
+    expect(r.decisionSummary?.checkpoints?.[0]?.ruleRef).toMatch(/^R-[a-f0-9]{16}$/);
+    expect(JSON.stringify(r)).not.toContain('"ruleId"');
+    expect(JSON.stringify(r)).not.toContain('"checkpointId"');
+    expect(JSON.stringify(r)).not.toContain("d1:trust-display-name");
     expect([r.D, r.W, r.S, r.trainingScore]).toEqual([null, null, null, null]); assertPublic(r);
     const raw = await h.raw(s); expect(raw.opportunities.some(o => o.definitionId === "w-extra")).toBe(false);
     expect(raw.opportunities.find(o => o.definitionId === "w1")!.incorrectEvidenceIds).toEqual([]);

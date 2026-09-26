@@ -180,11 +180,13 @@ it("result renders server outcome/nullable scores without deriving pass or weake
 it("decision result shows path scope and no legacy score", async () => {
   fetcher.mockResolvedValue(reply({ sessionId: "public-session", revision: 1, D: null, W: null, S: null,
     trainingScore: null, outcome: "PASSED", weakestSkills: [], evaluationMode: "DECISION_RULES_V1",
-    decisionSummary: { encountered: 0, safe: 0, review: 0, unassessed: 0 },
+    decisionSummary: { encountered: 1, safe: 1, review: 0, unassessed: 0, critical: 0, checkpoints: [{ ruleRef: "R-0123456789abcdef", label: "ตรวจที่มา", assessment: "SAFE", explanation: "ตรวจสอบผ่านช่องทางอื่น" }] },
     recommendation: { recommendationType: "PATH_REFLECTION", recommendationKey: "encountered-path", reason: "ลองฝึกเส้นทางอื่น" } }));
   render(<Result sessionId="public-session" />); await screen.findByText("ผ่านการฝึก");
   expect(document.body.textContent).toContain("คุณผ่านเส้นทางที่พบในรอบนี้");
   expect(document.body.textContent).toContain("ไม่ได้หมายถึงเชี่ยวชาญทุกประเภท");
+  expect(document.body.textContent).toContain("ตรวจสอบผ่านช่องทางอื่น");
+  expect(document.body.textContent).toContain("R-0123456789abcdef");
   expect(document.body.textContent).not.toContain("คะแนนรวม");
 });
 it("unknown/missing session gives safe error instead of hidden fields", async () => {

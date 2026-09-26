@@ -48,7 +48,10 @@ export const resultDto = z.strictObject({
   outcome: z.enum(["PASSED", "NOT_PASSED", "CRITICAL_FAILURE", "NEEDS_PRACTICE", "UNASSESSED"]),
   weakestSkills: z.array(z.enum(["D", "W", "S"])),
   evaluationMode: z.enum(["LEGACY_WEIGHTED_V1", "DECISION_RULES_V1"]).optional(),
-  decisionSummary: z.strictObject({ encountered: z.number().int().nonnegative(), safe: z.number().int().nonnegative(), review: z.number().int().nonnegative(), unassessed: z.number().int().nonnegative() }).nullable().optional(),
+  decisionSummary: z.strictObject({ encountered: z.number().int().nonnegative(), safe: z.number().int().nonnegative(), review: z.number().int().nonnegative(), unassessed: z.number().int().nonnegative(), critical: z.number().int().nonnegative().optional(),
+    checkpoints: z.array(z.strictObject({ ruleRef: z.string().regex(/^R-[a-f0-9]{16}$/), label: z.string().min(1),
+      assessment: z.enum(["SAFE", "REVIEW", "UNASSESSED", "CRITICAL"]), explanation: z.string().min(1) })).optional(),
+  }).nullable().optional(),
   recommendation: z.strictObject({
     recommendationType: z.enum(["DECISION_PRACTICE", "WARNING_SIGN_LESSON", "WARNING_SIGN_QUIZ", "SAFE_ACTION_CONTENT", "CRITICAL_FAILURE_REVIEW", "PATH_REFLECTION"]),
     recommendationKey: z.string(), reason: z.string(),

@@ -5,11 +5,12 @@ import { validateTemplate } from "../src/domain/template-validator.js";
 import type { ActionInput } from "../src/domain/training-action.js";
 import { smsPhishingDialogueFixture } from "../src/fixtures/sms-phishing-dialogue.js";
 import { smsPhishingDecisionRulesFixture } from "../src/fixtures/sms-phishing-decision-rules.js";
+import { smsPhishingFeedbackFixture } from "../src/fixtures/sms-phishing-feedback.js";
 
 async function harness() {
   const repository = new InMemoryTrainingRepository();
-  const core = await TrainingCore.create([smsPhishingDialogueFixture, smsPhishingDecisionRulesFixture], repository, () => 1000);
-  await core.start("new", "learner", smsPhishingDecisionRulesFixture.id, 3);
+  const core = await TrainingCore.create([smsPhishingDialogueFixture, smsPhishingDecisionRulesFixture, smsPhishingFeedbackFixture], repository, () => 1000);
+  await core.start("new", "learner", smsPhishingFeedbackFixture.id, 4);
   let sequence = 0;
   const current = () => core.resume("new", "learner");
   const act = async (action: ActionInput) => core.submit({ sessionId: "new", ownerId: "learner",
@@ -38,7 +39,7 @@ describe("decision rules v1", () => {
     expect(session.status).toBe("COMPLETED");
     expect(session.result?.outcome).toBe("PASSED");
     expect(session.result?.evaluationMode).toBe("DECISION_RULES_V1");
-    expect(session.result?.decisionSummary).toEqual({ encountered: 0, safe: 0, review: 0, unassessed: 0 });
+    expect(session.result?.decisionSummary).toEqual({ encountered: 0, safe: 0, review: 0, unassessed: 0, critical: 0, checkpoints: [] });
     expect(session.result?.trainingScore).toBeNull();
     expect(session.events).toEqual([]);
   });
@@ -47,7 +48,11 @@ describe("decision rules v1", () => {
     const h = await harness(); await h.toRequest();
     const session = await h.finish();
     expect(session.result?.outcome).toBe("PASSED");
-    expect(session.result?.decisionSummary).toEqual({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(session.result?.decisionSummary).toMatchObject({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(session.result?.decisionSummary?.checkpoints?.map(c => c.ruleId)).toEqual([
+      "d1:verify", "w1:finalize", "d2:refuse", "d3:official-channel", "s1:verify-end-report",
+    ]);
+    expect(session.result?.decisionSummary?.checkpoints?.[0]?.explanation).toContain("ช่องทางอื่น");
     expect(session.opportunities.some(o => o.definitionId === "w-extra")).toBe(false);
   });
 
@@ -66,7 +71,10 @@ describe("decision rules v1", () => {
     await h.progress("continue-link");
     const session = await h.finish();
     expect(session.result?.outcome).toBe("UNASSESSED");
-    expect(session.result?.decisionSummary).toEqual({ encountered: 6, safe: 5, review: 0, unassessed: 1 });
+    expect(session.result?.decisionSummary).toMatchObject({ encountered: 6, safe: 5, review: 0, unassessed: 1 });
+    expect(session.result?.decisionSummary?.checkpoints?.find(c => c.checkpointId === "w-extra")).toMatchObject({
+      ruleId: "w-extra:unanswered", assessment: "UNASSESSED",
+    });
   });
 
   it("validated critical action fails immediately even with incomplete checkpoints", async () => {
@@ -75,6 +83,7 @@ describe("decision rules v1", () => {
     expect(session.status).toBe("FAILED");
     expect(session.result?.outcome).toBe("CRITICAL_FAILURE");
     expect(session.result?.criticalEventIds).toHaveLength(1);
+    expect(session.result?.decisionSummary?.checkpoints?.at(-1)).toMatchObject({ ruleId: "confirm-simulated-otp", assessment: "CRITICAL" });
     expect(session.result?.trainingScore).toBeNull();
   });
 
@@ -94,11 +103,26 @@ describe("decision rules v1", () => {
   });
 
   it("publication rejects missing assessment metadata in the new version", () => {
-    const template = copy(smsPhishingDecisionRulesFixture);
+    const template = copy(smsPhishingFeedbackFixture);
     const d1 = template.opportunities.find(o => o.id === "d1");
     if (!d1 || d1.skill !== "D") throw new Error("missing fixture checkpoint");
     delete d1.choices[0]!.assessment;
     expect(() => validateTemplate(template)).toThrow("Missing decision assessment");
+  });
+
+  it("publication rejects missing public explanations when feedback is enabled", () => {
+    const template = copy(smsPhishingFeedbackFixture);
+    delete template.opportunities[0]!.publicCheckpointLabel;
+    expect(() => validateTemplate(template)).toThrow("Missing public checkpoint feedback");
+  });
+
+  it("version 3 remains playable and retains its original count-only result", async () => {
+    const h = await harness();
+    await h.core.start("prior", "learner", smsPhishingDecisionRulesFixture.id, 3);
+    const session = (await h.core.submit({ sessionId: "prior", ownerId: "learner", actionId: "prior-stop",
+      expectedRevision: 0, action: { kind: "PROGRESS", transitionId: "end-contact-early" } })).session;
+    expect(session.result?.decisionSummary).toEqual({ encountered: 0, safe: 0, review: 0, unassessed: 0 });
+    expect(session.result?.outcome).toBe("PASSED");
   });
 
   it("legacy version remains immutable and retains numeric result semantics", async () => {

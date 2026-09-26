@@ -9,6 +9,13 @@ export type SessionStatus = "ACTIVE" | "COMPLETED" | "FAILED" | "ABANDONED" | "E
 export type Outcome = "PASSED" | "NOT_PASSED" | "CRITICAL_FAILURE" | "NEEDS_PRACTICE" | "UNASSESSED";
 export type DecisionAssessment = "SAFE" | "REVIEW" | "UNASSESSED";
 export type EvaluationMode = "LEGACY_WEIGHTED_V1" | "DECISION_RULES_V1";
+export interface DecisionFeedback {
+  checkpointId: string;
+  ruleId: string;
+  label: string;
+  assessment: DecisionAssessment | "CRITICAL";
+  explanation: string;
+}
 export type ValidationStatus = "ACCEPTED" | "NO_EVENT" | "CLARIFICATION_REQUIRED" | "REJECTED";
 
 // AI interpretation has no authority. No score or state-change command belongs here.
@@ -84,7 +91,7 @@ export interface TrainingResult {
   recommendation: Recommendation;
   calculatedAt: number;
   evaluationMode?: EvaluationMode;
-  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number } | null;
+  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number; critical?: number; checkpoints?: DecisionFeedback[] } | null;
 }
 
 export interface TrainingSession {

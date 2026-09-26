@@ -4,10 +4,10 @@ import type { TrainingSession } from "../domain/types.js";
 import type { ActionInput } from "../domain/training-action.js";
 import type { PublicActionDefinition, PublicActionPayload, PublicScenario } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { smsPhishingDecisionRulesFixture } from "../fixtures/sms-phishing-decision-rules.js";
+import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js";
 
 // Presentation-only catalog for this playable version. No scores, events or guards here.
-export const playableTemplate = smsPhishingDecisionRulesFixture;
+export const playableTemplate = smsPhishingFeedbackFixture;
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -32,7 +32,7 @@ export function publicScenario(t: ScenarioTemplate): PublicScenario {
     learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" };
 }
 export function actionBindings(t: ScenarioTemplate): Binding[] {
-  if (t.id !== playableTemplate.id || ![2, 3].includes(t.version) || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
+  if (t.id !== playableTemplate.id || ![2, 3, 4].includes(t.version) || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
   const result: Binding[] = [];
   for (const [internalId, publicId] of [["d1", "a01"], ["w1", "a03"], ["d2", "a05"], ["d3", "a07"], ["s1", "a08"], ["w-extra", "a11"]]) {
     const o = t.opportunities.find(o => o.id === internalId)!;

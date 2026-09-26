@@ -5,10 +5,11 @@ import { ScenarioDialogueOrchestrator } from "../dialogue/orchestrator.js";
 import { playableTemplate } from "./catalog.js";
 import { smsPhishingFixture } from "../fixtures/sms-phishing.js";
 import { smsPhishingDialogueFixture } from "../fixtures/sms-phishing-dialogue.js";
+import { smsPhishingDecisionRulesFixture } from "../fixtures/sms-phishing-decision-rules.js";
 import { TrainingApplicationService } from "./training-service.js";
 
 export async function createApplication(repository: TrainingRepository,
   provider: ScenarioModelProvider, now: () => number = Date.now) {
-  const core = await TrainingCore.create([smsPhishingFixture, smsPhishingDialogueFixture, playableTemplate], repository, now);
+  const core = await TrainingCore.create([smsPhishingFixture, smsPhishingDialogueFixture, smsPhishingDecisionRulesFixture, playableTemplate], repository, now);
   return new TrainingApplicationService(core, new ScenarioDialogueOrchestrator(core, provider));
 }

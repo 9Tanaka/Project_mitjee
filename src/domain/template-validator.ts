@@ -18,6 +18,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   requireRule(parsed.success, parsed.success ? "" : parsed.error.message);
   const t = parsed.data;
   const decisionRules = t.evaluationMode === "DECISION_RULES_V1";
+  requireRule(!t.publicFeedbackEnabled || decisionRules, "Public feedback requires decision rules");
   unique(t.states.map(s => s.id), "state");
   unique(t.opportunities.map(o => o.id), "opportunity");
   unique(t.criticalFailureRules.map(r => r.id), "critical rule");
@@ -30,9 +31,11 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   requireRule(states.get("end_scenario")!.transitions.length === 0, "Terminal state has outgoing transitions");
 
   for (const o of t.opportunities) {
+    if (t.publicFeedbackEnabled) requireRule(!!o.publicCheckpointLabel && !!o.unassessedFeedback, `Missing public checkpoint feedback: ${o.id}`);
     const state = states.get(o.state);
     requireRule(state && o.state !== "end_scenario", `Invalid opportunity state: ${o.id}`);
     if (o.skill === "W") {
+      if (t.publicFeedbackEnabled) requireRule(!!o.safeFeedback && !!o.reviewFeedback, `Missing warning feedback: ${o.id}`);
       if (decisionRules) requireRule(o.assessmentRule === "ALL_WARNINGS_NO_FALSE_POSITIVES", `Missing warning assessment rule: ${o.id}`);
       unique(o.evidence.map(e => e.id), `evidence in ${o.id}`);
       const warnings = o.evidence.flatMap(e => e.warningSignId === null ? [] : [e.warningSignId]);
@@ -48,6 +51,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
         requireRule(options.some(option => option.score === o.maxScore), `Maximum not attainable: ${o.id}`);
       }
       for (const option of options) {
+        if (t.publicFeedbackEnabled) requireRule(!!option.publicFeedback, `Missing option feedback: ${o.id}:${option.id}`);
         if (decisionRules) requireRule(option.assessment !== undefined, `Missing decision assessment: ${o.id}:${option.id}`);
         if (!decisionRules) requireRule(option.score! <= o.maxScore!, `Score above maximum: ${o.id}`);
         unique(option.eventCodes, `option event in ${o.id}`);
@@ -66,6 +70,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   }
 
   for (const rule of t.criticalFailureRules) {
+    if (t.publicFeedbackEnabled) requireRule(!!rule.publicLabel && !!rule.publicFeedback, `Missing critical feedback: ${rule.id}`);
     requireRule(states.get(rule.state)?.allowedEventCodes.includes(rule.eventCode), `Critical event not allowed: ${rule.id}`);
     requireRule(opportunities.get(rule.opportunityId)?.state === rule.state, `Critical action requires a current-state opportunity: ${rule.id}`);
   }

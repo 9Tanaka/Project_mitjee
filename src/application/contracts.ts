@@ -1,4 +1,4 @@
-import type { EvaluationMode, Outcome, Recommendation, SessionStatus, Skill } from "../domain/types.js";
+import type { DecisionFeedback, EvaluationMode, Outcome, Recommendation, SessionStatus, Skill } from "../domain/types.js";
 
 /** Identity already verified by an outer adapter. Never a client-supplied owner ID. */
 export interface AuthenticatedPrincipal { id: string }
@@ -32,7 +32,8 @@ export interface PublicTrainingResult {
   D: number | null; W: number | null; S: number | null; trainingScore: number | null;
   outcome: Outcome; weakestSkills: Skill[]; recommendation: Recommendation;
   evaluationMode?: EvaluationMode;
-  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number } | null;
+  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number; critical?: number;
+    checkpoints?: (Omit<DecisionFeedback, "ruleId" | "checkpointId"> & { ruleRef: string })[] } | null;
 }
 export interface TrainingMutation { session: PublicTrainingSession; duplicate: boolean }
 export interface TrainingMessageReply extends TrainingMutation {
