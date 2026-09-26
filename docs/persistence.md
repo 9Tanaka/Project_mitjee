@@ -1,6 +1,22 @@
 # Prisma / MySQL Persistence
 
-The additive `202609250001_decision_rules` migration adds checkpoint assessment and result evaluation-mode/decision-summary columns. Existing `TrainingResult` rows receive the database default `LEGACY_WEIGHTED_V1`; no historical result is recalculated. Versions 3 and 4 keep legacy numeric columns for storage compatibility with zero opportunity values and null aggregate score. Version 4 stores selected-path feedback inside the existing decision-summary JSON column, so no rewrite of version 3 rows is needed. See [Decision Evaluation](decision-evaluation.md). Real migration deployment still requires a dedicated MySQL environment and has not been verified in this branch.
+The additive `202609250001_decision_rules` migration adds checkpoint assessment and result evaluation-mode/decision-summary columns. Existing `TrainingResult` rows receive the database default `LEGACY_WEIGHTED_V1`; no historical result is recalculated. Categorical templates (SMS v3/v4 and eight other scenarios at v1) keep legacy numeric columns for storage compatibility with zero opportunity values and null aggregate score. Public feedback lives in the decision-summary JSON column. See [Decision Evaluation](decision-evaluation.md). Real migration deployment still requires a dedicated MySQL environment and has not been verified in this branch.
+
+### Assessment round-trip recovery — 26 September 2026
+
+The adapter previously discarded checkpoint assessments for every template version below 3.
+Version numbers are scenario-local and do not identify evaluation semantics: all eight additional
+categorical templates are version 1. Reads now include the pinned immutable template configuration,
+use its explicit evaluationMode to preserve unanswered assessment:null, and always preserve a
+non-null persisted assessment. Legacy null assessments remain omitted to retain the original
+aggregate shape. No historical rows, scoring policy, schema or migration files are rewritten.
+
+Decoder regression tests exercise categorical versions 1, 2, 3, 4 and 30 with SAFE, REVIEW,
+UNASSESSED and unanswered null; legacy versions 1, 2 and 30 keep their old shape. These use a
+fake read client and are not MySQL verification. Ten conditional real-MySQL cases cover all eight
+additional scenarios plus SMS v3/v4, recreate a client after every explicit action, compare entire
+aggregates and require PASSED with review=0, unassessed=0 and trainingScore=null.
+Current external status: NOT RUN — MYSQL_TEST_DATABASE_URL unavailable.
 
 STATUS: IMPLEMENTED TECHNICAL DESIGN
 

@@ -8,6 +8,9 @@ import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { repositoryContract, repositoryHarness, safeActions } from "./repository-contract.js";
 import { smsPhishingDialogueFixture as fixture } from "../src/fixtures/sms-phishing-dialogue.js";
 import { smsPhishingDecisionRulesFixture } from "../src/fixtures/sms-phishing-decision-rules.js";
+import { smsPhishingFeedbackFixture } from "../src/fixtures/sms-phishing-feedback.js";
+import { additionalScamScenarios } from "../src/fixtures/scam-scenarios.js";
+import type { ActionInput } from "../src/domain/training-action.js";
 
 const url = process.env.MYSQL_TEST_DATABASE_URL;
 if (url && !/^mitjee_test(?:_[a-z0-9_]+)?$/.test(new URL(url).pathname.slice(1))) {
@@ -20,6 +23,47 @@ afterAll(async () => { await client?.$disconnect(); });
 
 describe.skipIf(!client)("Real MySQL / Prisma persistence (no DB mock)", () => {
   repositoryContract("Prisma repository port", () => new PrismaTrainingRepository(client!));
+
+  it.each([...additionalScamScenarios, smsPhishingDecisionRulesFixture, smsPhishingFeedbackFixture])(
+    "$id v$version: categorical assessments survive every write and fresh-client reload", async template => {
+      const id = randomUUID(), owner = "assessment-test-" + randomUUID();
+      let core = await TrainingCore.create([template], new PrismaTrainingRepository(client!), () => 1000);
+      await core.start(id, owner, template.id, template.version, template.variant);
+      const sms = template.category === "SMS_PHISHING";
+      const actions: ActionInput[] = [
+        { kind: "DECISION", opportunityId: "d1", choiceId: "verify" },
+        { kind: "PROGRESS", transitionId: sms ? "review-sms" : "read-claim" },
+        { kind: "WARNING_FINALIZE", opportunityId: "w1", selectedEvidenceIds: sms ? ["wrong-domain", "urgency"] : ["unverified-claim", "pressure"] },
+        { kind: "PROGRESS", transitionId: sms ? "inspect-link" : "consider-request" },
+        { kind: "DECISION", opportunityId: "d2", choiceId: "refuse" },
+        { kind: "PROGRESS", transitionId: sms ? "verify-and-close" : "choose-response" },
+        ...(sms ? [{ kind: "DECISION" as const, opportunityId: "d3", choiceId: "official-channel" }] : []),
+        { kind: "SAFE_ACTION", opportunityId: "s1", actionId: "verify-end-report" },
+        { kind: "PROGRESS", transitionId: "resolve" },
+      ];
+      let freshClient: ReturnType<typeof createPrismaClient> | null = null;
+      try {
+        for (const [index, action] of actions.entries()) {
+          const before = await core.resume(id, owner);
+          const committed = await core.submit({ sessionId: id, ownerId: owner, expectedRevision: before.revision,
+            actionId: "step-" + index, action });
+          await freshClient?.$disconnect();
+          freshClient = createPrismaClient(url!, connectionOptions);
+          core = await TrainingCore.create([], new PrismaTrainingRepository(freshClient), () => 1000);
+          const reloaded = await core.resume(id, owner);
+          expect(reloaded).toEqual(committed.session);
+          for (const opportunity of reloaded.opportunities) {
+            expect(opportunity).toHaveProperty("assessment", opportunity.finalizedAt === null ? null : "SAFE");
+          }
+        }
+        const result = (await core.resume(id, owner)).result;
+        expect((await core.resume(id, owner)).status).toBe("COMPLETED");
+        expect(result).toMatchObject({ outcome: "PASSED", evaluationMode: "DECISION_RULES_V1", trainingScore: null,
+          decisionSummary: { review: 0, unassessed: 0, safe: sms ? 5 : 4 } });
+        expect((await client!.trainingResult.findUniqueOrThrow({ where: { sessionId: id } })).evaluationMode).toBe("DECISION_RULES_V1");
+      } finally { await freshClient?.$disconnect(); }
+    }, 30_000,
+  );
 
   it("persists version 3 categorical result and resumes it without rewriting legacy history", async () => {
     const id = randomUUID();

@@ -9,6 +9,7 @@ import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-
 import { copy } from "../domain/copy.js";
 
 const include = {
+  template: { select: { configuration: true } },
   actions: { orderBy: { revision: "asc" } },
   opportunities: { orderBy: { position: "asc" } },
   events: { orderBy: { position: "asc" } },
@@ -27,6 +28,10 @@ function header(s: TrainingSession) {
     startedAt: new Date(s.startedAt), lastActivityAt: new Date(s.lastActivityAt), endedAt: date(s.endedAt) };
 }
 function decode(row: AggregateRow): TrainingSession {
+  // Versions are local to each scenario, not evaluation-mode identifiers. Read the
+  // pinned immutable configuration so even an unanswered categorical checkpoint
+  // retains assessment:null, while legacy snapshots keep their original shape.
+  const decisionRules = validateTemplate(row.template.configuration).evaluationMode === "DECISION_RULES_V1";
   // Enum/JSON casts are confined to the persistence boundary. Only Core writes these columns.
   return {
     id: row.id, ownerId: row.ownerId, templateId: row.templateId, templateVersion: row.templateVersion,
@@ -38,7 +43,7 @@ function decode(row: AggregateRow): TrainingSession {
       eligibleMaximum: o.eligibleMaximum, earned: o.earned, openedAt: o.openedAt.getTime(),
       finalizedAt: o.finalizedAt?.getTime() ?? null, finalizedByActionId: o.finalizedByActionId,
       correctWarningSignIds: o.correctWarningSignIds, incorrectEvidenceIds: o.incorrectEvidenceIds,
-      ...(row.templateVersion >= 3 ? { assessment: o.assessment } : {}) })),
+      ...(o.assessment !== null || decisionRules ? { assessment: o.assessment } : {}) })),
     events: row.events.map(e => ({ id: e.id, sessionId: e.sessionId, actionId: e.actionId, opportunityId: e.opportunityId,
       code: e.code, state: e.state, ruleId: e.ruleId, authority: e.authority, critical: e.critical, at: e.at.getTime() })),
     messages: row.messages.map(m => ({ id: m.id, turnId: m.turnId, role: m.role, text: m.text, state: m.state, at: m.at.getTime() })),
