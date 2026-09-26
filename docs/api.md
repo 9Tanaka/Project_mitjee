@@ -90,7 +90,7 @@ POST ที่ส่ง Origin ต่างจาก request origin ถูก re
 ## Public scenario and action projection
 
 Scenario มี id/category/title/description/learningObjectives/communicationMode=TEXT เท่านั้น
-Backend กำหนด SMS / Phishing version 4, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
+Backend เลือก template ที่เผยแพร่แล้วจาก catalog เก้าประเภท; SMS / Phishing ใช้ version 4 และอีกแปดประเภทใช้ version 1; client เลือก version/variant เองไม่ได้
 Catalog เพิ่ม label/description สำหรับ presentation เพราะ published Template เดิมไม่มีข้อความตัวเลือก D/S
 ไม่เพิ่ม score, Event, State guard หรือกฎใหม่ใน catalog
 

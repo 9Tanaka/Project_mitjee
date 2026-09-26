@@ -16,6 +16,8 @@ Dependencies: decision semantics and versioning precede more scenarios. Content 
 
 Model selection is a separate decision. Proposal v6 names GPT-5.4 mini and a possible backup; prior implementation approval names GPT-5.6 Luna; the later chat suggested Qwen3-4B-Instruct-2507 for future consideration. No model change is made in these phases. Live OpenAI checks remain paused after `429 credit_balance_exhausted` until the user confirms credits are ready.
 
+Phase 1 is committed with a version 4 feedback follow-up. Phase 2 now provides all nine text scenarios; see [Scenario Catalog](scenario-catalog.md). The normal-call variant and voice remain in Phase 5. The original table above remains the baseline gap analysis rather than a claim that later phases are complete.
+
 ## Phase 1 review boundary
 
 Version 3 adds an explicit safe exit at first contact and rule metadata on validated choices. The database migration only adds columns; old results are not rewritten. Legacy v1/v2 templates are still published for resume and replay. The new public result identifies its evaluation mode and summarizes the encountered checkpoints, while old result screens keep their numeric wording. The MySQL tests are conditional on a dedicated test database and must be reported as skipped when it is absent.

@@ -58,7 +58,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 | Assumption / target | ค่า | Status |
 |---|---|---|
-| Call Center variants | NORMAL_CALL / SCAM_CALL; seeded selection 50/50 | Variant schema implemented; selection และ playable fixture Planned |
+| Call Center variants | NORMAL_CALL / SCAM_CALL; seeded selection 50/50 | SCAM_CALL text fixture implemented; NORMAL_CALL, selection and voice Planned |
 | Non-AI backend response target | <1 วินาที | Target เท่านั้น ยังไม่มี benchmark รับรอง |
 | AI interaction target | <10 วินาทีใน test environment | Target เท่านั้น; Mock ไม่พิสูจน์ live latency |
 | Concurrent demo | 20 active sessions | Functional isolation test มีแล้ว; ไม่ใช่ production/load benchmark |

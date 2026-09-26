@@ -1,6 +1,6 @@
 # Frontend Foundation + Authentication UI + Playable Training Flow
 
-STATUS: IMPLEMENTED SCENARIO SIMULATION UI — SMS / Phishing only. Backend remains authoritative.
+STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine text scenarios. Backend remains authoritative.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.
 
 ## Architecture and routes
@@ -170,12 +170,12 @@ overflow in captured views. Keyboard skip-link focus/activation was tested in br
 All/production npm audits reported 0 known vulnerabilities on this date.
 No migration/reset/schema modification was required; test data remains synthetic.
 
-Demo Credentials implemented. Playable scenario: SMS / Phishing only.
+Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Catalog](scenario-catalog.md).
 OpenAI text adapter is implemented; real OpenAI network verification NOT RUN.
-Voice/Call Center, Profile, remaining 8 scenario fixtures, Pre/Post-test,
+Voice Call Center, Profile, Pre/Post-test,
 Review Quiz, Investigation Game, Knowledge Base and Dashboard: NOT IMPLEMENTED.
 No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.
 Local sanitizer is not production-grade PII detection; never enter real sensitive data.
-No backend security refactor was made. Stop for review before the next phase.
+No backend security refactor was made in the original frontend phase; current phase status is in [Implementation Roadmap](implementation-roadmap.md).

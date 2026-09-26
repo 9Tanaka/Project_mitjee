@@ -4,15 +4,16 @@ import type { ScenarioDialogueOrchestrator } from "../dialogue/orchestrator.js";
 import { DomainError } from "../domain/types.js";
 import type { AuthenticatedPrincipal, SubmitActionInput, SendMessageInput, QuitTrainingInput, StartTrainingInput } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { actionBindings, playableTemplate, publicScenario } from "./catalog.js";
+import { actionBindings, playableTemplates, publicScenario } from "./catalog.js";
 import { projectResult, projectSession } from "./projections.js";
 
 export class TrainingApplicationService {
   constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator) {}
-  listScenarios() { return [publicScenario(playableTemplate)]; }
+  listScenarios() { return playableTemplates.map(publicScenario); }
   scenario(id: string) {
-    if (id !== playableTemplate.id) throw new ApplicationError("SCENARIO_NOT_FOUND");
-    return publicScenario(playableTemplate);
+    const template = playableTemplates.find(t => t.id === id);
+    if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
+    return publicScenario(template);
   }
   private async snapshot(id: string, user: AuthenticatedPrincipal) {
     const session = await this.core.resume(id, user.id);
@@ -21,10 +22,11 @@ export class TrainingApplicationService {
   }
   async start(scenarioId: string, user: AuthenticatedPrincipal, input: StartTrainingInput) {
     this.scenario(scenarioId);
+    const template = playableTemplates.find(t => t.id === scenarioId)!;
     // Backend identity, version and variant. Repeated startId is stable for this owner/scenario.
     const id = createHash("sha256").update(JSON.stringify([user.id, scenarioId, input.startId])).digest("hex");
     let duplicate = false;
-    try { await this.core.start(id, user.id, playableTemplate.id, playableTemplate.version, playableTemplate.variant); }
+    try { await this.core.start(id, user.id, template.id, template.version, template.variant); }
     catch (error) {
       if (!(error instanceof DomainError) || error.code !== "SESSION_ALREADY_EXISTS") throw error;
       duplicate = true;

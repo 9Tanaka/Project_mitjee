@@ -19,6 +19,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   const t = parsed.data;
   const decisionRules = t.evaluationMode === "DECISION_RULES_V1";
   requireRule(!t.publicFeedbackEnabled || decisionRules, "Public feedback requires decision rules");
+  requireRule(!t.publicActionBindings || (decisionRules && t.publicFeedbackEnabled && !!t.description), "Public bindings require described decision rules");
   unique(t.states.map(s => s.id), "state");
   unique(t.opportunities.map(o => o.id), "opportunity");
   unique(t.criticalFailureRules.map(r => r.id), "critical rule");
@@ -52,6 +53,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
       }
       for (const option of options) {
         if (t.publicFeedbackEnabled) requireRule(!!option.publicFeedback, `Missing option feedback: ${o.id}:${option.id}`);
+        if (t.publicActionBindings) requireRule(!!option.publicLabel, `Missing public option label: ${o.id}:${option.id}`);
         if (decisionRules) requireRule(option.assessment !== undefined, `Missing decision assessment: ${o.id}:${option.id}`);
         if (!decisionRules) requireRule(option.score! <= o.maxScore!, `Score above maximum: ${o.id}`);
         unique(option.eventCodes, `option event in ${o.id}`);
@@ -77,6 +79,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   for (const s of t.states) {
     unique(s.allowedEventCodes, `allowed event in ${s.id}`);
     for (const tr of s.transitions) {
+      if (t.publicActionBindings) requireRule(!!tr.publicLabel, `Missing public transition label: ${tr.id}`);
       requireRule(!tr.earlySafeResolution || (decisionRules && tr.safeResolution && tr.requiresFinalized.length === 0 && tr.requiresEvents.length === 0), `Invalid early safe resolution: ${tr.id}`);
       requireRule(states.has(tr.target), `Unknown target ${tr.target}`);
       requireRule(tr.safeResolution === (tr.target === "end_scenario"), "Only safe-resolution transitions may target end_scenario");

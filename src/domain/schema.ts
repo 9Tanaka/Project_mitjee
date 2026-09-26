@@ -46,6 +46,7 @@ export const scenarioTemplateSchema = z.strictObject({
   id, version: z.number().int().positive(),
   evaluationMode: z.literal("DECISION_RULES_V1").optional(),
   publicFeedbackEnabled: z.literal(true).optional(),
+  publicActionBindings: z.literal(true).optional(),
   category: z.enum(CATEGORIES),
   variant: z.enum(["DEFAULT", "NORMAL_CALL", "SCAM_CALL"]),
   title: z.string().min(1), description: z.string().min(1).optional(), learningObjectives: z.array(z.string().min(1)).min(1),

@@ -121,6 +121,23 @@ describe("HTTP Route Handler integration", () => {
     expect(first!.session.revision).toBe(0);
     const other = await h.begin("user-b", input.startId); expect(other.sessionId).not.toBe(first!.session.sessionId);
   });
+  it("lists nine playable categories and starts another scenario through the same authenticated API", async () => {
+    const h = await harness();
+    const catalog = (await (await h.request("scenarios")).json()).data as { id: string; category: string }[];
+    expect(catalog).toHaveLength(9);
+    expect(new Set(catalog.map(item => item.category)).size).toBe(9);
+    const response = await h.request("start", "investment-scam", { startId: randomUUID(), expectedRevision: 0 });
+    expect(response.status).toBe(201);
+    const started = mutationDto.parse((await response.json()).data).session;
+    expect(started.scenario.id).toBe("investment-scam");
+    const stop = started.availableActions.find(action => action.label === "ยุติการติดต่ออย่างปลอดภัย");
+    expect(stop).toBeDefined();
+    const completed = await h.step(started, stop!.id);
+    expect(completed.status).toBe("COMPLETED");
+    const result = resultDto.parse((await (await h.request("result", completed.sessionId)).json()).data);
+    expect(result.outcome).toBe("PASSED");
+    expect(result.decisionSummary?.encountered).toBe(0);
+  });
   it.each(["ownerId", "score", "targetState", "version", "variant"])("rejects spoofed start field %s", async field => {
     const h = await harness();
     expect((await h.request("start", "sms-phishing-demo", { startId: randomUUID(), expectedRevision: 0, [field]: "injected" })).status).toBe(400);

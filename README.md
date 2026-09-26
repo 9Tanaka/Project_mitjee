@@ -3,7 +3,7 @@
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับ SMS / Phishing
+โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ข้อความ 9 ประเภท
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
 ผลเก่าของ template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่
 สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
@@ -18,19 +18,20 @@ Training API รับ UUID จาก verified session เท่านั้น;
 |---|---|
 | Core Domain | Implemented |
 | Scenario State Machine | Implemented |
-| Rule-Based Decision Evaluation | Implemented for new SMS / Phishing sessions; historical weighted results preserved |
+| Rule-Based Decision Evaluation | Implemented for new sessions in all nine text scenarios; historical weighted results preserved |
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
 | Prisma/MySQL Persistence | Implemented |
 | HTTP API / Public DTO | Implemented — 8 endpoints |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
-| Frontend UI | Implemented — registration/login, catalog, playable SMS / Phishing, result/logout |
+| Frontend UI | Implemented — registration/login, nine playable text scenarios, result/logout |
 | Live AI Provider | Implemented — OpenAI Responses API adapter; explicit Mock/OpenAI selection; **network verification NOT RUN** |
-| Voice / playable Call Center | Planned / Not Implemented |
+| Call Center text | Implemented — scam-call text variant; normal-call selection and voice pending |
+| Voice Call Center | Planned / Not Implemented |
 | WebSocket | Planned / Not Implemented |
 
-ประเภท Call Center และ variant มีใน schema แต่ยังไม่มี fixture/ระบบเสียง/ตัวเลือกแบบ seeded ที่เล่นได้
+Call Center เล่นผ่านข้อความได้แล้ว แต่ยังไม่มีระบบเสียงจริงหรือการสุ่มสายปกติ/สายหลอกลวง
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
 
 ## Architecture summary
@@ -144,6 +145,7 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 
 - [Architecture และแหล่งอ้างอิง](docs/architecture.md)
 - [Scenario Engine และ domain model](docs/scenario-engine.md)
+- [สถานการณ์ข้อความทั้งเก้าประเภทและขอบเขต Call Center](docs/scenario-catalog.md)
 - [State Machine และ lifecycle](docs/state-machine.md)
 - [Scoring และคำแนะนำ](docs/scoring.md)
 - [Decision Evaluation รุ่นใหม่และความเข้ากันได้กับผลเก่า](docs/decision-evaluation.md)
@@ -161,5 +163,5 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
 Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
-ยังไม่เริ่ม Profile, อีก 8 fixtures, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Voice หรือ WebSocket
+ยังไม่เริ่ม Profile, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Voice หรือ WebSocket
 งานที่ยังเหลือและลำดับดำเนินการอยู่ใน [Implementation gap and phases](docs/implementation-roadmap.md)

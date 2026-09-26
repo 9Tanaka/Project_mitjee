@@ -29,13 +29,15 @@ TrainingAction ≠ AICandidateEvent ≠ TrainingEvent ≠ TrainingResult
 `await TrainingCore.create(templates, repository, clock?)` ตรวจ Template ทั้งชุดก่อน publish ทีละ version
 การ publish ทั้งชุดไม่ใช่ batch transaction เดียว; แต่ละ version มี publication semantics ของ repository
 `start` โหลด id/version/variant ที่ลงทะเบียนแล้ว สร้าง ACTIVE Session revision 0 และเปิด opportunities ของ contact
-ทุก Safe Resolution path ต้องมี eligible D/W/S อย่างน้อยประเภทละหนึ่งรายการก่อนเปิดให้เล่น
+กฎ D/W/S ครบทุก Safe Resolution path ใช้เฉพาะ template รุ่นเก่าที่คิดคะแนน; รุ่นใหม่ใช้ Decision Checkpoint ที่พบจริงตาม [Decision Evaluation](decision-evaluation.md)
 Template validation ปฏิเสธ cycle, unreachable state, invalid mappings และ guard ที่อ้าง opportunity นอก path
 
-ทุก fixture ใช้ข้อมูลสมมติ `fictionalOnly: true`; ปัจจุบันมี SMS / Phishing:
+ทุก fixture ใช้ข้อมูลสมมติ `fictionalOnly: true`; ปัจจุบันมี [สถานการณ์ข้อความเก้าประเภท](scenario-catalog.md). SMS / Phishing คงรุ่นประวัติไว้:
 
 - [Version 1](../src/fixtures/sms-phishing.ts): Core-only configuration
 - [Version 2](../src/fixtures/sms-phishing-dialogue.ts): เพิ่ม characterRole โดยไม่แก้ Version 1
+- [Version 3](../src/fixtures/sms-phishing-decision-rules.ts): categorical evaluation
+- [Version 4](../src/fixtures/sms-phishing-feedback.ts): public feedback ของเส้นทางที่พบ
 
 Version 1 ใช้ Dialogue โดยตรงไม่ได้และจะได้ DIALOGUE_ROLE_NOT_CONFIGURED
 จำนวน 3 Decision Checkpoints เป็น Demo Assumption ของ fixture ไม่ใช่จำนวน fix สำหรับทุก Template
