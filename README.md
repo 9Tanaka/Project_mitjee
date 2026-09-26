@@ -6,7 +6,7 @@
 โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ข้อความ 9 ประเภท
 เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
-ผลเก่าของ template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่
+ผลเก่าของ SMS template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่; เลข version ไม่ใช้เลือกระบบประเมิน
 สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
@@ -22,16 +22,17 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | Rule-Based Decision Evaluation | Implemented for new sessions in all nine text scenarios; historical weighted results preserved |
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
-| Prisma/MySQL Persistence | Implemented |
+| Prisma/MySQL Persistence | Implemented but external verification pending — assessment recovery and Quiz snapshot fixes; dedicated test DB unavailable |
 | HTTP API / Public DTO | Implemented — 8 Training endpoints + 5 Quiz endpoints |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — registration/login, nine playable text scenarios, result/logout |
-| Live AI Provider | Implemented — OpenAI Responses API adapter; explicit Mock/OpenAI selection; **network verification NOT RUN** |
+| Live AI Provider | Implemented but external verification pending — approved gpt-5.6-luna; last live attempt FAILED with credit_balance_exhausted |
 | Call Center text | Implemented — scam-call text variant; normal-call selection and voice pending |
 | Voice Call Center | Planned / Not Implemented |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
 | WebSocket | Planned / Not Implemented |
+| Profile / Dashboard | Planned / Not Implemented |
 
 Call Center เล่นผ่านข้อความได้แล้ว แต่ยังไม่มีระบบเสียงจริงหรือการสุ่มสายปกติ/สายหลอกลวง
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
@@ -78,13 +79,19 @@ npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
-ผลล่าสุด 26 กันยายน 2026 — Quiz Pre-test/Post-test และ scenario decision rules:
+ผลก่อนรอบ recovery, 26 กันยายน 2026 — Quiz Pre-test/Post-test และ scenario decision rules:
 
 - Full tests: **454 passed, 34 skipped**, 488 รวม; ข้ามกรณีที่ต้องใช้ฐาน MySQL เพราะไม่มี `MYSQL_TEST_DATABASE_URL`
 - Prisma generate/validate, typecheck, production build และ client audit ผ่าน
 - Migration ของ Quiz เป็น additive; ยังไม่ได้ deploy ฐานจริง
 - Browser+MySQL E2E ใหม่ยัง **NOT RUN**; ไม่เรียก Live OpenAI
 - ขอบเขตโหมดอื่นของรอบนี้จำกัดที่ Pre-test/Post-test ตามคำขอล่าสุด ไม่รวม Review Quiz, บทเรียน 16 เรื่องหรือ Investigation Game
+
+ผลรอบ recovery และเงื่อนไขที่ยังติดค้างอยู่ใน [Current recovery verification](docs/recovery-verification.md)
+Full tests รอบ recovery: **475 passed, 48 skipped**, 523 รวม; skipped ไม่ใช่ PASS
+แก้ assessment หายหลัง Prisma resume โดยอิง evaluationMode ของ pinned template และค่าที่ persist จริง
+เพิ่ม repeatable-read snapshot สำหรับ Quiz และ E2E ของ investment-scam ที่พร้อมรันกับฐานจริง
+ฐานทดสอบยังไม่พร้อม: **NOT RUN — MYSQL_TEST_DATABASE_URL unavailable**; ไม่ deploy migration หรืออ้างว่า browser/MySQL ผ่าน
 
 ผลด้านล่างเป็นประวัติการตรวจรุ่นก่อนหน้า ไม่ใช่ผลการรันรอบนี้:
 
@@ -146,10 +153,13 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 ตั้ง `AI_PROVIDER=mock` อย่างชัดเจนเพื่อพัฒนาโดยไม่เรียก OpenAI; ไม่มี implicit Mock default อีกต่อไป
 หากใช้ `AI_PROVIDER=openai` ต้องมี `OPENAI_API_KEY` และ `OPENAI_MODEL` ใน private server environment
 Proposal v4 ระบุ `gpt-5.4-mini` และ final-test snapshot `gpt-5.4-mini-2026-03-17`;
-ไม่มีการเปลี่ยน model ให้เอง ไม่มี browser selector และไม่มี arbitrary proxy URL
+approved implementation decision ใช้ `gpt-5.6-luna` ตามคำอนุมัติล่าสุด โดยยังตั้ง `OPENAI_MODEL` ฝั่ง server ได้
+ดู [official Luna documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna); ไม่แก้ประวัติ Proposal
+ไม่มี browser selector และไม่มี arbitrary proxy URL
 OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โดย fake client ไม่เรียกเครือข่าย
 `npm run test:ai:live` แยกต่างหากสำหรับข้อมูลสมมติหนึ่ง turn สูงสุดสอง requests
-รอบนี้ไม่มี private API key: **Real OpenAI network verification: NOT RUN; model used: none**
+รอบ recovery ไม่เรียก Live API ซ้ำ: ครั้งล่าสุดใน workspace วันที่ 25 กันยายนใช้ gpt-5.6-luna และล้มเหลวด้วย HTTP 429 credit_balance_exhausted
+ต้องมีเครดิตพร้อมก่อนทดสอบจริงใหม่; fake-client tests ไม่ยืนยัน live network หรือความเข้ากันได้ของบัญชี
 ดู [AI integration](docs/ai-integration.md) สำหรับขอบเขตข้อมูล, timeout/retry และข้อจำกัด
 ดู [API contract และ composition setup](docs/api.md) สำหรับ environment และ protocol
 
@@ -161,7 +171,9 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 - [State Machine และ lifecycle](docs/state-machine.md)
 - [Scoring และคำแนะนำ](docs/scoring.md)
 - [Decision Evaluation รุ่นใหม่และความเข้ากันได้กับผลเก่า](docs/decision-evaluation.md)
-- [AI Integration — Mock/OpenAI adapter ทำแล้ว; live network ยังไม่ตรวจ](docs/ai-integration.md)
+- [Quiz Pre-test/Post-test](docs/quiz.md)
+- [Recovery verification และ blockers ปัจจุบัน](docs/recovery-verification.md)
+- [AI Integration — Mock/OpenAI adapter ทำแล้ว; live verification ยังไม่ผ่าน](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
 - [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)
@@ -175,5 +187,5 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
 Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
-ยังไม่เริ่ม Profile, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Voice หรือ WebSocket
+Quiz Pre-test/Post-test ทำแล้ว; Profile, Game, Knowledge Base, Review Quiz, Dashboard, OAuth, Voice และ WebSocket ยังไม่ทำ
 งานที่ยังเหลือและลำดับดำเนินการอยู่ใน [Implementation gap and phases](docs/implementation-roadmap.md)

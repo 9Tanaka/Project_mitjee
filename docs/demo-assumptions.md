@@ -6,8 +6,8 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 
 รายการนี้รวบรวมรายละเอียดที่ผู้ใช้อนุมัติเพิ่มสำหรับ MVP และ implementation choices
 แยกสถานะการทำแล้วออกจาก target/planned; ไม่เพิ่ม feature หรือเปลี่ยนกฎใน documentation phase
-น้ำหนัก D/W/S = 50/30/20 และเกณฑ์ >=70 ใช้กับผลเดิมของ template รุ่น 1–2 เท่านั้น; รุ่นใหม่ใช้ [Decision Evaluation](decision-evaluation.md) ตามข้อกำหนดที่อนุมัติภายหลัง
-เพราะตรวจพบใน Proposal v4 ดู [Scoring](scoring.md)
+น้ำหนัก D/W/S = 50/30/20 และเกณฑ์ >=70 พบใน Proposal และคงใช้กับผลเดิมของ SMS v1/v2 ตาม [Scoring](scoring.md)
+ข้อกำหนดที่อนุมัติภายหลังใช้ [Decision Evaluation](decision-evaluation.md) สำหรับ template ที่กำหนด evaluationMode=DECISION_RULES_V1 แม้ version=1; ไม่ใช่สูตรเดิมจาก Proposal
 
 ## Scenario and scoring decisions
 
@@ -15,18 +15,18 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 |---|---|---|
 | Demo State enum names | contact, build_trust, create_pressure, request_action, user_verification, end_scenario | Implemented; [หมายเหตุ attribution](state-machine.md#demo-state-model) |
 | First fixture | SMS / Phishing มี 3 D checkpoints; จำนวนเป็นของ Template ไม่ fix ทั้งระบบ | Implemented, [fixture](../src/fixtures/sms-phishing.ts) |
-| D checkpoint rubric | maxScore=10; safe=10, partially_safe=5, risky=0 | Implemented, [schema](../src/domain/schema.ts) |
-| S fixture rubric | เต็ม 10, ตัวเลือก 10/5/0; S schema รับ rubric ตาม Template | Implemented |
+| D checkpoint rubric (historical SMS v1/v2) | maxScore=10; safe=10, partially_safe=5, risky=0 | Legacy implemented; new categorical templates have no numeric rubric |
+| S fixture rubric (historical SMS v1/v2) | เต็ม 10, ตัวเลือก 10/5/0; S schema รับ rubric ตาม Template | Legacy implemented |
 | Warning evidence/choices/content | ข้อมูลคงที่และสมมติทั้งหมด รวม optional w-extra | Implemented |
 | Eligible opportunity | เปิดด้วย STATE_ENTRY เท่านั้น; ไม่อนุมาน exposure จาก AI | Implemented |
-| Empty denominator | normalized=null; ทุก Official Safe Resolution path ต้องมี D/W/S ครบ | Implemented |
+| Empty denominator (legacy) | normalized=null; legacy Official Safe Resolution paths ต้องมี D/W/S ครบ | Legacy implemented; categorical paths follow encountered-checkpoint rules |
 | Warning finalize | ครั้งเดียว เก็บ correctWarningSignIds / incorrectEvidenceIds | Implemented |
-| Warning false-positive penalty | ไม่มีสูตรหักคะแนน; เลือกทุกหลักฐานอาจได้ W เต็ม | Intentionally not implemented; ห้ามเพิ่มเอง |
+| Warning false-positive penalty (legacy) | ไม่มีสูตรหักคะแนน; เลือกทุกหลักฐานอาจได้ W เต็ม | Legacy preserved; categorical templates explicitly use ALL_WARNINGS_NO_FALSE_POSITIVES with no numeric penalty |
 | Explicit critical action | FREE_TEXT/candidate ไม่มีอำนาจ; Backend ตรวจ SIMULATED_ACTION confirmation | Implemented |
 | Event Code names | reusable domain registry + State allowed events | Implemented; SMS ใช้ Critical Rules สองรายการ |
 | Acyclic progression | ไม่มี cycle ใน Template graph; ยังสนทนาซ้ำใน State เดิมได้ | Implemented |
-| Weakest skill tie | เก็บ array, recommendation เดียวใช้ D → W → S; tolerance <1e-10 | Implemented, [Scoring Engine](../src/domain/scoring.ts) |
-| Recommendation scope | คืน type/key/reason เท่านั้น ไม่ทำ Quiz/Knowledge Base เต็ม | Metadata implemented; content Planned |
+| Weakest skill tie (legacy) | เก็บ array, recommendation เดียวใช้ D → W → S; tolerance <1e-10 | Legacy implemented; categorical result has no numeric weakest skill |
+| Recommendation scope | Scenario คืน type/key/reason; Quiz Pre/Post เป็น module แยก | Metadata and Quiz Pre/Post implemented; lesson/Knowledge/Review content out of current scope |
 
 ชื่อ State จัดประเภทเป็น Demo Assumption ตามคำสั่งผู้ใช้
 แต่ reference v4 ที่ตรวจใน 5.3.4 มีรายชื่อเดียวกัน จึงมี unresolved source-attribution discrepancy
@@ -58,12 +58,12 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 | Assumption / target | ค่า | Status |
 |---|---|---|
-| Call Center variants | NORMAL_CALL / SCAM_CALL; seeded selection 50/50 | SCAM_CALL text fixture implemented; NORMAL_CALL, selection and voice Planned |
+| Call Center variants | NORMAL_CALL / SCAM_CALL; latest request specifies backend random 50/50 with injectable selector | SCAM_CALL text implemented; NORMAL_CALL evaluation policy needs user decision before implementation |
 | Non-AI backend response target | <1 วินาที | Target เท่านั้น ยังไม่มี benchmark รับรอง |
 | AI interaction target | <10 วินาทีใน test environment | Target เท่านั้น; Mock ไม่พิสูจน์ live latency |
 | Concurrent demo | 20 active sessions | Functional isolation test มีแล้ว; ไม่ใช่ production/load benchmark |
 | Demo retention | DEMO_DATA_RETENTION_DAYS=30 แบบ configurable | Planned; ไม่มีการอ่านค่านี้หรือ cleanup job ใน code ปัจจุบัน |
-| Live network verification | Proposal model ผ่าน Responses API | Adapter implemented; network NOT RUN (ไม่มี private key) |
+| Live network verification | approved gpt-5.6-luna ผ่าน Responses API | Adapter implemented; last live test FAILED with credit_balance_exhausted; no new call in recovery |
 
 ## Implemented platform choices
 
@@ -85,7 +85,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
-- SMS fixture v2/DEFAULT เป็น playable allowlist; catalog เพิ่ม public description/labels โดยไม่เปลี่ยน Template
+- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT และอีกแปดประเภท v1 (Call Center ใช้ SCAM_CALL); เก็บ SMS v1–3 สำหรับประวัติ
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
 - Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)
@@ -112,3 +112,11 @@ Demo assumptions (not Proposal numeric requirements):
 Planned / Not Implemented: profile, account deletion, password reset/change, email
 verification, MFA, recovery, production abuse controls/security review, OAuth, Voice/WebSocket.
 See [Authentication](authentication.md) and [Security](security.md) for limitations.
+
+## Current model approval — 26 September 2026
+
+Proposal historical reference remains gpt-5.4-mini. Approved dialogue implementation is
+gpt-5.6-luna, configurable through OPENAI_MODEL on the server. Official OpenAI Docs were
+opened on 26 September and list Responses API and Structured Outputs support:
+[Luna capabilities](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
+Documentation support does not establish live account access or successful verification.

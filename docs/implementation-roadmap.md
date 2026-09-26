@@ -1,5 +1,24 @@
 # Implementation gap and phases
 
+## Current recovery status — 26 September 2026
+
+| Area | Status |
+|---|---|
+| P0 categorical persistence | Fixed: preserve persisted assessment; explicit evaluationMode, never numeric version proxy |
+| P1/P2 external MySQL/browser verification | Prepared regression/E2E coverage; NOT RUN — MYSQL_TEST_DATABASE_URL unavailable |
+| P3 documentation | Current/historical counts and implemented/pending/planned boundaries separated |
+| P4/P5 decision rules and nine text scenarios | Implemented; deterministic safe/review/critical/public-projection/AI-authority tests pass; real database reloads pending |
+| P7 normal/scam variants | SCAM_CALL text only. BLOCKED on NORMAL_CALL assessment/checkpoint policy before backend-only random 50/50 selector |
+| P8/P9 voice/transport | Planned after text variants; Azure STT/TTS, text fallback, no raw audio retention; WebSocket not required yet |
+| P10 Luna | Approved/configurable; official capabilities confirmed; last live FAIL 429 credit_balance_exhausted, no recovery retry |
+| P11 Quiz | Implemented 210/7/20; hardened coherent database snapshots; six native MySQL tests pending |
+| P12/P13 Profile/Dashboard | Not implemented; approved fields only and separate historical/categorical semantics |
+| P14 Game/Knowledge/Review | Excluded by latest user scope; do not implement from historical Proposal alone |
+
+Recovery stops at the NORMAL_CALL policy decision rather than inventing pass/fail behavior.
+See [Recovery verification](recovery-verification.md) for evidence, commands and remaining work.
+The following table is historical baseline analysis, not a current implementation checklist.
+
 This plan compares Proposal v6, the later approved decision rule, and the current repository. The Proposal file is read only. `origin/main` at `545c2c5` was the code baseline; the older mirror with uncommitted Luna documentation, tests, and `n8n/` was inspected read only.
 
 | Area | Proposal v6 scope | Repository at baseline | Next work |

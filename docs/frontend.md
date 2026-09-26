@@ -95,7 +95,7 @@ synchronization and offline durable retry are not implemented.
 Messages display sanitized public history only; a local unsent draft remains on error.
 Use fictional data only; the UI explicitly warns against real OTP/password/PII.
 Server selects Mock/OpenAI explicitly; browser uses the same public DTO with no model/provider selector.
-OpenAI adapter is implemented; real network verification NOT RUN. Footer now describes Scenario Simulation
+OpenAI adapter is implemented; last live verification failed with 429 credit_balance_exhausted. Footer describes Scenario Simulation
 without claiming a specific provider. No UI redesign or direct browser AI integration.
 
 Public action inputs:
@@ -171,7 +171,7 @@ All/production npm audits reported 0 known vulnerabilities on this date.
 No migration/reset/schema modification was required; test data remains synthetic.
 
 Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Catalog](scenario-catalog.md).
-OpenAI text adapter is implemented; real OpenAI network verification NOT RUN.
+OpenAI text adapter is implemented; last live verification failed with HTTP 429 `credit_balance_exhausted`; it was not rerun in recovery.
 Quiz Pre-test/Post-test is now implemented at `/quiz` and `/quiz/:attemptId`; see [Quiz](quiz.md) for current content, persistence, comparison and verification.
 Voice Call Center, Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented; the latest user scope limits other modes to Pre-test/Post-test.
 No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
@@ -179,3 +179,9 @@ Current backlog unchanged: production rate limits, duplicate-registration enumer
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.
 Local sanitizer is not production-grade PII detection; never enter real sensitive data.
 No backend security refactor was made in the original frontend phase; current phase status is in [Implementation Roadmap](implementation-roadmap.md).
+
+Recovery on 26 September adds a fifth browser test: real Investment safe actions with
+refreshes after finalized checkpoints and a categorical PASSED result. Five tests are
+discoverable, including the persisted Quiz Pre/Post flow; discovery is not execution.
+Browser + MySQL E2E: NOT RUN — MYSQL_TEST_DATABASE_URL unavailable. Current frontend
+subset: 59 passed; build and client artifact audit pass. See [Recovery verification](recovery-verification.md).

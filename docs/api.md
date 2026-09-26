@@ -106,11 +106,12 @@ public definition มี id, label, input, options เท่านั้น; IDs
 
 ตัวอย่าง initial action: actionDefinitionId=a01, payload={choiceId:"o1"}; ต้องใช้ actionId ใหม่และ revision ที่อ่านมา
 NONE เป็นคำขอไปต่อ ไม่รับ target State; Core ยังบังคับ checkpoints/event guards
-progress control อาจแสดงก่อน checkpoint ครบ แล้ว Core ตอบ 422 INVALID_STATE เมื่อยังไปต่อไม่ได้
+อีกแปด scenario ที่ใช้ publicActionBindings ซ่อน progress จน checkpoints/event guards ครบ
+SMS ที่ใช้ catalog bindings เดิมอาจแสดง progress ก่อนครบ; Core ยังคงตอบ 422 INVALID_STATE และห้ามข้าม checkpoint
 ไม่มี endpoint สำหรับ direct transition/scoring/Event CRUD/Opportunity CRUD/Result creation
 ไม่คืน scores ก่อนตอบ, answer flags, event codes, rule IDs, target State, hidden opportunities/transitions,
 prompts, fallback configuration, candidate confidence หรือ provider error metadata
-ผล version 4 คืน categorical Outcome, `evaluationMode=DECISION_RULES_V1`, `decisionSummary` พร้อม feedback ของจุดที่พบจริงและรหัสอ้างอิงกฎแบบ opaque และ recommendation; version 3 มีผลหมวดหมู่และจำนวนสรุปแต่ไม่มี feedback รายจุด; D/W/S และ trainingScore ของรุ่น 3–4 เป็น null ส่วนผล version 1–2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response
+ผลที่ template กำหนด `evaluationMode=DECISION_RULES_V1` คืน categorical Outcome และ decisionSummary; SMS v4 และอีกแปดประเภท v1 มี feedback ของจุดที่พบจริงและรหัสอ้างอิงกฎแบบ opaque; SMS v3 มีจำนวนสรุปแต่ไม่มี feedback รายจุด ทั้งหมดมี D/W/S และ trainingScore เป็น null ส่วน historical SMS v1/v2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response เลข version เพียงอย่างเดียวไม่กำหนด semantics
 ไม่มี internal event/rule mapping หรือเฉลยของ Session ที่ยังเล่นอยู่
 
 ## Revision, retry and lifecycle

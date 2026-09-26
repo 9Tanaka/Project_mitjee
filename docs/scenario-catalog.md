@@ -18,8 +18,22 @@ The nine types in Proposal v6 section 4.1.7.1 are available through the authenti
 
 The new scenarios share a small, reviewed state pattern but have distinct role, contact claim, pressure, evidence, request, safe response and critical rule. The backend maps public option IDs to pinned template choices. Free text and AI responses remain nonauthoritative. The mock provider now uses the selected scenario's context, and the real OpenAI adapter remains unverified due to the known 429 credit blocker.
 
-The action list shows a progression choice only after its required checkpoint and event guards are satisfied. The early safe stop is available at first contact. The backend repeats every guard when a request arrives, so a crafted request cannot bypass the state machine.
+For the eight new templates with publicActionBindings, the action list shows progression
+only after required checkpoint/event guards are satisfied. SMS retains its original catalog
+bindings and may expose a progress request that Core rejects until its guards pass.
+The early safe stop is available at first contact. Backend guards always apply, including crafted requests.
 
-Call Center currently uses the `SCAM_CALL` variant as a text simulation. The normal-call variant, seeded call selection, microphone speech-to-text, text-to-speech, and real-time voice flow are separate pending work. A text or mock path is not a production speech integration.
+Call Center currently uses the `SCAM_CALL` variant as a text simulation. `NORMAL_CALL`
+and backend-only 50/50 selection remain unimplemented. The latest approval calls for
+cryptographically reasonable randomness or an injectable selector for deterministic tests,
+not AI/client selection. NORMAL_CALL assessment/checkpoint semantics require a user decision:
+do not force scam warning signs, critical behavior or invent pass/fail rules for a normal call.
+Voice must follow validated text variants, using Azure AI Speech STT/TTS, user-initiated
+microphone access, no raw audio retention and a text fallback. No WebSocket is required yet.
 
 Tests exercise the catalog's nine distinct categories, each new template's full safe path, early safe exit, reviewed choice and validated critical action, plus an authenticated HTTP start/result path outside SMS. No real MySQL migration or live AI/voice service is claimed by these tests.
+
+Recovery adds nine multi-turn/high-confidence candidate authority tests and conditional
+fresh-client MySQL safe-path regression tests for all eight new version-1 templates plus
+SMS versions 3/4. Legacy SMS versions 1/2 have separate compatibility round-trip tests.
+MySQL and real browser execution remain NOT RUN; see [Recovery verification](recovery-verification.md).

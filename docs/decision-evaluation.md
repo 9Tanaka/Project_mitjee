@@ -1,8 +1,14 @@
-# Decision evaluation for scenario versions 3 and 4
+# Decision evaluation by explicit template evaluationMode
 
-STATUS: IMPLEMENTED FOR THE PLAYABLE SMS / PHISHING SCENARIO
+STATUS: IMPLEMENTED FOR ALL NINE TEXT SCENARIOS; REAL MYSQL VERIFICATION PENDING
 
-The user's later decision in the “Mitjee ปรับแก้” chat supersedes the weighted scenario scoring described in Proposal v6. The Proposal source file remains unchanged. Quiz answers can still be scored by number correct when Quiz is implemented. The rule here applies only to scenario simulation.
+The user's later decision in the “Mitjee ปรับแก้” chat supersedes the weighted scenario scoring described in Proposal v6. The Proposal source file remains unchanged. Implemented Quiz Pre/Post rounds use their separate number-correct calculation. This categorical rule applies only to scenario simulation.
+
+Evaluation semantics come from the pinned template's explicit evaluationMode, never a numeric
+version comparison. SMS v3/v4 and the eight other scenarios at v1 use DECISION_RULES_V1.
+Only historical SMS v1/v2 use the legacy weighted policy. The persistence adapter preserves
+non-null stored assessments and categorical unanswered nulls across all version numbers;
+see [round-trip recovery](persistence.md#assessment-round-trip-recovery--26-september-2026).
 
 ## Rule and scope
 
@@ -29,4 +35,4 @@ Published SMS template versions 1 and 2 remain immutable and use their original 
 
 ## Verification and limits
 
-Regression covers early safe stop, complete safe path, reviewed choices, an unanswered optional checkpoint, critical override, AI/free-text authority, legacy version availability, API projection, and UI wording. Database migration validation and generated Prisma types pass. Real MySQL integration tests require a dedicated `MYSQL_TEST_DATABASE_URL`; they are skipped when it is absent. The current UI presents encountered checkpoint explanations but has no cross-scenario dashboard yet.
+Regression covers early safe stop, complete safe path, reviewed choices, an unanswered optional checkpoint, critical override, AI/free-text authority across all nine templates, legacy version availability, API projection, and UI wording. Decoder tests separately cover version independence. Database migration validation and generated Prisma types pass. Real MySQL integration tests require a dedicated `MYSQL_TEST_DATABASE_URL`; they are skipped when it is absent. The current UI presents encountered checkpoint explanations but has no cross-scenario dashboard yet. Current results are in [recovery verification](recovery-verification.md).

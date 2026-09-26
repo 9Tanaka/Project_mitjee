@@ -87,7 +87,8 @@ User/history text เป็น untrusted input; prompt ช่วยจำกั�
 Safety flags เป็น model self-report ไม่ใช่ moderation service; sanitizer ไม่ครอบคลุม PII ทุกแบบ
 ส่งข้อมูลสมมติเท่านั้น แม้ store:false ก็ไม่ใช่ Zero Data Retention guarantee
 ไม่มี raw conversation/provider logs; HMAC request correlation ไม่ส่ง raw owner/session/turn IDs
-ดู [AI integration](ai-integration.md) สำหรับ retry, cancellation และ real-network NOT RUN
+ดู [AI integration](ai-integration.md) สำหรับ retry, cancellation และ live failure ล่าสุด
+HTTP 429 `credit_balance_exhausted`; recovery ไม่ได้ retry หรืออ้าง live PASS
 
 ไม่มี retention job แม้เลือกใช้ DEMO_DATA_RETENTION_DAYS=30 เป็น planned assumption
 จึงไม่อ้างว่าข้อมูลถูกลบหลัง 30 วันแล้ว และไม่ควรเก็บข้อมูลจริงในฐานทดสอบ

@@ -66,7 +66,7 @@ Critical Failure เป็นเส้นทางจบที่ Core กำห
 | เหตุการณ์ | Status / ผล |
 |---|---|
 | start | ACTIVE, revision 0, initial opportunities |
-| safe resolution | COMPLETED, Official TrainingResult ตามกฎของ template version; version 3 ใช้ PASSED, NEEDS_PRACTICE หรือ UNASSESSED |
+| safe resolution | COMPLETED; Official TrainingResult ตาม explicit evaluationMode ของ pinned template; DECISION_RULES_V1 ใช้ PASSED, NEEDS_PRACTICE หรือ UNASSESSED |
 | explicit critical action ผ่าน validation | FAILED, outcome CRITICAL_FAILURE, state=end_scenario |
 | QUIT_SESSION | ABANDONED, result=null |
 | ไม่มีกิจกรรมครบ 30 นาทีเมื่อ resume ตรวจพบ | EXPIRED, result=null |

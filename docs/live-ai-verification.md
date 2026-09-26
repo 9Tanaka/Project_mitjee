@@ -1,6 +1,24 @@
 # Live AI Provider Integration — verification
 
-Date: 22 September 2026. Scope: Scenario Simulation module, SMS / Phishing text only.
+## Current status — 26 September 2026 recovery
+
+Approved implementation model: `gpt-5.6-luna`, still server-configurable through
+`OPENAI_MODEL`. Historical Proposal reference: `gpt-5.4-mini`; not retrospectively changed.
+[Official Luna documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
+checked on 26 September confirms Responses API and Structured Outputs, not account access.
+
+Last actual live verification: 25 September, FAIL — HTTP 429
+`credit_balance_exhausted`, two attempts, Luna; fallback is not a passing verification.
+No paid request was made in this recovery because restored credits have not been confirmed.
+The current 68 AI adapter tests use fake clients/transports and cannot establish live success.
+Real network/schema/nonempty output/no-fallback verification remains pending.
+Nine text scenarios and Quiz Pre/Post are now implemented. NORMAL_CALL assessment policy,
+voice, Profile and Dashboard remain pending; Game/Knowledge/Review are outside current scope.
+See [Recovery verification](recovery-verification.md) for current tests and external limitations.
+
+## Historical adapter delivery — 22 September 2026
+
+Date: 22 September 2026. Historical scope: Scenario Simulation module, SMS / Phishing text only.
 Baseline GitHub: e4051f243492867eed94d419124dd45226c47e06.
 Status: LIVE PROVIDER IMPLEMENTED / REAL OPENAI NETWORK NOT VERIFIED.
 
@@ -80,11 +98,11 @@ not embedded in the commit itself. Local and GitHub baseline histories have diff
 commit identities but identical trees; delivery must preserve both histories and compare
 final trees, with no force push, reset, rewrite or unrelated merge.
 
-## Scope and limitations
+## Historical phase scope and continuing limitations
 
 Live AI controls dialogue content only. Backend remains authoritative for State, Events,
 Score, Critical Failure and pass/fail. Mock remains available. SMS / Phishing remains the
-only playable fixture. No Voice/playable Call Center, WebSocket/realtime/streaming or
+only playable fixture in that historical phase, not in the current recovery. No Voice/playable Call Center, WebSocket/realtime/streaming or
 remaining scenario fixtures were started. Profile, Quiz, Game, Knowledge Base and Dashboard
 remain outside this phase.
 

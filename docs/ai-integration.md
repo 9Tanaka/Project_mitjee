@@ -22,7 +22,7 @@ OpenAIScenarioModelProvider เป็น outer adapter ที่ inject thin Res
 ใช้ official SDK openai@7.21.0 กับ Responses API non-streaming เท่านั้น
 Core/Domain/Dialogue ไม่มี SDK import; Provider ไม่มี Core/repository reference
 Server composition เลือก provider แล้วส่งให้ createApplication(repository, provider); ไม่มี implicit Mock
-ยังไม่มี streaming, Voice หรือการทดสอบกับโมเดลผ่านเครือข่ายจริง
+ยังไม่มี streaming หรือ Voice; live network เคยล้มเหลวด้วย 429 จึงยังไม่มี verification ที่ผ่าน
 
 ## Configuration and model
 
@@ -33,9 +33,12 @@ Server composition เลือก provider แล้วส่งให้ creat
 - Endpoint ตรึงที่ https://api.openai.com/v1; ไม่อ่าน OPENAI_BASE_URL ไปเปลี่ยนปลายทาง
 - SDK logging off; ไม่ส่ง organization/project จาก implicit environment และไม่มี browser configuration
 
-ตรวจ Proposal v4 ซ้ำวันที่ 22 กันยายน 2026: runtime `gpt-5.4-mini`,
-final-test snapshot `gpt-5.4-mini-2026-03-17`. Official model page ยังระบุ Responses API,
-Structured Outputs และ snapshot นี้ ณ วันที่ตรวจ แต่ไม่ได้ยืนยันสิทธิ์เข้าถึงของบัญชี
+Proposal historical reference คือ `gpt-5.4-mini` และ final-test snapshot
+`gpt-5.4-mini-2026-03-17`; ไม่ได้ระบุ Luna และไม่มีการแก้ประวัติ Proposal
+Approved implementation decision คือ `gpt-5.6-luna` ผ่าน `OPENAI_MODEL` ที่ยัง configurable
+[Official Luna model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
+ที่ตรวจวันที่ 26 กันยายน 2026 ระบุ Responses API และ Structured Outputs
+การรองรับในเอกสารไม่ได้ยืนยัน credits หรือสิทธิ์เข้าถึงของบัญชีจริง
 ไม่มี default model หรือ silent substitution; tests ใช้ชื่อสมมติ ไม่ผูกกับ real model
 หาก model ใช้ไม่ได้ ให้รายงานและขออนุมัติก่อนเปลี่ยน ไม่ implement provider สำรองอื่นใน phase นี้
 
@@ -174,8 +177,11 @@ timeout late-response, CAS stale rejection, duplicate HTTP retry และ safe 
 ไม่ assert exact wording/confidence; รายงานเฉพาะ model, attempts, schema result, latency ไม่ log prompt/response
 Fallback ไม่ถือว่าผ่าน live verification; missing config exit nonzero พร้อม NOT RUN
 
-**รอบนี้: adapter tests ผ่าน; Real OpenAI network verification NOT RUN — ไม่มี API key ใน environment.
-Model used for live test: none.** ไม่อ้างว่า prompt injection/production moderation/PII detection สมบูรณ์
+**Recovery รอบ 26 กันยายน: adapter tests 68 ผ่านด้วย fake transport; live test NOT RUN รอบนี้
+เพราะยังไม่มีการยืนยันว่า credits พร้อม** ผล live ล่าสุดวันที่ 25 กันยายนคือ FAIL:
+HTTP 429 `credit_balance_exhausted` สำหรับ `gpt-5.6-luna` (สอง attempts; fallback ไม่ใช่ PASS)
+ไม่อ้างว่าไม่มี key หรือว่า real network ผ่านแล้ว ไม่ log secret/raw response
+ดู [Current verification](recovery-verification.md); ไม่อ้าง production moderation/PII/injection certification
 
 Official sources checked 22 September 2026:
 
