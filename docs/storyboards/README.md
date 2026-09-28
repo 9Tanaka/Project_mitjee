@@ -1,6 +1,24 @@
 # MITJEE Storyboard Index
 
-อ่าน [ข้อกำหนดร่วมและ master review](../scenario-storyboard-spec.md) ก่อนใช้เฟรมเพื่อวาด ทุกไฟล์เป็น CONTENT + INTERACTION DESIGN ONLY ไม่มี application implementation
+## ลำดับการอ่าน
+
+1. **For drawing / PRIMARY DRAWING DOCUMENT:** [Storyboard Flow Summary](../scenario-storyboard-flow-summary.md) สำหรับวาดภาพลำดับ 5–8 ขั้นต่อเรื่องโดยไม่ต้องรู้ระบบภายใน
+2. **For interaction detail / DETAILED INTERACTION REFERENCE:** [ไฟล์รายหมวดด้านล่าง](#files) เริ่มจาก Storyboard Drawing Flow แล้วค่อยอ่านรายละเอียด A–U และเฟรมเดิม
+3. **For rule/system semantics:** [Scenario Storyboard Specification](../scenario-storyboard-spec.md) และ [Decision Evaluation](../decision-evaluation.md) เมื่อจำเป็นต้องตรวจข้อกำหนดการทำงานและการประเมิน
+
+เอกสารมีสองระดับ: Level 1 คือเรื่องย่อสำหรับวาด และ Level 2 คือรายละเอียดการโต้ตอบเดิม ไม่ต้องอ่านรายละเอียดระบบก่อนเริ่มวาดร่าง ทุกไฟล์เป็น CONTENT + INTERACTION DESIGN ONLY ไม่มี application implementation
+
+## Drawing flow coverage
+
+- ตรวจ remote สำหรับรอบย่อเมื่อ 2026-09-29: local และ remote HEAD `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` ตรงกับฐานที่ร้องขอ
+- ครบ 9 หมวด / 19 scam stories / 2 normal controls; รวม 140 ขั้น เฉลี่ย 6.67 ขั้นต่อเรื่อง
+- 5 ขั้น: 1 เรื่อง; 6 ขั้น: 8 เรื่อง; 7 ขั้น: 9 เรื่อง; 8 ขั้น: 3 เรื่อง
+- วาดร่างได้ 21 เรื่อง แต่ยังรออนุมัติ: NEEDS_CONTENT_REVIEW 14 / CONDITIONAL_CONTENT 7; สายปกติไม่เพิ่มคำขออันตรายหรือสัญญาณเตือนปลอม
+- ลำดับในเอกสารหลักกับ Storyboard Drawing Flow รายหมวดใช้ข้อความตรงกันทุกคำ และเก็บรายละเอียดเดิมครบ 252 เฟรม
+
+## Detailed interaction baseline
+
+ข้อมูลต่อไปนี้คือสถิติและฐานการจัดทำรายละเอียดระดับ 2 เดิม ไม่ใช่จำนวนขั้นของฉบับย่อหรือการอนุมัติเนื้อหาใหม่
 
 - Branch: `feat/rule-based-evaluation`; local และ remote ณเริ่ม: `105fe8395f86cc936d808ecba0cf7643aeaf19af`
 - Source: [Story Bank](../scenario-story-bank.md) และ [Deduplication](../scenario-deduplication-report.md) ที่ HEAD จริง; ไม่ใช้รายชื่อประมาณจาก prompt แทน source
@@ -13,11 +31,11 @@
 
 ## วิธีใช้วาด
 
-1. เลือก Story ID แล้วอ่าน A–D เพื่อรู้บทบาท ชื่อหน้าจอ และสิ่งที่ตัวละครรู้
-2. ใช้ Frame summary เลือกทางหลัก แล้ววาดตาม Visual / UI และ Camera / screen focus; จำนวน frame ไม่ใช่จำนวน State
-3. วาด branch S/R/K ตาม O พร้อม confirmation และผลตามกฎ; example message เป็น DRAFT ไม่ใช่ full dialogue หรือ training target
-4. ตรวจ warning กับ neutral เฉพาะมุมผู้เขียน; ผู้เล่นต้องไม่เห็นสี/ป้ายเฉลยก่อนตัดสินใจ
-5. ปิดประเด็น [DETAIL_PENDING] และ CONDITIONAL_CONTENT ก่อนอนุมัติ final หรือเริ่ม implementation
+1. เลือก Story ID ใน [Flow Summary](../scenario-storyboard-flow-summary.md) อ่านแนวคิดและลำดับย่อ แล้วใช้ภาพสำคัญเป็นต้นร่าง
+2. วาดตัวเลือกตรวจสอบ ยุติ คุยต่อ และยืนยันรายการจำลองให้เห็น ไม่บังคับทุกทางให้เดินผ่านทุกขั้น
+3. เปิด Storyboard Drawing Flow ในไฟล์รายหมวดเพื่อดูข้อความเดียวกัน แล้วอ่าน A–D และรายละเอียดเฟรมเมื่อต้องการองค์ประกอบหรือบทพูดเพิ่ม
+4. ใช้ชื่อหน้าจอกลางและข้อมูลสมมติ ไม่เปิดเผยคำเฉลยหรือป้ายเส้นทางให้ผู้เล่นเห็นก่อนเลือก
+5. ตรวจผลลัพธ์กับข้อกำหนดระดับ 2 เมื่อออกแบบทางเลือกย่อย และปิดประเด็นที่ยังรอตรวจเนื้อหาก่อนอนุมัติฉบับสุดท้าย
 
 ## Storyboard index
 

@@ -4,6 +4,14 @@ CONTENT + INTERACTION DESIGN ONLY | 2026-09-28 | PROPOSED_FOR_REVIEW
 
 [เปิดสารบัญ 21 เรื่อง](storyboards/README.md)
 
+## Storyboard documentation has two levels
+
+- **LEVEL 1: Drawing Flow Summary / PRIMARY DRAWING DOCUMENT**: [scenario-storyboard-flow-summary.md](scenario-storyboard-flow-summary.md) เป็นเอกสารเริ่มต้นสำหรับวาด ทุกเรื่องมี 5–8 ขั้น พร้อมจุดตัดสินใจ เส้นทางหลัก และภาพสำคัญ อ่านได้โดยไม่ต้องรู้ backend
+- **LEVEL 2: Detailed Interaction Specification**: เอกสารฉบับนี้และ [docs/storyboards/*.md](storyboards/README.md) คงรายละเอียดการโต้ตอบ เฟรม และข้อกำหนดระบบเดิมไว้ครบ ใช้ตรวจรายละเอียดเมื่อจำเป็น ไม่ใช่สิ่งที่ต้องอ่านทั้งหมดก่อนวาด
+- ไฟล์รายหมวดเริ่มแต่ละเรื่องด้วย Storyboard Drawing Flow ซึ่งใช้ข้อความลำดับเดียวกับเอกสารหลักทุกคำ แล้วจึงตามด้วย A. Scenario identity และรายละเอียดเดิม
+- รอบ simplification ตรวจ fetch และยืนยัน local/remote HEAD ที่ `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` เมื่อ 2026-09-29; ตรงฐานที่ร้องขอ ไม่มี upstream diff ก่อนแก้ อ่าน [Drawing flow review](#drawing-flow-review) สำหรับ QA รอบนี้
+- ส่วน Source baseline และสถิติด้านล่างเป็นประวัติของการจัดทำ Level 2 เดิม ไม่ได้ถูกเขียนทับให้เป็นผลตรวจรอบใหม่
+
 ## Source baseline
 
 ตรวจ `git fetch origin feat/rule-based-evaluation` ก่อนอ่าน และพบ local HEAD = remote feature HEAD = `105fe8395f86cc936d808ecba0cf7643aeaf19af`. Repository: `9Tanaka/Project_mitjee`; branch: `feat/rule-based-evaluation`. Source files เดิมไม่ถูกแก้
@@ -194,6 +202,82 @@ Normal controls ไม่มี warning หรือ Critical ปลอม ไ�
 ผลตรวจเอกสาร 2026-09-28: ผ่านการเทียบ ID ทั้ง 21 กับ Story Bank, 252 เฟรมเรียงหมายเลขครบและมี metadata ทุกช่อง, 21 text branch maps และ 21 Mermaid graphs มี node/target ครบและเดินจาก F01 ถึงทุกเฟรมได้, ลิงก์ไฟล์อ้างอิงไม่ขาด, scam ทุกเรื่องมี warning 3/neutral 1 และ R1/R2, จำนวน owner ตรงสารบัญ ตรวจเพิ่มว่า cancel จาก REVIEW ที่ commit แล้วไม่ย้อนกลับไปเขียนทับ D
 
 ตรวจ hash ของ Story Bank, Deduplication, Rule Engine และ untracked database document ว่าไม่เปลี่ยน. ไม่รัน application tests หรือ Playwright เนื่องจากไม่แก้ code. Mermaid ตรวจโครงสร้างข้อความและ graph references; ยังไม่ได้ render ผ่าน Mermaid renderer จึงไม่อ้างว่าทดสอบภาพวาดหรือ UI จริงแล้ว
+
+<a id="drawing-flow-review"></a>
+
+## Drawing flow review
+
+ผลทบทวนรอบ simplification วันที่ 2026-09-29 อ้าง baseline `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` โดยใช้ Story Bank → Deduplication → master spec → category details เป็นลำดับหลักสำหรับย่อ เอกสารระดับ 2 เดิมไม่ได้ถูกลดรายละเอียด
+
+| คำถาม | ผลทบทวน |
+|---|---|
+| Q1 อ่านได้โดยไม่รู้ backend หรือไม่ | ได้ ใช้เหตุการณ์บนหน้าจอ บทบาทผู้เล่น หลักฐาน และตัวเลือก ไม่ใส่รหัสระบบใน Drawing Flow |
+| Q2 เห็น beginning → escalation → decision → result หรือไม่ | เห็นครบทุกเรื่องหลอกลวง ส่วนสายปกติใช้จุดเริ่ม → ตรวจข้อมูล → ตอบเท่าที่จำเป็น → จบตามปกติ โดยไม่แต่ง escalation |
+| Q3 มีเรื่องใดย่อแล้วเหมือนกันเกินไปหรือไม่ | ยังมีรูปแบบร่วมแต่คงความต่างตาม dedup: INV-01 ตรวจพอร์ต/การถอน เทียบ INV-02 ตรวจรายได้จากสมาชิก; TASK-01 มีภารกิจและค่าจ้าง; ECO แยกผู้ซื้อ/ผู้รับพัสดุ/ผู้ขาย; JOB แยกค่าเริ่มงาน/ข้อมูล/รับส่งเงิน |
+| Q3 คู่ข้ามหมวดที่ต้องระวัง | PHI-02 เป็นข้อความบริการชวนใช้แอป, LOAN-02 เป็นสินเชื่อขอรายชื่อและคำขู่, REC-02 เป็นการช่วยหลังเหตุเสียหายเดิม ส่วนค่าธรรมเนียม LOAN/REC/JOB ใช้บริบทและหลักฐานตรวจคนละอย่าง ไม่ใช่เปลี่ยนชื่อคำขออย่างเดียว |
+| Q4 ต้องเกิน 8 ขั้นหรือไม่ | ไม่พบสำหรับลำดับวาดระดับนี้ เรื่องที่มีช่วงเพิ่มหลายครั้งใช้ 8 ขั้น ได้แก่ INV-01, ROM-02, TASK-01; คนวาดแบ่งหนึ่งขั้นเป็นหลายภาพได้ |
+| Q5 การโต้ตอบสำคัญหายหรือไม่ | ไม่พบในระดับ flow: คงการถาม เลือกหลักฐาน ตรวจอิสระ ยุติเร็ว เปลี่ยนใจกลับไปตรวจ และยืนยัน/ยกเลิกการกระทำจำลองไว้; รายละเอียดบทพูด ทางย่อย การลองใหม่เมื่อระบบขัดข้อง และกฎยังอยู่ระดับ 2 ครบ ไม่ได้แทนที่รายละเอียดเหล่านั้นด้วยฉบับย่อ |
+| Q6 สายปกติยังไม่สอนให้ปฏิเสธทุกสายหรือไม่ | ใช่ CC-N01/CC-N02 ให้เทียบข้อมูลเดิม ตอบเฉพาะความจำเป็น และขอติดต่อกลับอย่างสุภาพ ไม่มีคำขออันตรายหรือสัญญาณเตือนที่แต่งเพิ่ม; outcome policy ยังรออนุมัติ |
+| Q7 ใช้เป็นต้นฉบับวาดได้หรือไม่ | ใช้ทำร่างครบ 21 เรื่องได้ มีลำดับ ภาพสำคัญ จุดตัดสินใจ และทางเลือกหลัก แต่ไม่ใช่ final approval: NEEDS_CONTENT_REVIEW 14 / CONDITIONAL_CONTENT 7 |
+
+### QA รอบย่อ
+
+- 9 categories; Story Bank 19 scam families + 2 normal controls = 21 stories; IDs และชื่อไทยตรงต้นทาง ไม่มีเพิ่มหรือหาย
+- 140 concise steps / เฉลี่ย 6.67; 5 ขั้น 1 เรื่อง, 6 ขั้น 8 เรื่อง, 7 ขั้น 9 เรื่อง, 8 ขั้น 3 เรื่อง; ทุกเรื่องเรียงหมายเลขและจบด้วยผลลัพธ์
+- ทุก scam story มีจุดตัดสินใจและคำยืนยันการกระทำจำลอง; ทุกเรื่องมีเส้นทางหลัก โดยสายปกติระบุว่าไม่มี Critical candidate และไม่ได้แต่ง Review เพื่อบังคับให้ครบ
+- ลำดับข้อความทุกเรื่องใน master summary และ category file ตรงกันทุกคำ ไม่ใช่เพียงจำนวนขั้นเท่ากัน
+- ตรวจเทียบ category files กับ baseline หลังตัดเฉพาะส่วน Drawing Flow ที่เพิ่มออก: เนื้อหาระดับ 2 เหมือนเดิมทั้งหมด รวม 252 เฟรม
+- CONDITIONAL_CONTENT คงครบ CC-N01, CC-N02, INV-02, ECO-03, LOAN-02, REC-02, JOB-02; ประเด็นรอตรวจทุกเรื่องอยู่ใน [Conditional / Pending Content](scenario-storyboard-flow-summary.md#conditional--pending-content)
+- ตรวจลิงก์รายหมวดและ anchor ของเรื่อง, รูปแบบ Markdown และ diff whitespace; ไม่เปลี่ยน source/runtime/fixtures/Prisma/migrations หรือข้อมูลฝึก
+- ไม่รัน application tests หรือ Playwright เพราะเป็นการแก้เอกสารเท่านั้น การตรวจนี้ไม่ใช่การทดสอบ UI ที่ทำงานจริง และยังไม่ได้วาดภาพ Storyboard ฉบับสุดท้าย
+- คงไฟล์ untracked เดิม `docs/scenario-database-design.md` ไว้นอกชุดเปลี่ยนแปลงและนอก commit
+
+### ตรวจข้อความซ้ำก่อนแก้รอบต่อไป
+
+ตัวอย่างตรวจแบบอ่านอย่างเดียวจากราก repository ด้วย Python 3 ตรวจ Story Bank, ชื่อ/ID, จำนวนขั้น, ข้อความทั้งสองตำแหน่ง และการคงรายละเอียดเดิม ไม่สร้างหรือเปลี่ยนเอกสารและไม่เป็นส่วนของ runtime:
+
+```powershell
+@'
+import pathlib, re, subprocess
+root = pathlib.Path(".")
+read = lambda p: (root / p).read_text(encoding="utf-8")
+bank = dict(re.findall(
+    r"storyFamilyId: ([A-Z]+-(?:N)?\d+);[^\n]*?titleThai: ([^;]+);",
+    read("docs/scenario-story-bank.md")))
+summary = read("docs/scenario-storyboard-flow-summary.md")
+pattern = r"^### ([A-Z]+-(?:N)?\d+) \u2014 ([^\n]+)\n(.*?)(?=^<a id=|^## |\Z)"
+stories = {m[1]: (m[2], m[3]) for m in re.finditer(pattern, summary, re.M | re.S)}
+assert set(stories) == set(bank)
+seen, total = set(), 0
+for path in sorted((root / "docs/storyboards").glob("[0-9]*.md")):
+    text = path.read_text(encoding="utf-8")
+    sections = re.finditer(
+        r"^## ([A-Z]+-(?:N)?\d+) \u2014 ([^\n]+)\n\n"
+        r"### Storyboard Drawing Flow\n(.*?)^### A\.",
+        text, re.M | re.S)
+    for m in sections:
+        sid = m[1]
+        assert sid not in seen
+        seen.add(sid)
+        title, body = stories[sid]
+        assert title == m[2] == bank[sid]
+        step_pattern = r"^\d+\. \*\*[^:\n]+:\*\* [^\n]+$"
+        steps = re.findall(step_pattern, body, re.M)
+        assert 5 <= len(steps) <= 8
+        assert steps == re.findall(step_pattern, m[3], re.M)
+        total += len(steps)
+    before = subprocess.check_output(
+        ["git", "show", "e07c6f26af5e071cb5c99628cd1b880bdc0846f9:" + path.as_posix()],
+        encoding="utf-8")
+    stripped = re.sub(r"^### Storyboard Drawing Flow\n.*?(?=^### A\.)",
+                      "", text, flags=re.M | re.S)
+    assert stripped == before
+assert seen == set(bank)
+print("PASS:", len(seen), "stories;", total, "steps; details preserved")
+'@ | python -X utf8 -
+```
+
+หลังตรวจข้อความต้องอ่านทบทวนความหมายของ normal controls, confirmation, early exit, ความต่างระหว่างเรื่อง และสถานะรออนุมัติด้วย การตรวจข้อความตรงกันไม่ทดแทน content review
 
 ## Handoff
 
