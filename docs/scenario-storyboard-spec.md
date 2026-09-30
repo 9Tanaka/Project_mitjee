@@ -12,7 +12,7 @@ CONTENT + INTERACTION DESIGN ONLY | 2026-09-28 | PROPOSED_FOR_REVIEW
 - รอบ simplification ตรวจ fetch และยืนยัน local/remote HEAD ที่ `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` เมื่อ 2026-09-29; ตรงฐานที่ร้องขอ ไม่มี upstream diff ก่อนแก้ อ่าน [Drawing flow review](#drawing-flow-review) สำหรับ QA รอบนี้
 - ส่วน Source baseline และสถิติด้านล่างเป็นประวัติของการจัดทำ Level 2 เดิม ไม่ได้ถูกเขียนทับให้เป็นผลตรวจรอบใหม่
 
-## Source baseline
+## Source baseline (historical Level 2)
 
 ตรวจ `git fetch origin feat/rule-based-evaluation` ก่อนอ่าน และพบ local HEAD = remote feature HEAD = `105fe8395f86cc936d808ecba0cf7643aeaf19af`. Repository: `9Tanaka/Project_mitjee`; branch: `feat/rule-based-evaluation`. Source files เดิมไม่ถูกแก้
 
@@ -26,13 +26,13 @@ CONTENT + INTERACTION DESIGN ONLY | 2026-09-28 | PROPOSED_FOR_REVIEW
 | 6 | ข่าว N01–N17 ใน [Story Bank sources](scenario-story-bank.md#20-sources) | ใช้ evidence เดิมที่ bank ตรวจ ไม่ค้นข่าวใหม่และไม่อ้างว่าบทแต่งทุกเฟรมเป็นข่าว |
 | 7 | [RECOMMENDATION] ในเอกสารนี้ | เติม UX, wording, frame order, draft action/rule mappings เท่านั้น |
 
-Source SHA-256: Story Bank `68f77eba997ea8d45928316965ddb870b1837bf3b53ac6a2e63d2599d65fd7d7`; Deduplication `8566e5bd8581c74dd20fa7defc91ee7d2b2402585bdebf305b310b8707b5af64`; รายการผู้ใช้ `3bf2f4367485fba2f27b453a2fe3ee9dadbe1b1120ad35af1391e108bcb6c813`; Proposal update `55b41b0a383348f30a905dcfbd3c41abdcf7ed77bee323ad8c1f2795f05f227b`
+Historical source SHA-256 (2026-09-28; ไม่ใช่ hash หลัง matched-control revision): Story Bank `68f77eba997ea8d45928316965ddb870b1837bf3b53ac6a2e63d2599d65fd7d7`; Deduplication `8566e5bd8581c74dd20fa7defc91ee7d2b2402585bdebf305b310b8707b5af64`; รายการผู้ใช้ `3bf2f4367485fba2f27b453a2fe3ee9dadbe1b1120ad35af1391e108bcb6c813`; Proposal update `55b41b0a383348f30a905dcfbd3c41abdcf7ed77bee323ad8c1f2795f05f227b`
 
 พบ `docs/scenario-database-design.md` เป็น untracked งานเดิมก่อนเริ่ม ไม่อ่านเป็น requirement ไม่แก้และไม่รวม commit. รอบนี้ไม่มี Prisma/migration/runtime/fixtures/AI/voice/UI/training dataset/Playwright changes
 
 ## Scope and evidence labels
 
-[SOURCE-DERIVED] คง 19 scam families เดิมใน 9 หมวด และ 2 normal controls. ไม่มี family ใหม่ ไม่มีการ merge/delete source. รักษา INV-01 hybrid romance เป็น related context ไม่สร้าง ROM-03; QR ไป form เป็น PHI-01 variant ไม่เพิ่มเรื่อง
+[SOURCE-DERIVED] คง 19 scam families เดิมใน 9 หมวด และ 2 normal controls. ไม่มี family ใหม่; รอบ 2026-09-30 แทนเนื้อหา CC-N02 โดยใช้ ID เดิมและบันทึก provenance ไม่ได้เพิ่ม control อีกเรื่อง. รักษา INV-01 hybrid romance เป็น related context ไม่สร้าง ROM-03; QR ไป form เป็น PHI-01 variant ไม่เพิ่มเรื่อง
 
 - [SOURCE-DERIVED]: identity/mechanism/tier ที่ระบุใน bank; ไม่แปลว่า final approval
 - [CURRENT_CODE]: สิ่งที่ตรวจที่ start SHA จริง
@@ -84,7 +84,7 @@ EARLY_SAFE_EXIT ที่อนุญาตอาจผ่านได้ตั�
 
 Feedback หลัง commit ต้องไม่เฉลย checkpoint ถัดไปที่ยังไม่ตัดสิน; แบบร่างหลักแสดงรายละเอียดใน result. Result มี outcome, encountered checkpoint explanations, warning ที่พบ, safe recommendations และ proposed tags. ไม่แสดง numeric training score หรือ weighted D/W/S. Current recommendation เลือก first REVIEW skill/critical mapping; tag หลายเรื่องในนี้เป็นข้อเสนอที่ต้อง map ก่อน implementation ไม่อ้างว่าบทเรียนใหม่ถูกสร้างแล้ว
 
-Normal controls ไม่มี warning หรือ Critical ปลอม ไม่มี REVIEW บังคับ. การรับสายปกติหรือปฏิเสธคุยอย่างสุภาพไม่ใช่ความผิด. Outcome policy ยัง pending จึงวาด observation result ไม่สร้าง PASSED จาก C=0 อย่างเดียว และไม่กำหนดอัตราสุ่ม normal/scam
+Normal controls ควรจับคู่กับบริบท scam ที่ใกล้กันเมื่อทำได้ เพื่อให้แยกพฤติกรรมแทนหัวข้อ: CC-01 ↔ CC-N01 (parcel/delivery) และ CC-02 ↔ CC-N02 (bank/transaction) ไม่มี warning หรือ Critical ปลอม ไม่มี REVIEW บังคับ. การรับสายปกติหรือปฏิเสธคุยอย่างสุภาพไม่ใช่ความผิด. Outcome policy ยัง pending จึงวาด observation result ไม่สร้าง PASSED จาก C=0 อย่างเดียว และไม่กำหนดอัตราสุ่ม normal/scam
 
 ### Fallback and synthetic assets
 
@@ -123,7 +123,7 @@ Normal controls ไม่มี warning หรือ Critical ปลอม ไ�
 | P01 | CC-01 | DP-CC01: เนื้อคดี ลายน้ำเอกสาร และเงื่อนไขยุติหลังวางสาย | CONTENT_REVIEW |
 | P02 | CC-02 | DP-CC02: ถ้อยคำวัตถุประสงค์รหัสและ UI readback สำหรับเสียง | CONTENT_REVIEW |
 | P03 | CC-N01 | DP-N01: policy normal control และเงื่อนไขประเมินการตอบเวลาที่จำเป็น; ไม่กำหนดสัดส่วนสุ่ม | CONDITIONAL_CONTENT |
-| P04 | CC-N02 | DP-N02: บริบทนัดเป็น recommendation ใน bank และ control outcome policy ยังไม่อนุมัติ | CONDITIONAL_CONTENT |
+| P04 | CC-N02 | DP-N02: บทธนาคารเป็น matched-control recommendation; ข้อมูลอ้างอิง ขอบเขตคำตอบ และ control outcome policy ยังไม่อนุมัติ | CONDITIONAL_CONTENT |
 | P05 | INV-01 | DP-INV01: กราฟพอร์ตและประวัติทดลองต้องแสดงชัดว่าเป็นสถานะตั้งต้น ไม่มีการโอนของผู้เล่น | CONTENT_REVIEW |
 | P06 | INV-02 | DP-INV02: อนุมัติ news-derived family และแบบจำลองรายได้; DP-INV02-C: เกณฑ์ต่อการชวนคนต้องพิจารณาแยกจากการโอน | CONDITIONAL_CONTENT |
 | P07 | ROM-01 | DP-ROM01: เหตุเดินทาง ความเข้มข้นทางอารมณ์ และข้อความข้ามเวลาต้องทบทวน | CONTENT_REVIEW |
@@ -205,7 +205,7 @@ Normal controls ไม่มี warning หรือ Critical ปลอม ไ�
 
 <a id="drawing-flow-review"></a>
 
-## Drawing flow review
+## Drawing flow review (historical 2026-09-29)
 
 ผลทบทวนรอบ simplification วันที่ 2026-09-29 อ้าง baseline `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` โดยใช้ Story Bank → Deduplication → master spec → category details เป็นลำดับหลักสำหรับย่อ เอกสารระดับ 2 เดิมไม่ได้ถูกลดรายละเอียด
 
@@ -220,7 +220,7 @@ Normal controls ไม่มี warning หรือ Critical ปลอม ไ�
 | Q6 สายปกติยังไม่สอนให้ปฏิเสธทุกสายหรือไม่ | ใช่ CC-N01/CC-N02 ให้เทียบข้อมูลเดิม ตอบเฉพาะความจำเป็น และขอติดต่อกลับอย่างสุภาพ ไม่มีคำขออันตรายหรือสัญญาณเตือนที่แต่งเพิ่ม; outcome policy ยังรออนุมัติ |
 | Q7 ใช้เป็นต้นฉบับวาดได้หรือไม่ | ใช้ทำร่างครบ 21 เรื่องได้ มีลำดับ ภาพสำคัญ จุดตัดสินใจ และทางเลือกหลัก แต่ไม่ใช่ final approval: NEEDS_CONTENT_REVIEW 14 / CONDITIONAL_CONTENT 7 |
 
-### QA รอบย่อ
+### QA รอบย่อ (historical 2026-09-29)
 
 - 9 categories; Story Bank 19 scam families + 2 normal controls = 21 stories; IDs และชื่อไทยตรงต้นทาง ไม่มีเพิ่มหรือหาย
 - 140 concise steps / เฉลี่ย 6.67; 5 ขั้น 1 เรื่อง, 6 ขั้น 8 เรื่อง, 7 ขั้น 9 เรื่อง, 8 ขั้น 3 เรื่อง; ทุกเรื่องเรียงหมายเลขและจบด้วยผลลัพธ์
@@ -234,7 +234,7 @@ Normal controls ไม่มี warning หรือ Critical ปลอม ไ�
 
 ### ตรวจข้อความซ้ำก่อนแก้รอบต่อไป
 
-ตัวอย่างตรวจแบบอ่านอย่างเดียวจากราก repository ด้วย Python 3 ตรวจ Story Bank, ชื่อ/ID, จำนวนขั้น, ข้อความทั้งสองตำแหน่ง และการคงรายละเอียดเดิม ไม่สร้างหรือเปลี่ยนเอกสารและไม่เป็นส่วนของ runtime:
+ตัวอย่างตรวจแบบอ่านอย่างเดียวจากราก repository ด้วย Python 3 ตรวจ Story Bank, ชื่อ/ID, จำนวนขั้น และข้อความทั้งสองตำแหน่ง เทียบไฟล์หมวดอื่นกับ baseline ก่อน matched-control revision; Call Center มีการแก้เนื้อหาโดยตั้งใจจึงตรวจจำนวนเฟรมและอ่าน diff แยก ไม่สร้างหรือเปลี่ยนเอกสารและไม่เป็นส่วนของ runtime:
 
 ```powershell
 @'
@@ -267,17 +267,58 @@ for path in sorted((root / "docs/storyboards").glob("[0-9]*.md")):
         assert steps == re.findall(step_pattern, m[3], re.M)
         total += len(steps)
     before = subprocess.check_output(
-        ["git", "show", "e07c6f26af5e071cb5c99628cd1b880bdc0846f9:" + path.as_posix()],
+        ["git", "show", "4062a8b837728a3aed56df48ea35eaeaf0c3fa87:" + path.as_posix()],
         encoding="utf-8")
-    stripped = re.sub(r"^### Storyboard Drawing Flow\n.*?(?=^### A\.)",
-                      "", text, flags=re.M | re.S)
-    assert stripped == before
+    if path.name != "01-call-center.md":
+        assert text == before
+    else:
+        assert len(re.findall(r"^#### FRAME ", text, re.M)) == 42
+        for sid in ("CC-N01", "CC-N02"):
+            assert len(re.findall(step_pattern, stories[sid][1], re.M)) == 6
 assert seen == set(bank)
-print("PASS:", len(seen), "stories;", total, "steps; details preserved")
+assert len(seen) == 21 and total == 141
+print("PASS:", len(seen), "stories;", total, "steps; matched controls checked")
 '@ | python -X utf8 -
 ```
 
 หลังตรวจข้อความต้องอ่านทบทวนความหมายของ normal controls, confirmation, early exit, ความต่างระหว่างเรื่อง และสถานะรออนุมัติด้วย การตรวจข้อความตรงกันไม่ทดแทน content review
+
+## Call Center matched-control refinement (2026-09-30)
+
+Baseline หลัง fetch: local และ remote `4062a8b837728a3aed56df48ea35eaeaf0c3fa87` ตรงกับ known HEAD ไม่มี upstream diff งานนี้เป็น CONTENT REFINEMENT ONLY ไม่แก้ runtime หรืออนุมัติเนื้อหา final
+
+| Pair | Scam | Normal | Same context | Key difference |
+|---|---|---|---|---|
+| A | CC-01 | CC-N01 | parcel / delivery | สายหลอกเริ่มเรื่องพัสดุแล้วอ้างอำนาจ คดี เอกสาร และขอโอนเงิน; สายปกติยืนยันการจัดส่งที่มีคำสั่งซื้ออยู่แล้วและตอบเพียงข้อมูลจำเป็น |
+| B | CC-02 | CC-N02 | bank / transaction notification | สายหลอกขอ OTP และเร่งให้ทำตามในสาย; สายปกติให้เปิดแอปเอง ไม่ขอข้อมูลลับหรือเงิน และยอมรับการวางสาย/ติดต่อกลับ |
+
+**Learning purpose:** ตรวจว่าผู้โทรขออะไร ขอข้อมูลลับหรือเงินหรือไม่ ยอมให้ใช้ช่องทางอิสระหรือไม่ มีแรงกดดัน/คำขู่/ความลับหรือไม่ และยอมให้วางสาย/ติดต่อกลับหรือไม่ ไม่สอนให้ตัดสินจากตำรวจ ธนาคาร หัวข้อสาย หรือการเป็นเบอร์ไม่รู้จัก
+
+**Provenance:** CC-N01 ยังคงแนวคิดยืนยันจัดส่งจาก CC-S06 ส่วน CC-N02 เป็น USER_SOURCE_DERIVED control concept + RECOMMENDATION for bank-transaction matched context บทธนาคารเป็น DESIGN RECOMMENDATION / MATCHED CONTROL ไม่ใช่ต้นฉบับผู้ใช้หรือข้ออ้างว่าธนาคารทุกแห่งต้องทำเช่นนี้ ทั้งคู่ยัง CONTROL / CONDITIONAL_CONTENT และ control outcome policy ยังไม่อนุมัติ ดู [ประวัติการแทนเนื้อหา](scenario-deduplication-report.md#call-center-matched-control-revision-2026-09-30)
+
+**Drawing vs detail:** controls ใช้ลำดับวาด 6 ภาพตรงกันระหว่าง summary กับ Call Center file ส่วนรายละเอียด 8 เฟรมต่อ control ยังคงโครงสร้างเดิมเพื่ออธิบาย intro/ยืนยันคำตอบ/จบสาย ไม่เพิ่ม State หรือ Checkpoint การยืนยันคำตอบในสายปกติไม่ใช่การยืนยันธุรกรรมและไม่สร้าง critical action
+
+**Future selection:** เลือกบริบทพัสดุแล้วจึงใช้ CC-01 หรือ CC-N01; เลือกบริบทธนาคารแล้วจึงใช้ CC-02 หรือ CC-N02 ใช้ชื่อเริ่มต้นกลางและรูปแบบใกล้เคียงกัน ยังไม่พัฒนาการสุ่ม ไม่กำหนดสัดส่วน และไม่ลงโทษการรับสายหรือการขอตรวจ
+
+**Future dataset:** controls ไม่รวมใน 19 scam families ต้องรักษา matched-pair links หากภายหลังทำ classifier/evaluation และตรวจ leakage จาก template ร่วมก่อนแบ่งชุด รอบนี้ไม่สร้าง dataset
+
+### Content QA A–G
+
+| ข้อ | สิ่งที่ตรวจ |
+|---|---|
+| A | CC-01 เปิดเรื่องพัสดุก่อนอ้างคดี/เงิน; CC-N01 ยืนยันพัสดุที่สั่งและถามเฉพาะเวลาจัดส่ง |
+| B | CC-02 และ CC-N02 ใช้บริบทธนาคาร แต่ต่างที่ขอ OTP ในสายกับให้ตรวจแอปเอง |
+| C | Controls ไม่มี harmful request/action, warning ปลอม, คำขู่, ความลับ, forced transfer หรือเส้นตายปลอม |
+| D | ตรวจเอง วางสาย และติดต่อกลับได้โดยไม่ลงโทษความระมัดระวัง |
+| E | Scam flows ยังใช้คำขอ การตรวจอิสระ และแรงกดดันเป็นหลัก ไม่ใช้ชื่อตำแหน่งตัดสิน |
+| F | ไม่มี family ID เพิ่มหรือหาย CC-N02 เปลี่ยนเนื้อหา ไม่เพิ่ม control ใหม่ |
+| G | คง 9 categories / 19 scam families / 2 normal controls รวม 21 เรื่อง |
+
+ผลตรวจรอบนี้: 141 ขั้น เฉลี่ย 6.71; 5 ขั้น 0 เรื่อง, 6 ขั้น 9 เรื่อง, 7 ขั้น 9 เรื่อง, 8 ขั้น 3 เรื่อง ทั้งสอง controls มี 6 ขั้น ทุกเรื่องยังมีผลลัพธ์และข้อความ master/category ตรงกัน รายละเอียดรวมยัง 252 เฟรม (Call Center 42) ตัวเลข 140 ขั้นในบันทึก QA วันที่ 2026-09-29 ด้านบนเป็นประวัติ ไม่ใช่ยอดปัจจุบัน
+
+ค้น stale active CC-N02 ทั้ง docs: ไม่เหลือคำบรรยายบริบทเดิม; ประวัติ OLD ใน dedup report เก็บเพื่อ traceability ส่วนคำ appointment ที่กล่าวถึงระยะเวลานัดเข้าร่วมวิจัยใน qwen-proposal-recheck.md ไม่ใช่เรื่อง CC-N02 จึงไม่แก้ ไม่แตะไฟล์ฐานข้อมูล untracked และคงข้อความ Storyboard ที่ผู้ใช้เพิ่มไว้ก่อนเริ่มใน working tree โดยไม่นำเข้า commit นี้
+
+ไม่รัน application tests หรือ Playwright เพราะแก้เฉพาะ Markdown ไม่มี runtime implementation
 
 ## Handoff
 

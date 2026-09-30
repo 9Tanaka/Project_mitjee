@@ -125,9 +125,11 @@ Branch: `feat/rule-based-evaluation`; start SHA: `491a48bcaa15260eb3837a50ca46b1
 - personaVariants: V03; themeVariants: V01, V02.
 - newsSources: [N01]; shortEvidenceSummary: ตำรวจเตือนการอ้างคดีแล้วหลอกโอนเงินตรวจสอบ ไม่ใช่การรับรองบทสมมติ.
 - estimatedComplexity: MEDIUM; recommendedMode: TEXT_OR_VOICE; datasetFamilyId: CC-FAMILY-CASE-TRANSFER.
+- matchedControl [RECOMMENDATION]: CC-N01; matchedDimension: parcel / delivery surface context; ใช้พัสดุเป็นบริบทเปิดของฉบับจับคู่ ก่อนอ้างคดีและขอโอนเงิน ไม่สร้าง family ใหม่และยังคง case-transfer identity กับ variants เดิม.
 - uniqueness: เทียบ CC-02 ต่างคำขอเงินแทนรหัส, หลักฐานคดีแทนธุรกรรม และ safe decision ตรวจข้อกล่าวหาแทนรักษาการยืนยันบัญชี.
 
 ### CC-02
+- matchedControl [RECOMMENDATION]: CC-N02; matchedDimension: bank / transaction notification; ความต่างอยู่ที่คำขอ OTP กับการให้ตรวจแอปเอง ไม่ใช่ชื่อธนาคาร.
 - storyFamilyId: CC-02; category / primaryCategory: Call Center; titleThai: สายธนาคารปลอมขอรหัสยืนยัน; titleEnglish: Bank security caller requesting verification codes.
 - sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED; provenance: CC-S03 + NEWS_VALIDATED + CURRENT_CODE; RECOMMENDATION: รายละเอียดการตรวจกลับ; DETAIL_PENDING: บทเต็ม.
 - oneSentencePremise: ผู้โทรอ้างตรวจธุรกรรมผิดปกติและขอรหัสที่ใช้ยืนยันบัญชี.
@@ -379,27 +381,54 @@ Branch: `feat/rule-based-evaluation`; start SHA: `491a48bcaa15260eb3837a50ca46b1
 
 ## 14. Normal Call Controls
 
-ไม่รวมใน 19 scam families. ไม่กำหนด fake warning signs หรือ fake critical action. การขอตรวจอิสระ/ปฏิเสธคุยอย่างสุภาพไม่ใช่ความผิด และการรับสายตามปกติไม่ใช่หลักฐานว่าขาดทักษะ. ไม่กำหนดอัตราสุ่ม 50/50 ในรอบนี้.
+Matched-control refinement | 2026-09-30 | base HEAD `4062a8b837728a3aed56df48ea35eaeaf0c3fa87` | CONTENT REFINEMENT ONLY
+
+ไม่รวม controls ใน 19 scam families และไม่เพิ่ม ID ใหม่ รอบนี้คง CC-N01 และแทนเนื้อหา CC-N02 ด้วยบริบทธนาคาร ทั้งสองยังเป็น CONTROL / CONDITIONAL_CONTENT ไม่อนุมัติ policy การประเมินโดยอัตโนมัติ
+
+**เหตุผลการจับคู่ [RECOMMENDATION]:** ใช้ SAME / SIMILAR SURFACE CONTEXT + DIFFERENT UNDERLYING BEHAVIOR เพื่อให้ผู้เรียนแยกจากพฤติกรรมและคำขอ การเทียบสายคดีปลอมกับสายปกติที่หัวข้อไม่เกี่ยวกันทำให้เดาประเภทจากหัวข้อได้ง่าย จึงใช้คู่พัสดุและคู่ธนาคาร ไม่สอนว่า “ตำรวจ = scam”, “ธนาคาร = scam”, “สายแปลก = scam” หรือ “ปฏิเสธทุกสาย = correct”
+
+| Pair | Scam | Normal | Same context | Key difference |
+|---|---|---|---|---|
+| A | CC-01 | CC-N01 | parcel / delivery | สายหลอกเริ่มเรื่องพัสดุแล้วอ้างอำนาจ คดี เอกสาร และขอโอนเงิน; สายปกติยืนยันการจัดส่งที่มีคำสั่งซื้ออยู่แล้วและตอบเพียงข้อมูลจำเป็น |
+| B | CC-02 | CC-N02 | bank / transaction notification | สายหลอกขอ OTP และเร่งให้ทำตามในสาย; สายปกติให้เปิดแอปเอง ไม่ขอข้อมูลลับหรือเงิน และยอมรับการวางสาย/ติดต่อกลับ |
+
+สิ่งที่ผู้เรียนควรสังเกต:
+1. ผู้โทรกำลังขออะไร
+2. ขอข้อมูลลับหรือไม่
+3. ขอให้โอนเงินหรือไม่
+4. ยอมให้ตรวจสอบผ่านช่องทางอิสระหรือไม่
+5. ใช้ความเร่งด่วน ข่มขู่ หรือขอเก็บเป็นความลับหรือไม่
+6. สามารถวางสายและติดต่อกลับเองได้หรือไม่
+
+**ข้อจำกัด controls:** ไม่มีคำขอ OTP, password, transfer, upfront fee, remote access หรือ app install; ไม่มีคำขู่ secrecy/isolation เส้นตายปลอม warning ปลอม หรือ critical action ความยากมาจากบริบทใกล้กัน ไม่ใช่แต่งพฤติกรรมอันตรายให้สายปกติ การรับสาย การขอตรวจ และการวางสายอย่างสุภาพไม่ใช่ความผิด ความสุภาพเพียงอย่างเดียวก็ไม่ยืนยันตัวตน
+
+**การเลือกเรื่องในอนาคต [RECOMMENDATION]:** PARCEL CONTEXT → CC-01 หรือ CC-N01; BANK CONTEXT → CC-02 หรือ CC-N02 ไม่มีการพัฒนาระบบสุ่มและไม่กำหนดอัตรา 50/50 ในรอบเนื้อหานี้ ใช้หน้าจอเริ่มต้นและชื่อบริบทกลางที่ใกล้เคียงกัน ไม่ให้ป้าย “normal/scam” หรือรูปแบบหน้าจอเป็นคำเฉลย
 
 ### CC-N01
 - storyFamilyId: CC-N01; type: CONTROL_NORMAL; category / primaryCategory: Call Center; titleThai: สายยืนยันการจัดส่งปกติ; titleEnglish: Normal delivery confirmation.
-- sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED; provenance: CC-S06; RECOMMENDATION: ตัวอย่างคำขอไม่อ่อนไหว; DETAIL_PENDING: เนื้อสนทนา.
-- oneSentencePremise: ผู้ส่งยืนยันช่วงเวลาส่งของที่มีคำสั่งซื้อสมมติอยู่แล้ว.
-- initialContact: สายแจ้งส่ง; trustMechanism: ตรวจได้กับคำสั่งซื้อเดิม; pressureMechanism: ไม่มีแรงกดดันผิดปกติ; mainRequest: ยืนยันเวลารับ; escalation: ไม่มี.
-- expectedSafeBehavior: ตรวจคำสั่งซื้อก่อนตอบข้อมูลที่จำเป็น; potentialReviewBehavior: ยังไม่กำหนด ไม่ลงโทษความระมัดระวัง; criticalCandidateBehavior: ไม่มี; safeTermination: ยืนยันหรือขอเลื่อนตรวจผ่านช่องทางเดิม.
+- sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED; provenance: CC-S06 รองรับแนวคิดสายยืนยันจัดส่ง; RECOMMENDATION: รายละเอียดบทและการจับคู่กับ CC-01; DETAIL_PENDING: เนื้อสนทนาและ control outcome policy.
+- status / selectionTier: CONTROL; approval: CONDITIONAL_CONTENT.
+- matchedScamFamily: CC-01; matchedDimension: parcel / delivery surface context.
+- oneSentencePremise: ผู้จัดส่งยืนยันการจัดส่งของคำสั่งซื้อสมมติที่ผู้เรียนมีอยู่แล้ว ผู้เรียนเปิดรายการของตนเองเทียบได้และตอบเฉพาะข้อมูลที่จำเป็นต่อการจัดส่ง.
+- initialContact: สายจากผู้จัดส่งสมมติ; trustMechanism: เทียบเลขพัสดุ เวลา และร้านค้ากับคำสั่งซื้อเดิม; pressureMechanism: ไม่มี; mainRequest: ยืนยันช่วงเวลารับสินค้า; escalation: ไม่มี.
+- expectedSafeBehavior: ตรวจคำสั่งซื้อเองก่อนตอบเฉพาะเรื่องจัดส่ง; potentialReviewBehavior: ยังไม่กำหนด ไม่ลงโทษความระมัดระวัง; criticalCandidateBehavior: ไม่มี; safeTermination: ยืนยันเวลา ขอเลื่อน หรือวางสายแล้วติดต่อผ่านช่องทางเดิม.
+- safetyBoundary: ไม่มีคำขอ OTP/รหัสผ่าน/โอนเงิน/ค่าธรรมเนียม/ติดตั้งแอป/ควบคุมเครื่อง ไม่มีความลับ คำขู่ หรือการบังคับให้โอนสาย; ไม่มี harmful action.
 - relatedCategories: E-commerce / Online Shopping; tacticTags: []; personaVariants: []; themeVariants: [].
-- newsSources: ไม่ใช้ข่าว scam มายืนยัน normal; sourceUrls: ไม่เกี่ยวข้อง; accessDate: 2026-09-27; shortEvidenceSummary: มาจากแนวคิดผู้ใช้ ไม่อ้างสถิติ.
+- newsSources: ไม่ใช้ข่าว scam มายืนยัน normal; sourceUrls: ไม่เกี่ยวข้อง; accessDate: 2026-09-27; shortEvidenceSummary: แนวคิดสายจัดส่งมาจากผู้ใช้ รายละเอียด matched control เป็นข้อเสนอ ไม่อ้างสถิติ.
 - estimatedComplexity: LOW; recommendedMode: TEXT_OR_VOICE; datasetFamilyId: CC-CONTROL-DELIVERY.
 
 ### CC-N02
-- storyFamilyId: CC-N02; type: CONTROL_NORMAL; category / primaryCategory: Call Center; titleThai: สายแจ้งเตือนนัดหมายปกติ; titleEnglish: Normal appointment reminder.
-- sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED; provenance: CC-S06 แนวคิดกว้าง; RECOMMENDATION: นัดหมายเป็นตัวอย่างที่เสนอเพิ่ม ไม่ใช่คำต้นฉบับ; DETAIL_PENDING: บริบทนัด.
-- oneSentencePremise: หน่วยบริการสมมติเตือนนัดที่ผู้เรียนมีข้อมูลอยู่แล้ว.
-- initialContact: สายเตือน; trustMechanism: เทียบปฏิทิน/ช่องทางเดิม; pressureMechanism: ไม่มี; mainRequest: รับทราบหรือขอเลื่อน; escalation: ไม่มี.
-- expectedSafeBehavior: ตรวจนัดและจำกัดข้อมูล; potentialReviewBehavior: ยังไม่กำหนด; criticalCandidateBehavior: ไม่มี; safeTermination: รับทราบหรือโทรกลับผ่านช่องทางที่ตรวจไว้.
+- storyFamilyId: CC-N02; type: CONTROL_NORMAL; category / primaryCategory: Call Center; titleThai: สายธนาคารปกติแจ้งให้ตรวจสอบรายการ; titleEnglish: Normal bank transaction notification.
+- sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED control concept + RECOMMENDATION for bank-transaction matched context; provenance: CC-S06 รองรับเพียงแนวคิดสายปกติทั่วไป ไม่ได้ระบุบทธนาคารนี้โดยตรง; DESIGN RECOMMENDATION / MATCHED CONTROL เมื่อ 2026-09-30; DETAIL_PENDING: บทธนาคารและ control outcome policy.
+- status / selectionTier: CONTROL; approval: CONDITIONAL_CONTENT.
+- matchedScamFamily: CC-02; matchedDimension: bank / abnormal transaction surface context.
+- oneSentencePremise: ฝ่ายธนาคารสมมติแจ้งให้ผู้เรียนตรวจรายการผ่านช่องทางที่ผู้เรียนเปิดเอง โดยไม่ขอ OTP รหัสผ่าน หรือการโอนเงิน.
+- initialContact: สายจากฝ่ายบริการ/ความปลอดภัยธนาคารสมมติ; trustMechanism: ข้อมูลอ้างอิงทั่วไปที่ผู้เรียนเทียบกับแอปธนาคารจำลองของตนเองได้; pressureMechanism: ไม่มีแรงกดดันให้ข้ามการตรวจสอบ; mainRequest: เปิดแอปธนาคารจำลองเองเพื่อตรวจรายการ หรือรับทราบว่าควรติดต่อกลับผ่านช่องทางเดิม; escalation: ไม่มี.
+- expectedSafeBehavior: เปิดแอปหรือช่องทางธนาคารเอง ตรวจยอด เวลา และรายการ จำกัดข้อมูลตอบกลับ และวางสาย/โทรกลับได้; potentialReviewBehavior: ยังไม่กำหนด ไม่ลงโทษความระมัดระวัง; criticalCandidateBehavior: ไม่มี; safeTermination: รับทราบแล้วตรวจผ่านแอป หรือวางสายแล้วติดต่อช่องทางเดิม.
+- safetyBoundary: ไม่มีคำขอ OTP/รหัสผ่าน/โอนเงิน/ค่าธรรมเนียม/ติดตั้งแอป/ควบคุมเครื่อง ไม่มีคำขู่ ความลับ การแยกจากผู้อื่น หรือเส้นตายที่ทำให้ข้ามการตรวจสอบ; ไม่มี harmful action.
 - relatedCategories: []; tacticTags: []; personaVariants: []; themeVariants: [].
-- newsSources: ไม่เกี่ยวข้อง; sourceUrls: ไม่เกี่ยวข้อง; accessDate: 2026-09-27; shortEvidenceSummary: normal control ที่เสนอ ไม่ใช่ incident ข่าว.
-- estimatedComplexity: LOW; recommendedMode: TEXT_OR_VOICE; datasetFamilyId: CC-CONTROL-APPOINTMENT.
+- newsSources: ไม่เกี่ยวข้อง; sourceUrls: ไม่เกี่ยวข้อง; accessDate: 2026-09-27 สำหรับแนวคิด control เดิม; contentRevisionDate: 2026-09-30; shortEvidenceSummary: บทธนาคารเป็นข้อเสนอ matched control ไม่ใช่ incident ข่าวหรือข้ออ้างว่าธนาคารจริงทุกแห่งติดต่อแบบนี้.
+- estimatedComplexity: LOW; recommendedMode: TEXT_OR_VOICE; datasetFamilyId: CC-CONTROL-BANK-TRANSACTION; identifier นี้เป็นแผนเนื้อหา ไม่ได้สร้าง dataset หรือแก้ registry.
 
 ## 15. Cross-category Hybrid Map
 
@@ -444,7 +473,7 @@ Master Table ใช้ DEMO หมายถึงสมาชิก Core ที�
 | Job | JOB-02 | งานเก็บเอกสาร | ขอข้อมูลเกินจำเป็น | USER_SOURCE | DATA_HARVESTING | ส่งข้อมูล | ตรวจวัตถุประสงค์ | ไม่มี | ไม่มี | N15 ภาพรวม | MEDIUM | EXTENDED |
 | Job | JOB-03 | งานรับส่งเงิน | ใช้บัญชีตนแทนบริษัท | USER_SOURCE | MONEY_MULE | ส่งต่อเงิน | ปฏิเสธใช้บัญชีแทน | ไม่มี | ไม่มี dedicated flow | N16 | HIGH | CORE |
 | Call Center | CC-N01 | ยืนยันส่งของปกติ | ตรวจเวลาส่ง | USER_SOURCE | ไม่มี | ไม่มี | ตรวจคำสั่งซื้อเดิม | ไม่มี | ไม่ implement | ไม่เกี่ยวข้อง | LOW | CONTROL |
-| Call Center | CC-N02 | เตือนนัดปกติ | ตรวจนัดเดิม | USER_SOURCE | ไม่มี | ไม่มี | ตรวจปฏิทิน/ช่องทางเดิม | ไม่มี | ไม่ implement | ไม่เกี่ยวข้อง | LOW | CONTROL |
+| Call Center | CC-N02 | ธนาคารแจ้งตรวจรายการปกติ | เปิดแอปเองตรวจรายการ | USER_SOURCE control concept + RECOMMENDATION bank context | ไม่มี | ไม่มี | ตรวจแอป/ช่องทางธนาคารที่เปิดเอง | ไม่มี | ไม่ implement | ไม่เกี่ยวข้อง | LOW | CONTROL / CONDITIONAL_CONTENT |
 
 Selection gates: REC-02 ต้อง review ความต่างจาก PHI-02 และ source specificity; LOAN-02 ต้องแยก fake loan กับการกู้ที่ละเมิดข้อมูล; INV-02/ECO-03 เป็น additions ที่ต้องอนุมัติ. จำนวน Core 18 เป็นข้อเสนอมีเงื่อนไข ไม่ใช่รับรองว่า stories พร้อมเขียนทันที.
 
@@ -480,7 +509,7 @@ INV-01 ที่มี romance opening ต้องใช้ family/group เด
 
 Proposal เป้าหมาย 3,600 ตัวอย่าง (400/category) และ 80/10/10 เป็นเป้าปริมาณเดิม ไม่สามารถ random split rows เพื่อให้ตัวเลขสวย. มี 19 families แต่หลายหมวดมี 2 และ Task มี 1 จึงยังแยกทุกหมวดลงทั้งสามชุดแบบไม่รั่วไม่ได้. อย่างน้อย 3 independent families/category = 27 เป็นเพียง lower bound ถ้าต้องการทุกหมวดในทุก split; shared groups และขนาด test ที่มีความหมายอาจต้องมากกว่า. ไม่สร้าง families เทียมเพื่อเติมจำนวน.
 
-ทางเลือกที่ต้อง review: เพิ่มเรื่องต่างจริงจากข่าวในหมวดบาง หรือกำหนด evaluation แบบ held-out families โดยยอมรับว่าบางหมวดไม่อยู่ครบทุก splitและรายงานข้อจำกัด. Normal controls อยู่ separate group และต้องมีตัวอย่างอิสระเพียงพอ ไม่เอา paraphrases ข้ามชุด.
+ทางเลือกที่ต้อง review: เพิ่มเรื่องต่างจริงจากข่าวในหมวดบาง หรือกำหนด evaluation แบบ held-out families โดยยอมรับว่าบางหมวดไม่อยู่ครบทุก splitและรายงานข้อจำกัด. Normal controls อยู่ separate group และต้องมีตัวอย่างอิสระเพียงพอ ไม่เอา paraphrases ข้ามชุด ไม่รวม CC-N01/CC-N02 ใน 19 scam families หากอนาคตมี normal/scam classifier หรือ evaluation ต้องเก็บลิงก์ CC-01 ↔ CC-N01 และ CC-02 ↔ CC-N02 ไว้ชัดเจน และพิจารณา shared context/template ใน leakage grouping ไม่ถือว่าชื่อต่างกันแล้วเป็นอิสระ รอบนี้ไม่สร้างตัวอย่างฝึกหรือกำหนดการแบ่งชุด controls
 
 **Rule-Based compatibility:** expectedSafeBehavior / potentialReviewBehavior / criticalCandidateBehavior เป็นแนวทางแยกพฤติกรรม ไม่คำนวณคะแนนเอง ไม่กำหนดสูตร/rule IDs ไม่ให้ Qwen ตัดสินผลลัพธ์. หลักฐาน observable, opportunities, omission และ ambiguity ต้องออกแบบใน phase ถัดไปหลัง review. จำนวน/ค่าฝึกและการเลือกโมเดลไม่เปลี่ยนในงานนี้.
 

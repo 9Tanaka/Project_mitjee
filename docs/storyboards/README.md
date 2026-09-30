@@ -10,11 +10,19 @@
 
 ## Drawing flow coverage
 
-- ตรวจ remote สำหรับรอบย่อเมื่อ 2026-09-29: local และ remote HEAD `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` ตรงกับฐานที่ร้องขอ
-- ครบ 9 หมวด / 19 scam stories / 2 normal controls; รวม 140 ขั้น เฉลี่ย 6.67 ขั้นต่อเรื่อง
-- 5 ขั้น: 1 เรื่อง; 6 ขั้น: 8 เรื่อง; 7 ขั้น: 9 เรื่อง; 8 ขั้น: 3 เรื่อง
+- ตรวจ remote สำหรับรอบ matched control เมื่อ 2026-09-30: local และ remote HEAD `4062a8b837728a3aed56df48ea35eaeaf0c3fa87` ตรงกับฐานที่ร้องขอ
+- ครบ 9 หมวด / 19 scam stories / 2 normal controls; รวม 141 ขั้น เฉลี่ย 6.71 ขั้นต่อเรื่อง
+- 5 ขั้น: 0 เรื่อง; 6 ขั้น: 9 เรื่อง; 7 ขั้น: 9 เรื่อง; 8 ขั้น: 3 เรื่อง
 - วาดร่างได้ 21 เรื่อง แต่ยังรออนุมัติ: NEEDS_CONTENT_REVIEW 14 / CONDITIONAL_CONTENT 7; สายปกติไม่เพิ่มคำขออันตรายหรือสัญญาณเตือนปลอม
-- ลำดับในเอกสารหลักกับ Storyboard Drawing Flow รายหมวดใช้ข้อความตรงกันทุกคำ และเก็บรายละเอียดเดิมครบ 252 เฟรม
+- ลำดับในเอกสารหลักกับ Storyboard Drawing Flow รายหมวดใช้ข้อความตรงกันทุกคำ และยังมีรายละเอียดครบ 252 เฟรม โดยรอบนี้แก้เฉพาะเนื้อหา Call Center ที่เกี่ยวกับ matched controls ไม่ลดโครงเฟรม
+
+## Call Center matched controls
+
+- CC-01 ↔ CC-N01: บริบทพัสดุร่วมกัน แต่ต่างที่การอ้างคดีและขอโอนเงินกับการยืนยันจัดส่งเดิม
+- CC-02 ↔ CC-N02: บริบทธนาคารร่วมกัน แต่ต่างที่การขอ OTP กับการให้เปิดแอปเองและยอมวางสาย
+- ทั้งสอง controls ใช้ Drawing Flow 6 ภาพ และรายละเอียดระดับ 2 จำนวน 8 เฟรมต่อเรื่อง
+- CC-N02 ใหม่เป็น DESIGN RECOMMENDATION / MATCHED CONTROL จากแนวคิดสายปกติทั่วไป ไม่ใช่บทธนาคารที่อ้างว่ามีในต้นฉบับ และยังเป็น CONTROL / CONDITIONAL_CONTENT
+- ไม่มีการเพิ่มเรื่อง ไม่มีการสุ่มจริงหรือกำหนดสัดส่วน; อ่าน [เหตุผลและ provenance](../scenario-story-bank.md#14-normal-call-controls)
 
 ## Detailed interaction baseline
 
@@ -44,7 +52,7 @@
 | [CC-01](01-call-center.md#cc-01) | Call Center | คดีปลอมบังคับโอนเงินเพื่อตรวจสอบ | CORE / PROPOSED | TEXT_OR_VOICE (target VOICE; FUTURE VOICE UX) | 13 | S2 / R2 / K1 | T 4–6 / V 6–9 นาที | ไม่มี dedicated flow | NEEDS_CONTENT_REVIEW |
 | [CC-02](01-call-center.md#cc-02) | Call Center | สายธนาคารปลอมขอรหัสยืนยัน | DEMO / PROPOSED | TEXT_OR_VOICE (target VOICE; FUTURE VOICE UX) | 13 | S2 / R2 / K1 | T 4–6 / V 6–9 นาที | call-center-scam v1: TEXT เท่านั้น; คล้ายธนาคารขอ OTP | NEEDS_CONTENT_REVIEW |
 | [CC-N01](01-call-center.md#cc-n01) | Call Center | สายยืนยันการจัดส่งปกติ | CONTROL / CONDITIONAL_CONTENT | TEXT_OR_VOICE (FUTURE VOICE UX) | 8 | S2 / R0 / K0 | T 3–4 / V 4–5 นาที | ไม่ implement | CONDITIONAL |
-| [CC-N02](01-call-center.md#cc-n02) | Call Center | สายแจ้งเตือนนัดหมายปกติ | CONTROL / CONDITIONAL_CONTENT | TEXT_OR_VOICE (FUTURE VOICE UX) | 8 | S2 / R0 / K0 | T 3–4 / V 4–5 นาที | ไม่ implement | CONDITIONAL |
+| [CC-N02](01-call-center.md#cc-n02) | Call Center | สายธนาคารปกติแจ้งให้ตรวจสอบรายการ | CONTROL / CONDITIONAL_CONTENT | TEXT_OR_VOICE (FUTURE VOICE UX) | 8 | S2 / R0 / K0 | T 3–4 / V 4–5 นาที | ไม่ implement | CONDITIONAL |
 | [INV-01](02-investment.md#inv-01) | Investment | ลงทุนได้กำไรช่วงแรกแต่ถอนเงินติดค่าปลดล็อก | DEMO / PROPOSED | TEXT | 14 | S2 / R2 / K1 | T 4–6 นาที | investment-scam v1: partial generic text flow | NEEDS_CONTENT_REVIEW |
 | [INV-02](02-investment.md#inv-02) | Investment | ลงทุนที่ให้ผลตอบแทนจากการชวนสมาชิก | CORE / CONDITIONAL_CONTENT | TEXT | 13 | S2 / R2 / K1 | T 4–6 นาที | ไม่มี dedicated flow | CONDITIONAL |
 | [ROM-01](03-romance.md#rom-01) | Romance / Relationship | คนรักออนไลน์ขอเงินฉุกเฉิน | DEMO / PROPOSED | TEXT | 13 | S2 / R2 / K1 | T 6–8 นาที | romance-scam v1: partial emergency text flow | NEEDS_CONTENT_REVIEW |

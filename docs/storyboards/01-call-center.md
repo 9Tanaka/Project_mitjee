@@ -4,7 +4,17 @@
 
 Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19af | 2026-09-28
 
-[SOURCE-DERIVED] Family identity/tier อ้าง Story Bank เดิม. [RECOMMENDATION] ทุก storyboard/action mapping เป็น draft สำหรับ review ไม่ใช่ current runtime. ไม่แก้หรือเพิ่ม family. ป้ายข้อมูลผู้เขียนทั้งหมดไม่ใช่ UI ผู้เล่น
+[SOURCE-DERIVED] Family IDs/tier อ้าง Story Bank. [RECOMMENDATION] ทุก storyboard/action mapping เป็น draft สำหรับ review ไม่ใช่ current runtime. รอบ 2026-09-30 ปรับ matched controls โดยคง IDs และจำนวนเดิม; เนื้อหาธนาคาร CC-N02 เป็น DESIGN RECOMMENDATION ไม่ใช่บทที่อยู่ในต้นฉบับผู้ใช้ ป้ายข้อมูลผู้เขียนทั้งหมดไม่ใช่ UI ผู้เล่น
+
+## Call Center matched pairs
+
+| Pair | Scam | Normal | Same context | Key difference |
+|---|---|---|---|---|
+| A | CC-01 | CC-N01 | parcel / delivery | สายหลอกเริ่มเรื่องพัสดุแล้วอ้างอำนาจ คดี เอกสาร และขอโอนเงิน; สายปกติยืนยันการจัดส่งที่มีคำสั่งซื้ออยู่แล้วและตอบเพียงข้อมูลจำเป็น |
+| B | CC-02 | CC-N02 | bank / transaction notification | สายหลอกขอ OTP และเร่งให้ทำตามในสาย; สายปกติให้เปิดแอปเอง ไม่ขอข้อมูลลับหรือเงิน และยอมรับการวางสาย/ติดต่อกลับ |
+
+เป้าหมายคือแยกคำขอและพฤติกรรมในบริบทใกล้กัน ไม่เดาจากตำแหน่งผู้โทร ดูเหตุผลและขอบเขตใน [Story Bank](../scenario-story-bank.md#14-normal-call-controls) การเลือก PARCEL → CC-01/CC-N01 และ BANK → CC-02/CC-N02 เป็นแนวคิดในอนาคต ยังไม่พัฒนาการสุ่มหรือกำหนดสัดส่วน และทั้งสอง controls ยังคง CONDITIONAL_CONTENT
+
 
 <a id="cc-01"></a>
 
@@ -18,7 +28,7 @@ Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19a
 
 1. **สายเข้า:** หน้าจอแสดงผู้โทรที่อ้างว่าเป็นเจ้าหน้าที่ ผู้เล่นเลือกรับ พิมพ์ตอบหรือพูดคุยตามโหมด หรือวางสายตั้งแต่ต้นแล้วตรวจสอบผ่านช่องทางที่หาเองในระบบได้
 
-2. **แจ้งข้อกล่าวหา:** ผู้โทรอ้างว่าพัสดุหรือบัญชีเกี่ยวข้องกับคดี ผู้เล่นขอรายละเอียด เลือกข้อมูลที่ควรตรวจเพิ่ม หรือยุติการติดต่อได้โดยไม่ต้องรับฟังจนจบ
+2. **แจ้งข้อกล่าวหา:** ผู้โทรเริ่มจากเรื่องพัสดุแล้วอ้างว่าเกี่ยวข้องกับคดี ผู้เล่นขอรายละเอียด เลือกข้อมูลที่ควรตรวจเพิ่ม หรือยุติการติดต่อได้โดยไม่ต้องรับฟังจนจบ
 
 3. **เสริมความน่าเชื่อถือ:** ผู้โทรให้เลขอ้างอิง ส่งเอกสารสมมติ หรือโอนสายไปยังผู้ที่อ้างตำแหน่งสูงกว่า ผู้เล่นเปิดดูและเปรียบเทียบข้อกล่าวอ้างได้ แต่เอกสารจากผู้โทรยังไม่ใช่ผลตรวจจากหน่วยงานอื่น
 
@@ -46,15 +56,17 @@ Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19a
 
 ### B. Scenario premise
 
+Matched control [RECOMMENDATION]: CC-N01 ใช้ parcel / delivery surface context ร่วมกัน ฉบับจับคู่ใช้ทางเข้าพัสดุของ CC-01 เดิมก่อนอ้างคดี เอกสาร แรงกดดันและขอโอน ไม่เปลี่ยน case-transfer identity หรือเพิ่ม family; variants ข้อกล่าวหาเดิมใน bank ยังอยู่
+
 [SOURCE-DERIVED] ผู้โทรอ้างคดีและอำนาจเจ้าหน้าที่เพื่อให้โอนเงินแทนการตรวจสอบอิสระ
 
-[RECOMMENDATION] ผู้เรียนเป็นเจ้าของบัญชีสมมติที่ไม่ได้ทราบเรื่องคดีมาก่อน ตัวละครเป็นผู้ประสานงานสอบสวนสมมติ พูดเป็นทางการและใช้บทบาทผู้บังคับบัญชาเพิ่มความน่าเชื่อถือ
+[RECOMMENDATION] ผู้เรียนเป็นผู้รับการติดต่อเรื่องพัสดุสมมติ ก่อนถูกโยงเข้าข้อกล่าวหาคดี ตัวละครเป็นผู้ประสานงานสอบสวนสมมติ พูดเป็นทางการและใช้บทบาทผู้บังคับบัญชาเพิ่มความน่าเชื่อถือ
 การติดต่อเริ่มผ่านสายเรียกเข้าสมมติ โดยอาศัยโอนสายและเอกสารราชการจำลอง เป้าหมายคำขอคือโอนเงินจำลองเพื่อพิสูจน์ความบริสุทธิ์
 สิ่งที่ผู้เรียนต้องสังเกตคือความสัมพันธ์ระหว่างข้ออ้าง หลักฐาน และคำขอ ไม่ตัดสินจากรูปลักษณ์หรืออาชีพ
 
 ### C. Pre-scenario screen
 
-[RECOMMENDATION] แสดงชื่อกลาง “สายแจ้งเรื่องที่ต้องตรวจสอบ” บริบท “คุณรับบทเป็นเจ้าของบัญชีสมมติที่ไม่ได้ทราบเรื่องคดีมาก่อน เรื่องทั้งหมดเป็นเหตุการณ์สมมติ” ป้ายข้อมูลสมมติ โหมด TEXT_OR_VOICE (target VOICE; FUTURE VOICE UX) และปุ่มเริ่ม/กลับ ไม่แสดงชื่อวิจัยที่มีคำว่าปลอมหรือคำตอบล่วงหน้า ไม่แสดงเฉลย warning/critical ใช้ F01 เป็นภาพร่าง ก่อนเริ่มไม่มีผลประเมิน
+[RECOMMENDATION] แสดงชื่อกลาง “สายเกี่ยวกับพัสดุ” บริบท “คุณรับบทเป็นผู้รับการติดต่อเรื่องพัสดุในสถานการณ์สมมติ เรื่องทั้งหมดเป็นเหตุการณ์สมมติ” ป้ายข้อมูลสมมติ โหมด TEXT_OR_VOICE (target VOICE; FUTURE VOICE UX) และปุ่มเริ่ม/กลับ ไม่แสดงชื่อวิจัยที่มีคำว่าปลอมหรือคำตอบล่วงหน้า ไม่แสดงเฉลย warning/critical ใช้ F01 เป็นภาพร่าง ก่อนเริ่มไม่มีผลประเมิน
 
 ### D. Character profile
 
@@ -95,12 +107,12 @@ Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19a
 [RECOMMENDATION] รายละเอียด UX/การเรียงเฟรมนี้เป็นข้อเสนอ; Example message เป็น DRAFT ไม่ใช่ Qwen training target.
 
 - Stage: PRE_SCENARIO
-- Current situation: คุณรับบทเป็นเจ้าของบัญชีสมมติที่ไม่ได้ทราบเรื่องคดีมาก่อน เรื่องทั้งหมดเป็นเหตุการณ์สมมติ
+- Current situation: คุณรับบทเป็นผู้รับการติดต่อเรื่องพัสดุในสถานการณ์สมมติ เรื่องทั้งหมดเป็นเหตุการณ์สมมติ
 - Visual / UI: full intro screen / title / context / mode / Start
 - Camera / screen focus: full intro screen
 - Character behavior: ยังไม่เปิดตัวคู่สนทนา
 - Dialogue intent: ให้ทราบบทบาทและวิธีเข้าโดยไม่เฉลย
-- Example message (DRAFT): “พร้อมเริ่มเหตุการณ์จำลอง: สายแจ้งเรื่องที่ต้องตรวจสอบ”
+- Example message (DRAFT): “พร้อมเริ่มเหตุการณ์จำลอง: สายเกี่ยวกับพัสดุ”
 - Evidence shown: บริบทผู้เรียน; ไม่มี warning label หรือผลประเมิน
 - Pressure / tactic: NONE
 - User interaction: ACTION: Start / ออกจากหน้าก่อนเริ่ม
@@ -119,9 +131,9 @@ Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19a
 - Current situation: มีสายเรียกเข้าสมมติขณะผู้เรียนอยู่หน้าฝึก
 - Visual / UI: call screen / caller claim
 - Camera / screen focus: call screen
-- Character behavior: เริ่มแจ้งข้อกล่าวหาและถามว่าจะฟังรายละเอียดหรือไม่
+- Character behavior: เริ่มอ้างเรื่องพัสดุและเชื่อมไปสู่ข้อกล่าวหา ก่อนถามว่าจะฟังรายละเอียดหรือไม่
 - Dialogue intent: สร้างการตอบสนองตามเนื้อหาช่วง INITIAL_CONTACT โดยใช้ข้อมูลที่แสดงแล้วเท่านั้น
-- Example message (DRAFT): “มีเรื่องเกี่ยวกับรายการของคุณที่ต้องตรวจสอบ ขอแจ้งเลขอ้างอิงก่อนครับ”
+- Example message (DRAFT): “มีเรื่องเกี่ยวกับพัสดุที่อ้างถึงคุณ ขอแจ้งเลขอ้างอิงก่อนครับ”
 - Evidence shown: เลข CASE-CC01-SIM; ชื่อฝ่ายสมมติ
 - Pressure / tactic: IMPERSONATION
 - User interaction: FREE_TEXT / VOICE (FUTURE VOICE UX) / CONTINUE / END_CONTACT
@@ -590,6 +602,8 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 - [DETAIL_PENDING] DP-CC02: ถ้อยคำวัตถุประสงค์รหัสและ UI readback สำหรับเสียง
 
 ### B. Scenario premise
+
+Matched control [RECOMMENDATION]: CC-N02 ใช้ bank / transaction surface context ร่วมกัน แต่ CC-02 ยังคงผู้โทรขอ OTP และเร่งให้ทำตามในสาย ขณะที่ CC-N02 ให้เปิดแอปเอง ไม่ใช้ชื่อธนาคารตัดสินประเภทสาย
 
 [SOURCE-DERIVED] ผู้โทรอ้างตรวจธุรกรรมผิดปกติและขอรหัสที่ใช้ยืนยันบัญชี
 
@@ -1108,17 +1122,17 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 
 [เอกสารหลักสำหรับวาด](../scenario-storyboard-flow-summary.md#cc-n01) | ลำดับย่อสำหรับวาดร่าง; รายละเอียดเดิมอยู่ด้านล่าง
 
-1. **สายยืนยันจัดส่ง:** ผู้เล่นเห็นสายจากผู้จัดส่งและมีคำสั่งซื้อสมมติอยู่ก่อนแล้ว เลือกรับสาย พิมพ์ตอบหรือพูดคุย หรือวางสายแล้วใช้ช่องทางเดิมติดต่อกลับได้
+1. **สายจากผู้จัดส่ง:** ผู้เล่นได้รับสายเรื่องพัสดุและมีคำสั่งซื้อจำลองอยู่ก่อนแล้ว เลือกรับสาย วางสาย หรือเปิดคำสั่งซื้อเองได้ โดยยังไม่ทราบจากชื่อหน้าจอว่าสายเป็นประเภทใด
 
-2. **แจ้งวัตถุประสงค์:** ผู้โทรแจ้งเลขพัสดุและขอยืนยันเวลารับของโดยไม่เร่งรัด ผู้เล่นสอบถามรายละเอียดที่เกี่ยวข้องหรือขอเวลาตรวจรายการได้
+2. **แจ้งเลขพัสดุ:** ผู้โทรแจ้งเลขพัสดุและถามช่วงเวลาที่สะดวกรับสินค้า ผู้เล่นฟัง พิมพ์ถามหรือพูดตอบ ขอให้ทวน หรือเลือกตรวจเลขพัสดุก่อนได้
 
-3. **เทียบคำสั่งซื้อ:** ผู้เล่นเปิดรายการสั่งซื้อของตนในระบบแล้วเทียบเลขพัสดุกับเวลาจัดส่ง ข้อมูลสอดคล้องกันและผู้โทรยอมให้ตรวจสอบโดยไม่สร้างเงื่อนไขเพิ่ม
+3. **เปรียบเทียบคำสั่งซื้อ:** ผู้เล่นเปิดประวัติการสั่งซื้อของตนเองแล้วตรวจเลขพัสดุ เวลา และร้านค้ากับสิ่งที่ได้รับแจ้ง ผู้โทรให้เวลาตรวจโดยไม่เร่งหรือห้ามวางสาย
 
-4. **เลือกตอบเท่าที่จำเป็น:** ผู้เล่นยืนยันเวลารับของหรือขอเปลี่ยนเวลาผ่านตัวเลือกที่มี หากยังไม่สะดวกสามารถขอจบสายและกลับไปติดต่อช่องทางที่บันทึกไว้ได้
+4. **ตอบเฉพาะเรื่องจัดส่ง:** ข้อมูลตรงกับคำสั่งซื้อเดิมและผู้โทรขอเพียงเวลารับสินค้า ผู้เล่นเลือกยืนยันเวลา ขอเลื่อน หรือไม่ให้ข้อมูลเกินความจำเป็น โดยไม่มีคำขอรหัสลับหรือการจ่ายเงิน
 
-5. **จบการติดต่อ:** ผู้โทรทวนเวลาที่ตกลงและจบสายตามปกติ ผู้เล่นเห็นสรุปการนัดรับในเรื่องจำลอง ไม่ต้องทำรายการทางการเงินหรือเปิดเผยข้อมูลเพิ่มเติม
+5. **ทวนเวลาและจบสาย:** ผู้โทรทวนเวลาจัดส่งตามที่ตกลงแล้วจบสายตามปกติ ผู้เล่นรับทราบหรือจบสายได้ รวมถึงเลือกติดต่อกลับผ่านช่องทางที่มีอยู่เดิมโดยไม่ถูกกดดัน
 
-6. **ผลลัพธ์:** ระบบสะท้อนการเทียบคำสั่งซื้อ การตอบเฉพาะเรื่องจัดส่ง และเหตุที่ควรตรวจเพิ่มหากข้อมูลไม่ตรง แสดงว่าการตรวจสอบอย่างสุภาพอยู่ร่วมกับการติดต่อที่ถูกต้องได้ โดยไม่สร้างสัญญาณเตือนปลอมหรือตัดสินว่ารับสายเป็นความผิด
+6. **ผลลัพธ์:** ระบบสะท้อนการเทียบคำสั่งซื้อและขอบเขตข้อมูลที่ผู้เล่นตอบ การตรวจสอบอย่างสุภาพทำได้แม้เป็นการติดต่อที่ถูกต้อง ไม่แต่งสัญญาณเตือนหรือคำขออันตราย และไม่ถือว่าการรับสายหรือขอวางสายเป็นความผิด
 
 ### A. Scenario identity
 
@@ -1130,7 +1144,8 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 - Ready for Drawing?: CONDITIONAL; วาด draft ได้ ยังไม่มี final outcome policy
 - Primary learning goal [RECOMMENDATION]: ตอบคำขอที่จำเป็นหลังเทียบคำสั่งซื้อ โดยไม่ตีความความสุภาพหรือสายเรียกเข้าเป็นความเสี่ยง
 - Primary mechanism: การติดต่อปกติ ไม่ใช่ scam; decision pattern: เปิดคำสั่งซื้อจากรายการของผู้เรียนเองแล้วเทียบเลขพัสดุ/เวลา
-- Source: [Story Bank CC-N01](../scenario-story-bank.md#cc-n01); CC-S06; ไม่ใช้ข่าว scam รับรอง normal
+- Source: [Story Bank CC-N01](../scenario-story-bank.md#cc-n01); CC-S06 รองรับสายยืนยันจัดส่ง; [RECOMMENDATION] การจับคู่และรายละเอียดบท; ไม่ใช้ข่าว scam รับรอง normal
+- Matched control [RECOMMENDATION]: CC-01; matchedDimension: parcel / delivery surface context; เปรียบเทียบการยืนยันจัดส่งกับการอ้างคดีและขอโอน ไม่เปรียบเทียบจากตำแหน่งผู้โทร
 - [DETAIL_PENDING] DP-N01: policy normal control และเงื่อนไขประเมินการตอบเวลาที่จำเป็น; ไม่กำหนดสัดส่วนสุ่ม
 
 ### B. Scenario premise
@@ -1138,12 +1153,12 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 [SOURCE-DERIVED] ผู้ส่งยืนยันช่วงเวลาส่งของที่มีคำสั่งซื้อสมมติอยู่แล้ว
 
 [RECOMMENDATION] ผู้เรียนเป็นผู้รับที่มีคำสั่งซื้อสมมติยืนยันอยู่ก่อน; คู่สนทนาเป็นพนักงานจัดส่งสมมติ แจ้งเฉพาะเวลารับและยอมให้ตรวจสอบ
-การติดต่ออิงรายการที่ผู้เรียนมีอยู่ก่อน คำขอจำกัดอยู่ที่รับทราบหรือเวลานัด ไม่ต้องโอนเงิน ให้รหัส หรือติดตั้งแอป
+การติดต่ออิงรายการที่ผู้เรียนมีอยู่ก่อน คำขอจำกัดอยู่ที่รับทราบหรือเวลารับสินค้า ไม่ต้องโอนเงิน ให้รหัส หรือติดตั้งแอป
 ผู้เรียนสามารถเทียบข้อมูล เลื่อน หรือวางสายอย่างสุภาพได้โดยไม่มีการลงโทษ
 
 ### C. Pre-scenario screen
 
-[RECOMMENDATION] ชื่อกลาง “สายเรื่องเวลาจัดส่ง”; บริบท ผู้รับที่มีคำสั่งซื้อสมมติยืนยันอยู่ก่อน; notice “ข้อมูลและการติดต่อทั้งหมดเป็นเหตุการณ์สมมติ”; mode และ Start ไม่แสดง CONTROL_NORMAL/normal/คำตอบว่าปลอดภัยก่อนเล่น และไม่กำหนดอัตราสุ่มร่วม scam ในงานนี้
+[RECOMMENDATION] ชื่อกลาง “สายเกี่ยวกับพัสดุ”; บริบท ผู้รับที่มีคำสั่งซื้อสมมติยืนยันอยู่ก่อน; notice “ข้อมูลและการติดต่อทั้งหมดเป็นเหตุการณ์สมมติ”; mode และ Start ไม่แสดง CONTROL_NORMAL/normal/คำตอบว่าปลอดภัยก่อนเล่น และไม่กำหนดอัตราสุ่มร่วม scam ในงานนี้
 
 ### D. Character profile
 
@@ -1152,6 +1167,8 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 Known information allowed: เลขคำสั่งซื้อและช่วงส่งที่อยู่ในบท; Unknown: รหัสยืนยัน บัญชี และที่อยู่จริง. Allowed tactics: NONE. Forbidden: คำขอลับ/เงิน/ติดตั้ง/ข่มขู่ เพิ่ม warning เพื่อให้ครบตาราง เฉลยคำตอบ เปลี่ยน state หรือประกาศผล. Objective: แจ้ง/ยืนยันเรื่องที่จำเป็นแล้วจบ. Qwen สนทนาเท่านั้น
 
 ### E. Frame summary
+
+ลำดับสำหรับวาดใช้ 6 panels ด้านบน ส่วน 8 เฟรมด้านล่างเก็บรายละเอียดการโต้ตอบ: ภาพ 1 รวม F01–F02, ภาพ 2 ใช้ F03, ภาพ 3 ใช้ F04, ภาพ 4 ใช้ F05, ภาพ 5 รวม F06–F07 และภาพ 6 ใช้ F08
 
 [RECOMMENDATION] 8 เฟรม; รวม trust กับการเทียบรายการจริงในบท ตัด pressure/escalation/harm request เพราะไม่มีใน normal source ไม่สร้างเพื่อให้ครบ 9 stages
 
@@ -1176,7 +1193,7 @@ Known information allowed: เลขคำสั่งซื้อและช�
 - Camera / screen focus: intro
 - Character behavior: ยังไม่มีบทพูด
 - Dialogue intent: วางบริบทโดยไม่บอกว่าเป็นสายปกติ
-- Example message (DRAFT): “เหตุการณ์จำลอง: สายเรื่องเวลาจัดส่ง”
+- Example message (DRAFT): “เหตุการณ์จำลอง: สายเกี่ยวกับพัสดุ”
 - Evidence shown: เลขคำสั่งซื้อ เวลา และคำขอจำกัดเฉพาะช่วงรับตรงกับบันทึกอิสระ
 - Pressure / tactic: NONE
 - User interaction: ACTION: Start
@@ -1235,8 +1252,8 @@ Known information allowed: เลขคำสั่งซื้อและช�
 
 - Stage: INDEPENDENT_VERIFICATION
 - Current situation: ผู้เรียนเปิดแหล่งที่มีอยู่ก่อนการติดต่อ
-- Visual / UI: independent order or calendar panel
-- Camera / screen focus: independent order or calendar panel
+- Visual / UI: independent order panel
+- Camera / screen focus: independent order panel
 - Character behavior: ตัวละครรอโดยไม่เร่ง
 - Dialogue intent: เทียบข้อมูลจากแหล่งอิสระ
 - Example message (DRAFT): “ตรวจรายการของคุณก่อนตอบได้”
@@ -1425,7 +1442,9 @@ flowchart TD
 
 ### P–Q. UI / normal-call constraints
 
-[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, order/calendar card, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
+Matched pair A: ใช้บริบทพัสดุร่วมกับ CC-01 แต่ CC-N01 มีคำสั่งซื้อเดิมและถามเฉพาะเรื่องจัดส่ง ไม่มีคำขอ OTP รหัสผ่าน โอนเงิน ค่าธรรมเนียม ติดตั้งแอป หรือควบคุมเครื่อง ไม่มีความลับ การแยกจากผู้อื่น คำขู่ เส้นตายปลอม หรือการบังคับโอนสาย ไม่ใช้การรับสายเป็นข้อผิดพลาด
+
+[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, existing order / parcel card, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
 
 ### R–S. Visual / pressure
 
@@ -1471,7 +1490,7 @@ QWEN_GENERATED: F02,F03,F06; SCRIPTED: F01 และรายการอิส�
 
 <a id="cc-n02"></a>
 
-## CC-N02 — สายแจ้งเตือนนัดหมายปกติ
+## CC-N02 — สายธนาคารปกติแจ้งให้ตรวจสอบรายการ
 
 ### Storyboard Drawing Flow
 
@@ -1479,48 +1498,53 @@ QWEN_GENERATED: F02,F03,F06; SCRIPTED: F01 และรายการอิส�
 
 [เอกสารหลักสำหรับวาด](../scenario-storyboard-flow-summary.md#cc-n02) | ลำดับย่อสำหรับวาดร่าง; รายละเอียดเดิมอยู่ด้านล่าง
 
-1. **สายเตือนนัด:** ผู้โทรแจ้งนัดหมายตามปกติและผู้เล่นมีรายการนัดสมมติอยู่แล้ว ผู้เล่นเลือกรับ พิมพ์ตอบหรือพูดคุย หรือขอวางสายเพื่อตรวจปฏิทินก่อน
+1. **สายแจ้งให้ตรวจรายการ:** ผู้เล่นได้รับสายจากฝ่ายธนาคารสมมติแจ้งว่ามีรายการที่ควรตรวจสอบ ผู้เล่นเลือกรับสาย ขอรายละเอียด หรือวางสายได้โดยไม่ต้องทำตามผู้โทรก่อน
 
-2. **ตรวจรายละเอียด:** ผู้โทรแจ้งวัน เวลา และรหัสนัด ผู้เล่นเปิดปฏิทินและช่องทางบริการที่บันทึกไว้เดิมเพื่อเทียบข้อมูล อีกฝ่ายไม่ห้ามตรวจสอบหรือเร่งให้ตัดสินใจ
+2. **แจ้งข้อมูลอ้างอิงทั่วไป:** ผู้โทรบอกข้อมูลอ้างอิงของรายการสมมติ แต่ไม่ขอ OTP รหัสผ่าน หรือข้อมูลลับ ผู้เล่นฟัง พิมพ์ถามหรือพูดตอบ ขอให้ทวน หรือเตรียมตรวจด้วยตนเองได้
 
-3. **เลือกตอบรับนัด:** เมื่อข้อมูลตรงกัน ผู้เล่นเลือกยืนยันหรือขอเปลี่ยนเวลาผ่านตัวเลือกของเรื่อง และตอบเฉพาะเรื่องนัด หากยังไม่แน่ใจสามารถติดต่อบริการผ่านช่องทางเดิมได้
+3. **เปิดช่องทางของตนเอง:** ผู้โทรแนะนำให้เปิดแอปธนาคารจำลองจากเมนูของผู้เล่น ไม่ส่งลิงก์ให้ทำรายการ ผู้เล่นเลือกเปิดแอปเองหรือวางสายก่อนตรวจได้ โดยผู้โทรยอมรับและไม่เร่งรัด
 
-4. **ทวนและจบสาย:** ผู้โทรทวนข้อมูลตามทางเลือกของผู้เล่นแล้วจบการสนทนา หน้าจอแสดงสรุปนัดโดยไม่มีคำขอให้ทำรายการอื่นเพิ่มเติม
+4. **เปรียบเทียบรายการ:** ผู้เล่นเทียบยอด เวลา และรายการในแอปกับข้อมูลที่ได้รับแจ้ง ข้อมูลอ้างอิงตรงกับรายการสมมติ ผู้เล่นตรวจเพิ่มผ่านช่องทางเดิมได้โดยไม่ต้องอ่านข้อมูลลับหรือรายละเอียดบัญชีกลับให้ผู้โทร
 
-5. **ผลลัพธ์:** ระบบทบทวนว่าผู้เล่นเทียบรหัสและเวลาอย่างไร พร้อมชี้ให้ตรวจจากช่องทางเดิมหากมีข้อมูลไม่ตรง การตรวจสอบอย่างสุภาพไม่ทำให้การติดต่อที่ถูกต้องล้มเหลว และไม่จำเป็นต้องปฏิเสธทุกสาย
+5. **รับทราบหรือติดต่อกลับ:** ผู้เล่นเลือกรับทราบ จบสาย หรือติดต่อธนาคารผ่านช่องทางที่บันทึกไว้เอง ผู้โทรยอมรับทางเลือกและจบการสนทนา ไม่มีคำขอโอนเงินหรือให้ดำเนินธุรกรรมผ่านสาย
+
+6. **ผลลัพธ์:** ระบบทบทวนว่าผู้เล่นตรวจรายการจากช่องทางใดและรักษาข้อมูลอย่างไร แสดงว่าสายปกติในเรื่องนี้ยอมให้ตรวจเองโดยไม่ขอ OTP หรือให้โอนเงิน การขอวางสายไม่ใช่ความผิด และตัวอย่างจำลองนี้ไม่ใช่ข้อสรุปว่าธนาคารทุกแห่งต้องติดต่อในรูปแบบเดียวกัน
 
 ### A. Scenario identity
 
 - Story Family ID: CC-N02; Category: Call Center; Type: CONTROL_NORMAL (ไม่รวมยอด scam families)
-- Thai title [SOURCE-DERIVED]: สายแจ้งเตือนนัดหมายปกติ; English title: Normal appointment reminder
+- Thai title [RECOMMENDATION / MATCHED CONTROL]: สายธนาคารปกติแจ้งให้ตรวจสอบรายการ; English title: Normal bank transaction notification
 - Status: CONDITIONAL; selection tier เดิม CONTROL; Approval: CONDITIONAL_CONTENT
 - Mode: TEXT_OR_VOICE; target VOICE [FUTURE VOICE UX]; current: ไม่ implement ทั้ง normal และ voice
 - Estimated play time: TEXT 3–4 นาที / VOICE target 4–5 นาที [RECOMMENDATION; PLANNING ESTIMATE / NOT MEASURED]; แจกแจงช่วงใน T
 - Ready for Drawing?: CONDITIONAL; วาด draft ได้ ยังไม่มี final outcome policy
-- Primary learning goal [RECOMMENDATION]: ตรวจนัดจากแหล่งเดิมและจำกัดข้อมูลตอบกลับโดยไม่กล่าวหาผู้โทร
-- Primary mechanism: การติดต่อปกติ ไม่ใช่ scam; decision pattern: เปิดปฏิทินและช่องทางบริการจำลองที่บันทึกก่อนรับสาย เทียบรหัสนัด
-- Source: [Story Bank CC-N02](../scenario-story-bank.md#cc-n02); CC-S06 แนวคิดกว้าง; ไม่ใช้ข่าว scam รับรอง normal
-- [DETAIL_PENDING] DP-N02: บริบทนัดเป็น recommendation ใน bank และ control outcome policy ยังไม่อนุมัติ
+- Primary learning goal [RECOMMENDATION]: ตรวจรายการธนาคารผ่านแอปที่เปิดเองและรักษาข้อมูลลับ โดยไม่ตัดสินประเภทสายจากชื่อธนาคาร
+- Primary mechanism: การติดต่อปกติ ไม่ใช่ scam; decision pattern: เปิดแอปธนาคารจำลองและช่องทางติดต่อที่มีอยู่เดิมด้วยตนเอง เทียบยอด เวลา และรายการ โดยไม่ใช้ลิงก์หรือเบอร์ที่ผู้โทรส่ง
+- Source: [Story Bank CC-N02](../scenario-story-bank.md#cc-n02); sourceOrigin: USER_SOURCE; derivation: USER_SOURCE_DERIVED control concept + RECOMMENDATION for bank-transaction matched context; CC-S06 รองรับสายปกติทั่วไปเท่านั้น ไม่ได้ระบุบทธนาคารนี้; ไม่ใช้ข่าว scam รับรอง normal
+- Matched control [RECOMMENDATION]: CC-02; matchedDimension: bank / abnormal transaction surface context; เป็น DESIGN RECOMMENDATION / MATCHED CONTROL ไม่ใช่ข้อสรุปว่าธนาคารจริงทุกแห่งติดต่อแบบนี้
+- [DETAIL_PENDING] DP-N02: บทธนาคารเป็น matched-control recommendation; ต้องทบทวนข้อมูลอ้างอิง ขอบเขตคำตอบ และ control outcome policy ก่อนอนุมัติ
 
 ### B. Scenario premise
 
-[SOURCE-DERIVED] หน่วยบริการสมมติเตือนนัดที่ผู้เรียนมีข้อมูลอยู่แล้ว
+[RECOMMENDATION / MATCHED CONTROL] ฝ่ายธนาคารสมมติแจ้งให้ผู้เรียนตรวจรายการผ่านแอปที่เปิดเอง โดยไม่ขอ OTP รหัสผ่าน หรือโอนเงิน แนวคิดสายปกติทั่วไปมาจาก CC-S06 แต่การเลือกบริบทธนาคารและบทนี้เป็นข้อเสนอใหม่
 
-[RECOMMENDATION] ผู้เรียนเป็นผู้มีนัดบริการสมมติบันทึกไว้ก่อน; คู่สนทนาเป็นเจ้าหน้าที่เตือนนัดสมมติ น้ำเสียงปกติ ให้เวลาตรวจและยอมรับการเลื่อน
-การติดต่ออิงรายการที่ผู้เรียนมีอยู่ก่อน คำขอจำกัดอยู่ที่รับทราบหรือเวลานัด ไม่ต้องโอนเงิน ให้รหัส หรือติดตั้งแอป
-ผู้เรียนสามารถเทียบข้อมูล เลื่อน หรือวางสายอย่างสุภาพได้โดยไม่มีการลงโทษ
+[RECOMMENDATION] ผู้เรียนเป็นผู้ใช้แอปธนาคารสมมติที่มีรายการและช่องทางติดต่อเดิมให้ตรวจ; คู่สนทนาเป็นเจ้าหน้าที่ฝ่ายบริการ/ความปลอดภัยธนาคารสมมติ แจ้งข้อมูลทั่วไป ให้เวลาตรวจเองและยอมรับการวางสาย
+การติดต่ออิงรายการธนาคารสมมติที่ผู้เรียนตรวจเองได้ คำขอจำกัดอยู่ที่ให้เปิดแอปของตนเองตรวจรายการหรือรับทราบว่าติดต่อกลับได้ ไม่ต้องอ่านยอดคงเหลือ ส่งข้อมูลบัญชี โอนเงิน ให้รหัส หรือติดตั้งแอป
+ผู้เรียนสามารถเทียบข้อมูล รับทราบ หรือวางสายแล้วติดต่อผ่านช่องทางธนาคารเดิมได้โดยไม่มีการลงโทษ
 
 ### C. Pre-scenario screen
 
-[RECOMMENDATION] ชื่อกลาง “สายเรื่องนัดหมายบริการ”; บริบท ผู้มีนัดบริการสมมติบันทึกไว้ก่อน; notice “ข้อมูลและการติดต่อทั้งหมดเป็นเหตุการณ์สมมติ”; mode และ Start ไม่แสดง CONTROL_NORMAL/normal/คำตอบว่าปลอดภัยก่อนเล่น และไม่กำหนดอัตราสุ่มร่วม scam ในงานนี้
+[RECOMMENDATION] ชื่อกลาง “สายเกี่ยวกับรายการธนาคาร”; บริบท ผู้ใช้แอปธนาคารสมมติที่มีรายการและช่องทางติดต่อเดิมให้ตรวจ; notice “ข้อมูลและการติดต่อทั้งหมดเป็นเหตุการณ์สมมติ”; mode และ Start ไม่แสดง CONTROL_NORMAL/normal/คำตอบว่าปลอดภัยก่อนเล่น และไม่กำหนดอัตราสุ่มร่วม scam ในงานนี้
 
 ### D. Character profile
 
-[RECOMMENDATION] Role/Persona: เจ้าหน้าที่เตือนนัดสมมติ น้ำเสียงปกติ ให้เวลาตรวจและยอมรับการเลื่อน; Relationship: หน่วยบริการที่มีรายการในบท; Style: สุภาพ ไม่กดดัน ยอมให้ตรวจกลับ
+[RECOMMENDATION] Role/Persona: เจ้าหน้าที่ฝ่ายบริการ/ความปลอดภัยธนาคารสมมติ แจ้งข้อมูลทั่วไป ให้เวลาตรวจเองและยอมรับการวางสาย; Relationship: หน่วยบริการที่มีรายการในบท; Style: สุภาพ ไม่กดดัน ยอมให้ตรวจกลับ
 
-Known information allowed: รหัสนัด วันเวลา และบริการสังเคราะห์; Unknown: ข้อมูลส่วนบุคคลจริงหรือเหตุผลส่วนตัวที่ไม่จำเป็น. Allowed tactics: NONE. Forbidden: คำขอลับ/เงิน/ติดตั้ง/ข่มขู่ เพิ่ม warning เพื่อให้ครบตาราง เฉลยคำตอบ เปลี่ยน state หรือประกาศผล. Objective: แจ้ง/ยืนยันเรื่องที่จำเป็นแล้วจบ. Qwen สนทนาเท่านั้น
+Known information allowed: ข้อมูลอ้างอิงทั่วไป ยอด เวลา และรายการธนาคารสังเคราะห์ตามบท; Unknown: OTP รหัสผ่าน เลขบัญชี ยอดคงเหลือและข้อมูลจริงของผู้เล่น. Allowed tactics: NONE. Forbidden: คำขอลับ/เงิน/ติดตั้ง/ข่มขู่ เพิ่ม warning เพื่อให้ครบตาราง เฉลยคำตอบ เปลี่ยน state หรือประกาศผล. Objective: แจ้ง/ยืนยันเรื่องที่จำเป็นแล้วจบ. Qwen สนทนาเท่านั้น
 
 ### E. Frame summary
+
+ลำดับสำหรับวาดใช้ 6 panels ด้านบน ส่วน 8 เฟรมเดิมคงไว้เป็นรายละเอียด: ภาพ 1 รวม F01–F02, ภาพ 2 ใช้ F03, ภาพ 3–4 ขยายการเปิดแอปและเทียบรายการใน F04, ภาพ 5 รวม F05–F07 และภาพ 6 ใช้ F08 ไม่มี State หรือ Checkpoint ใหม่
 
 [RECOMMENDATION] 8 เฟรม; รวม trust กับการเทียบรายการจริงในบท ตัด pressure/escalation/harm request เพราะไม่มีใน normal source ไม่สร้างเพื่อให้ครบ 9 stages
 
@@ -1528,9 +1552,9 @@ Known information allowed: รหัสนัด วันเวลา และ
 |---|---|---|---|---|---|
 | F01 | PRE_SCENARIO | วางบริบทโดยไม่บอกว่าเป็นสายปกติ | ACTION: Start | NONE | F02 |
 | F02 | CALL_ENTRY | แจ้งการติดต่อที่มีเหตุผล | FREE_TEXT / VOICE (FUTURE VOICE UX) / CONTINUE / END_CONTACT | NONE | F03 หรือ F04 ตรวจเอง; F07 ขอจบคุย |
-| F03 | BOUNDED_REQUEST | ให้ทางเลือกที่ไม่ขอข้อมูลลับ | FREE_TEXT / VOICE target / ACTION: ตรวจข้อมูล | NONE | F04; F07 ขอเลื่อนหรือจบคุย |
+| F03 | BOUNDED_REQUEST | ให้ทางเลือกที่ไม่ขอข้อมูลลับ | FREE_TEXT / VOICE target / ACTION: ตรวจข้อมูล | NONE | F04; F07 ขอตรวจเองหรือจบคุย |
 | F04 | INDEPENDENT_VERIFICATION | เทียบข้อมูลจากแหล่งอิสระ | ACTION: เปิด/เทียบ / CONTINUE | CONTROL-VERIFY (observation only; DETAIL_PENDING scoring) | F05; F07 จบหรือขอตรวจต่อ |
-| F05 | USER_DECISION_CONFIRMATION | ยืนยันขอบเขตคำตอบที่ผู้เรียนเลือก | ACTION: รับทราบ/เลื่อน/ตรวจกลับ / VOICE readback then confirmation | CONTROL-RESPONSE (observation only) | F06 หลังยืนยัน; F04 ยกเลิก/ตรวจเพิ่ม; F07 ปฏิเสธคุย |
+| F05 | USER_DECISION_CONFIRMATION | ยืนยันขอบเขตคำตอบที่ผู้เรียนเลือก | ACTION: รับทราบ/วางสายแล้วตรวจ/ติดต่อกลับ / VOICE readback then confirmation | CONTROL-RESPONSE (observation only) | F06 หลังยืนยัน; F04 ยกเลิก/ตรวจเพิ่ม; F07 ปฏิเสธคุย |
 | F06 | CHARACTER_ACKNOWLEDGEMENT | ปิดการติดต่ออย่างปกติ | CONTINUE / END_CONTACT | NONE | F07 |
 | F07 | TERMINATION | บันทึกเฉพาะ action ที่ยืนยัน | CONTINUE: ดูสรุป | Control terminal (draft) | F08; ออกจากฝึกกลางคันแสดงยังไม่ครบ |
 | F08 | RESULT_FEEDBACK | สะท้อนพฤติกรรมโดยไม่สร้าง scam classification ปลอม | ACTION: จบ / อ่านเหตุผล | NONE | END |
@@ -1540,13 +1564,13 @@ Known information allowed: รหัสนัด วันเวลา และ
 [RECOMMENDATION] Draft UX สำหรับ normal control; Example message ไม่ใช่ training target
 
 - Stage: PRE_SCENARIO
-- Current situation: ผู้เรียนเห็นข้อมูลเดิมที่ยืนยันอยู่ในบทก่อนรับสาย
+- Current situation: ผู้เรียนเห็นบริบทรายการธนาคารสมมติและเมนูแอปของตนก่อนรับสาย โดยยังไม่เฉลยประเภทสาย
 - Visual / UI: intro / neutral title / mode / Start
 - Camera / screen focus: intro
 - Character behavior: ยังไม่มีบทพูด
 - Dialogue intent: วางบริบทโดยไม่บอกว่าเป็นสายปกติ
-- Example message (DRAFT): “เหตุการณ์จำลอง: สายเรื่องนัดหมายบริการ”
-- Evidence shown: รหัสนัดและวันเวลาตรงปฏิทิน; ไม่มีการเร่งหรือเพิ่มคำขอ
+- Example message (DRAFT): “เหตุการณ์จำลอง: สายเกี่ยวกับรายการธนาคาร”
+- Evidence shown: เมนูแอปและรายการธนาคารสมมติสำหรับตรวจด้วยตนเอง ไม่เฉลยว่าข้อมูลผู้โทรจะตรงกันหรือไม่ก่อนเริ่ม
 - Pressure / tactic: NONE
 - User interaction: ACTION: Start
 - Checkpoint: NONE
@@ -1566,7 +1590,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 - Camera / screen focus: call screen
 - Character behavior: แนะนำหน้าที่และเลขอ้างอิง
 - Dialogue intent: แจ้งการติดต่อที่มีเหตุผล
-- Example message (DRAFT): “ขอแจ้งเตือนนัด APPT-N02-SIM ตามวันเวลาในรายการครับ”
+- Example message (DRAFT): “ขอแจ้งว่ามีรายการธนาคารสมมติที่ควรตรวจสอบ อ้างอิง TXN-N02-SIM ครับ”
 - Evidence shown: เลขอ้างอิงที่ตรวจเทียบได้
 - Pressure / tactic: NONE
 - User interaction: FREE_TEXT / VOICE (FUTURE VOICE UX) / CONTINUE / END_CONTACT
@@ -1582,18 +1606,18 @@ Known information allowed: รหัสนัด วันเวลา และ
 [RECOMMENDATION] Draft UX สำหรับ normal control; Example message ไม่ใช่ training target
 
 - Stage: BOUNDED_REQUEST
-- Current situation: คำขอจำกัดเฉพาะเวลาหรือการรับทราบ
+- Current situation: ผู้โทรแจ้งข้อมูลอ้างอิงทั่วไปและให้ตรวจรายการด้วยตนเอง ไม่ขอคำยืนยันธุรกรรมผ่านสาย
 - Visual / UI: full call / reference card
 - Camera / screen focus: full call
-- Character behavior: ถามข้อมูลที่จำเป็นตามรายการ
+- Character behavior: แจ้งเฉพาะข้อมูลอ้างอิงที่จำเป็นและไม่ร้องขอข้อมูลลับ
 - Dialogue intent: ให้ทางเลือกที่ไม่ขอข้อมูลลับ
-- Example message (DRAFT): “ต้องการรับทราบหรือจัดการเลื่อนผ่านช่องทางเดิมครับ”
+- Example message (DRAFT): “เปิดแอปธนาคารจำลองจากเมนูของคุณเพื่อตรวจรายการได้ครับ ไม่ต้องแจ้งรหัสหรือข้อมูลบัญชีกลับมา จะวางสายก่อนก็ได้”
 - Evidence shown: ข้อมูลเดิมและขอบเขตคำขอ
 - Pressure / tactic: NONE
 - User interaction: FREE_TEXT / VOICE target / ACTION: ตรวจข้อมูล
 - Checkpoint: NONE
 - Backend authority: CANDIDATE_ONLY
-- Possible next frames: F04; F07 ขอเลื่อนหรือจบคุย
+- Possible next frames: F04; F07 ขอตรวจเองหรือจบคุย
 - Content owner / Qwen role: QWEN_GENERATED
 - Intended learner pressure: LOW
 - Teaching purpose: แยกคำขอจำเป็นจากข้อมูลเกินจำเป็น
@@ -1604,12 +1628,12 @@ Known information allowed: รหัสนัด วันเวลา และ
 
 - Stage: INDEPENDENT_VERIFICATION
 - Current situation: ผู้เรียนเปิดแหล่งที่มีอยู่ก่อนการติดต่อ
-- Visual / UI: independent order or calendar panel
-- Camera / screen focus: independent order or calendar panel
+- Visual / UI: independently opened simulated banking app / transaction details
+- Camera / screen focus: independently opened simulated banking app / transaction details
 - Character behavior: ตัวละครรอโดยไม่เร่ง
 - Dialogue intent: เทียบข้อมูลจากแหล่งอิสระ
-- Example message (DRAFT): “ตรวจรายการของคุณก่อนตอบได้”
-- Evidence shown: เปิดปฏิทินและช่องทางบริการจำลองที่บันทึกก่อนรับสาย เทียบรหัสนัด; พบการนัดตรงกัน; รับทราบ เลื่อนผ่านช่องทางเดิม หรือปฏิเสธคุยแล้วตรวจกลับได้
+- Example message (DRAFT): “เปิดแอปของคุณเองแล้วเทียบยอด เวลา และรายการได้ โดยไม่ต้องอ่านข้อมูลกลับให้ผู้โทร”
+- Evidence shown: เปิดแอปธนาคารจำลองและช่องทางติดต่อที่มีอยู่เดิมด้วยตนเอง เทียบยอด เวลา และรายการ โดยไม่ใช้ลิงก์หรือเบอร์ที่ผู้โทรส่ง; ข้อมูลอ้างอิงตรงกับรายการสมมติ; รับทราบ ตรวจต่อเอง หรือวางสายแล้วติดต่อช่องทางเดิมได้ ไม่ยืนยันตัวตนจากความสุภาพอย่างเดียว
 - Pressure / tactic: NONE
 - User interaction: ACTION: เปิด/เทียบ / CONTINUE
 - Checkpoint: CONTROL-VERIFY (observation only; DETAIL_PENDING scoring)
@@ -1624,7 +1648,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 [RECOMMENDATION] Draft UX สำหรับ normal control; Example message ไม่ใช่ training target
 
 - Stage: USER_DECISION_CONFIRMATION
-- Current situation: เลือกตอบเรื่องเวลาหรือขอจัดการภายหลัง
+- Current situation: เลือกเพียงรับทราบว่าจะตรวจรายการเอง หรือวางสายและติดต่อกลับผ่านช่องทางเดิม ไม่ใช่ยืนยันธุรกรรม
 - Visual / UI: neutral action options / readback for voice
 - Camera / screen focus: neutral action options
 - Character behavior: หยุดพูดช่วงระบบยืนยัน
@@ -1632,7 +1656,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 - Example message (DRAFT): “ยืนยันคำตอบตามรายการ หรือกลับไปตรวจอีกครั้ง”
 - Evidence shown: การกระทำจำกัดตามบท ไม่มีตัวเลือกโอน/OTP/remote
 - Pressure / tactic: NONE
-- User interaction: ACTION: รับทราบ/เลื่อน/ตรวจกลับ / VOICE readback then confirmation
+- User interaction: ACTION: รับทราบ/วางสายแล้วตรวจ/ติดต่อกลับ / VOICE readback then confirmation
 - Checkpoint: CONTROL-RESPONSE (observation only)
 - Backend authority: VALIDATED_ACTION
 - Possible next frames: F06 หลังยืนยัน; F04 ยกเลิก/ตรวจเพิ่ม; F07 ปฏิเสธคุย
@@ -1650,7 +1674,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 - Camera / screen focus: call screen
 - Character behavior: ยอมรับทางเลือกและไม่เพิ่มคำขอ
 - Dialogue intent: ปิดการติดต่ออย่างปกติ
-- Example message (DRAFT): “ตรวจปฏิทินและติดต่อกลับผ่านช่องที่คุณมีอยู่ได้ครับ”
+- Example message (DRAFT): “ตรวจแอปของคุณเองและติดต่อธนาคารกลับผ่านช่องทางเดิมได้ครับ ไม่ต้องโอนเงินหรือแจ้งรหัสใด ๆ”
 - Evidence shown: ไม่มีหลักฐานใหม่และไม่มีแรงกดดัน
 - Pressure / tactic: NONE
 - User interaction: CONTINUE / END_CONTACT
@@ -1666,7 +1690,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 [RECOMMENDATION] Draft UX สำหรับ normal control; Example message ไม่ใช่ training target
 
 - Stage: TERMINATION
-- Current situation: สิ้นสุดสายโดยตอบ/เลื่อน/ขอตรวจกลับได้
+- Current situation: สิ้นสุดสายโดยรับทราบ/ตรวจเอง/ขอติดต่อกลับได้
 - Visual / UI: ended call status
 - Camera / screen focus: ended call status
 - Character behavior: หยุดสร้างบทสนทนา
@@ -1714,7 +1738,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 | AMBIGUOUS | “ขอคิดก่อน” | ให้เวลา/ช่องทางเดิม | ไม่ประเมินจากความลังเล |
 | HARMFUL CANDIDATE | ผู้เรียนพิมพ์เสนอข้อมูลลับเอง | ไม่ร้องขอ ไม่ทวนข้อมูล และใช้ข้อความเบี่ยงกลับ | ไม่สร้าง critical ใหม่ที่ไม่มีใน source; PII redaction / system notice โดยไม่หักผล |
 
-ทุกช่วงที่สนทนาใช้หลักเดียวกัน Qwen ไม่แปลคำว่า “ตกลง” เป็นธุรกรรม ขณะ F05 ระบบเป็นผู้ทวนเรื่องเวลาหรือการรับทราบแล้วรอยืนยัน ไม่ถามรหัสและไม่มีข้อมูลบัญชี
+ทุกช่วงที่สนทนาใช้หลักเดียวกัน Qwen ไม่แปลคำว่า “ตกลง” เป็นธุรกรรม ขณะ F05 ระบบเป็นผู้ทวนการรับทราบว่าจะตรวจเองหรือขอติดต่อกลับแล้วรอยืนยัน ไม่ถามรหัสและไม่มีข้อมูลบัญชี
 
 ### H. Safe branches
 
@@ -1723,7 +1747,7 @@ Known information allowed: รหัสนัด วันเวลา และ
 | Branch | Trigger / observable action | Character / system reaction | Next / terminal | Feedback |
 |---|---|---|---|---|
 | S1 EARLY_SAFE_EXIT | ผู้เรียนเลือกขอวางสายและตรวจผ่านช่องทางเดิม | ยอมรับ; บันทึกการยุติ ไม่มีการลงโทษ | F02 → F07 → F08 | การขอเวลาตรวจหรือปฏิเสธคุยยอมรับได้; ไม่ให้เครดิตว่าตรวจเสร็จ |
-| S2 VERIFIED_RESPONSE | ผู้เรียนทำ เปิดปฏิทินและช่องทางบริการจำลองที่บันทึกก่อนรับสาย เทียบรหัสนัด แล้วตอบเฉพาะที่จำเป็น | รับทราบ/เลื่อนตามคำตอบ | F04 → F05 → F06 → F07 → F08 | รายการตรงและรักษาขอบเขตข้อมูล; ไม่รับรองคำขออื่นนอกบท |
+| S2 VERIFIED_RESPONSE | ผู้เรียนทำ เปิดแอปธนาคารจำลองและช่องทางติดต่อที่มีอยู่เดิมด้วยตนเอง เทียบยอด เวลา และรายการ โดยไม่ใช้ลิงก์หรือเบอร์ที่ผู้โทรส่ง แล้วตอบเฉพาะที่จำเป็น | ยอมรับการตรวจเองหรือขอติดต่อกลับตามคำตอบ | F04 → F05 → F06 → F07 → F08 | รายการตรงและรักษาขอบเขตข้อมูล; ไม่รับรองคำขออื่นนอกบท |
 
 ### I. Review branch
 
@@ -1731,7 +1755,7 @@ N/A — [DETAIL_PENDING] ยังไม่มีพฤติกรรมที�
 
 ### J. Critical candidate branch
 
-N/A — ไม่มี harmful request และไม่มี critical action ในบท ไม่เพิ่มโอน/OTP/remote เพื่อทำ branch ให้ครบ Voice confirmation ที่ F05 ยืนยันคำตอบเรื่องเวลาหรือรับทราบเท่านั้น
+N/A — ไม่มี harmful request และไม่มี critical action ในบท ไม่เพิ่มโอน/OTP/remote เพื่อทำ branch ให้ครบ Voice confirmation ที่ F05 ยืนยันคำตอบการรับทราบว่าจะตรวจเองหรือติดต่อกลับเท่านั้น
 
 ### K. Evidence
 
@@ -1739,15 +1763,15 @@ N/A — ไม่มี harmful request และไม่มี critical action
 
 | Evidence | Type | เหตุผล |
 |---|---|---|
-| N1 | NEUTRAL / corroborating | รหัสนัดและวันเวลาตรงปฏิทิน; ไม่มีการเร่งหรือเพิ่มคำขอ |
+| N1 | NEUTRAL / corroborating | ข้อมูลอ้างอิงทั่วไปตรงยอด เวลา และรายการในแอปจำลองที่เปิดเอง; ไม่มีการเร่งหรือเพิ่มคำขอ |
 | N2 | NEUTRAL | คู่สนทนายอมให้ตรวจและไม่ขอข้อมูลเพิ่ม; ใช้ประกอบบริบท ไม่ใช่หลักประกันตัวตน |
-| N3 | INDEPENDENT CORROBORATION | พบการนัดตรงกัน; รับทราบ เลื่อนผ่านช่องทางเดิม หรือปฏิเสธคุยแล้วตรวจกลับได้ |
+| N3 | INDEPENDENT CORROBORATION | ข้อมูลอ้างอิงตรงกับรายการสมมติ; รับทราบ ตรวจต่อเอง หรือวางสายแล้วติดต่อช่องทางเดิมได้ ไม่ยืนยันตัวตนจากความสุภาพอย่างเดียว |
 
 ไม่มี warning-selection checkpoint และไม่ใช้ select-all rubric กับ control
 
 ### L. Verification action
 
-[RECOMMENDATION] เปิดปฏิทินและช่องทางบริการจำลองที่บันทึกก่อนรับสาย เทียบรหัสนัด. พบการนัดตรงกัน; รับทราบ เลื่อนผ่านช่องทางเดิม หรือปฏิเสธคุยแล้วตรวจกลับได้. ช่องทางดังกล่าวมาจากรายการของผู้เรียนที่เตรียมไว้ก่อนรับสาย ไม่ใช่ลิงก์/เบอร์ที่ผู้โทรส่ง และทำงานใน sandbox
+[RECOMMENDATION] เปิดแอปธนาคารจำลองและช่องทางติดต่อที่มีอยู่เดิมด้วยตนเอง เทียบยอด เวลา และรายการ โดยไม่ใช้ลิงก์หรือเบอร์ที่ผู้โทรส่ง. ข้อมูลอ้างอิงตรงกับรายการสมมติ; รับทราบ ตรวจต่อเอง หรือวางสายแล้วติดต่อช่องทางเดิมได้ ไม่ยืนยันตัวตนจากความสุภาพอย่างเดียว. ช่องทางดังกล่าวมาจากรายการของผู้เรียนที่เตรียมไว้ก่อนรับสาย ไม่ใช่ลิงก์/เบอร์ที่ผู้โทรส่ง และทำงานใน sandbox
 
 ### M. Endings
 
@@ -1755,7 +1779,9 @@ N/A — ไม่มี harmful request และไม่มี critical action
 
 ### N. Result screen storyboard
 
-[RECOMMENDATION] F08 แสดง “สรุปการติดต่อ” กับการเปิดตรวจ/รับทราบ/เลื่อน/วางสายที่ยืนยัน พร้อมเหตุผลว่าคำขอจำกัดและตรงรายการเดิม แสดงเฉพาะสิ่งที่พบ ไม่สร้าง SAFE/REVIEW/UNASSESSED entries ที่ยังไม่มี rubric หรือ numeric score. Proposed tag: `NORMAL_CONTACT_BOUNDARIES`; เป็นข้อเสนอเชื่อมเนื้อหา ไม่ใช่ lesson ที่พัฒนาแล้ว
+ข้อความสะท้อนหลัก: “สายปกติในเหตุการณ์นี้ยอมให้คุณตรวจผ่านช่องทางของตนเอง โดยไม่ขอ OTP หรือให้โอนเงิน คุณสามารถรับทราบหรือวางสายแล้วติดต่อกลับเองได้” ไม่รับรองว่าทุกสายที่สุภาพเป็นสายจริง และไม่สรุปว่าธนาคารทุกแห่งใช้บทเดียวกัน
+
+[RECOMMENDATION] F08 แสดง “สรุปการติดต่อ” กับการเปิดตรวจ/รับทราบ/ตรวจเอง/วางสายที่ยืนยัน พร้อมเหตุผลว่าคำขอจำกัดและตรงรายการเดิม แสดงเฉพาะสิ่งที่พบ ไม่สร้าง SAFE/REVIEW/UNASSESSED entries ที่ยังไม่มี rubric หรือ numeric score. Proposed tag: `NORMAL_CONTACT_BOUNDARIES`; เป็นข้อเสนอเชื่อมเนื้อหา ไม่ใช่ lesson ที่พัฒนาแล้ว
 
 ### O. Branch map
 
@@ -1794,7 +1820,9 @@ flowchart TD
 
 ### P–Q. UI / normal-call constraints
 
-[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, order/calendar card, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
+Matched pair B ใช้บริบทและหน้าสายธนาคารใกล้กับ CC-02 ไม่เฉลยด้วยชื่อหน้าจอหรือรูปแบบพิเศษ ความต่างอยู่ที่ผู้โทรไม่ขอ OTP รหัสผ่าน โอนเงิน ค่าธรรมเนียม ติดตั้งแอป หรือ remote access และไม่มีคำขู่ secrecy/isolation หรือเส้นตายให้ข้ามการตรวจ การเปิดแอปคือแอปจำลองที่ผู้เล่นเข้าจากเมนูของตนเอง ไม่ใช่ลิงก์ติดตั้งจากผู้โทร บทนี้เป็นตัวอย่าง matched control ไม่ใช่กฎว่าธนาคารจริงจะโทรแบบนี้เสมอ
+
+[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, bank transaction reference / simulated banking app, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
 
 ### R–S. Visual / pressure
 
@@ -1822,18 +1850,18 @@ QWEN_GENERATED: F02,F03,F06; SCRIPTED: F01 และรายการอิส�
 
 ### AD. Content review questions
 
-1. ต่างจาก family อื่น: อิงปฏิทินนัดเดิมและรับทราบ/เลื่อน ต่าง CC-N01 ที่อิงพัสดุ
+1. ต่างจาก family อื่น: จับคู่ CC-02 ในบริบทธนาคาร แต่ไม่ขอ OTP หรือทำธุรกรรมผ่านสาย ให้ตรวจแอปเอง ต่าง CC-N01 ที่อิงพัสดุ
 2. ประเมินอะไร: เสนอ observation การตรวจ/จำกัดข้อมูล; final rubric pending
 3. Warning หลัก: ไม่มี ไม่สร้างขึ้น
-4. Neutral: รหัสนัดและวันเวลาตรงปฏิทิน; ไม่มีการเร่งหรือเพิ่มคำขอ
+4. Neutral: ข้อมูลอ้างอิงทั่วไปตรงยอด เวลา และรายการในแอปจำลองที่เปิดเอง; ไม่มีการเร่งหรือเพิ่มคำขอ
 5. Checkpoint: F04/F05 observation; ไม่ใช้ scam correctness ก่อนอนุมัติ
 6. Early exit: S1 มีและไม่ลงโทษ
 7. Free text: สนทนา/ถามข้อมูลในขอบเขต ไม่ commit
-8. Explicit action: เปิดตรวจ ยืนยันรับทราบ/เลื่อน หรือ END_CONTACT
+8. Explicit action: เปิดตรวจ ยืนยันรับทราบ/ตรวจเอง/ติดต่อกลับ หรือ END_CONTACT
 9. Critical candidate: ไม่มีในเรื่องนี้
 10. Over-coach: ห้ามเขียนคำว่า normal หรือ safe บน intro; ไม่ยืนยันตัวตนจากความสุภาพอย่างเดียว
 11. Qwen: F02,F03,F06
 12. Backend: F04,F05,F07; F08 อ่านสรุป ไม่มี mutation
-13. Ready: CONDITIONAL; DP-N02: บริบทนัดเป็น recommendation ใน bank และ control outcome policy ยังไม่อนุมัติ
+13. Ready: CONDITIONAL; DP-N02: บทธนาคารเป็น matched-control recommendation; ต้องทบทวนข้อมูลอ้างอิง ขอบเขตคำตอบ และ control outcome policy ก่อนอนุมัติ
 
 ---

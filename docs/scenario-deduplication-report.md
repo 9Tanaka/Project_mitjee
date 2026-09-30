@@ -4,6 +4,25 @@ Content curation only | 2026-09-27 | Status: PROPOSED_FOR_REVIEW
 
 Branch: `feat/rule-based-evaluation`. Start SHA: `491a48bcaa15260eb3837a50ca46b15d24ac4488`. ไม่แก้ runtime, fixtures, rules, Prisma, migrations, Qwen หรือ voice. เอกสารคู่กัน: [Scenario Story Bank](scenario-story-bank.md).
 
+## Call Center matched-control revision (2026-09-30)
+
+CONTENT REFINEMENT ONLY | baseline `4062a8b837728a3aed56df48ea35eaeaf0c3fa87`
+
+| Record | Disposition | Reason / provenance |
+|---|---|---|
+| OLD CC-N02: สายแจ้งเตือนนัดหมายปกติ / Normal appointment reminder | REPLACED_AS_CONTROL_RECOMMENDATION | เป็นตัวอย่างสายปกติที่ใช้ได้ แต่บริบทนัดหมายจับคู่กับ scam calls ปัจจุบันได้ไม่ใกล้พอ ผู้เรียนอาจเดาจากหัวข้อ จึงแทนเนื้อหา ไม่ได้ตัดสินว่าตัวอย่างเดิมผิด |
+| NEW CC-N02: สายธนาคารปกติแจ้งให้ตรวจสอบรายการ / Normal bank transaction notification | CONTROL / CONDITIONAL_CONTENT | จับคู่ CC-02 ที่บริบทธนาคาร/รายการธุรกรรม ต่างกันที่ไม่ขอ OTP/เงินและให้ตรวจแอปเอง; USER_SOURCE_DERIVED control concept + RECOMMENDATION for bank-transaction matched context ไม่อ้างว่าบทธนาคารอยู่ในต้นฉบับ CC-S06 |
+| CC-N01: สายยืนยันการจัดส่งปกติ | CONTROL / CONDITIONAL_CONTENT; REFINED_MATCHED_CONTROL | ยึดแนวคิดสายจัดส่งจาก CC-S06 และระบุ matchedScamFamily CC-01; ทางเข้าพัสดุเหมือนกันแต่ไม่มีการอ้างคดี กดดัน หรือเรียกเงิน |
+
+| Pair | Scam | Normal | Same context | Key difference |
+|---|---|---|---|---|
+| A | CC-01 | CC-N01 | parcel / delivery | สายหลอกเริ่มเรื่องพัสดุแล้วอ้างอำนาจ คดี เอกสาร และขอโอนเงิน; สายปกติยืนยันการจัดส่งที่มีคำสั่งซื้ออยู่แล้วและตอบเพียงข้อมูลจำเป็น |
+| B | CC-02 | CC-N02 | bank / transaction notification | สายหลอกขอ OTP และเร่งให้ทำตามในสาย; สายปกติให้เปิดแอปเอง ไม่ขอข้อมูลลับหรือเงิน และยอมรับการวางสาย/ติดต่อกลับ |
+
+คง 19 scam families + 2 normal controls ไม่เพิ่ม CC-N03 และไม่นับ OLD CC-N02 เป็นเรื่องที่ยังใช้อยู่ เป้าหมายการเรียนคือดูคำขอ การตรวจอิสระ การรักษาข้อมูล แรงกดดัน/ความลับ และสิทธิ์วางสาย ไม่เหมารวมตำรวจ ธนาคาร หรือสายไม่รู้จักเป็น scam
+
+การเลือกบริบทพัสดุแล้วใช้ CC-01/CC-N01 หรือบริบทธนาคารแล้วใช้ CC-02/CC-N02 เป็นแนวคิดอนาคตเท่านั้น ไม่กำหนดความน่าจะเป็นและไม่พัฒนาระบบสุ่ม Controls ไม่มี harmful action หรือ warning ปลอม หากอนาคตทำ classifier/evaluation ให้เก็บ matched-pair links และทบทวนการรั่วของ template ร่วม แต่ไม่รวม controls ใน scam-family count และไม่สร้างข้อมูลฝึกรอบนี้
+
 ## 1. Scope and Counting Rules
 
 **USER_SOURCE:** `E:/locate/Listขอscenarioกับตำรวจ.txt`; SHA-256 `3bf2f4367485fba2f27b453a2fe3ee9dadbe1b1120ad35af1391e108bcb6c813`. อ่านทั้งไฟล์เพื่อหาขอบเขต แต่ classify เฉพาะ 62 bullet ใน 9 dialogue categories; ในนั้น 61 bullet เกี่ยวกับ scam และ 1 bullet เป็น normal-control concept. ส่วนเกมเดิม 54 bullet แยกออก ไม่ปนเข้าคลังนี้
@@ -44,7 +63,7 @@ Branch: `feat/rule-based-evaluation`. Start SHA: `491a48bcaa15260eb3837a50ca46b1
 | CC-S03 | แอบอ้างเป็นธนาคารและแจ้งธุรกรรมผิดปกติ | STORY_ELEMENT | CC-02; คำขอ OTP มาจาก CURRENT_CODE/ข่าว ไม่ได้อยู่ใน bullet นี้ |
 | CC-S04 | อ้างว่าบัญชีเกี่ยวข้องกับการฟอกเงินหรือบัญชีม้า | VARIANT | ข้อกล่าวหาใน CC-01; ไม่ใช่ JOB-03 ซึ่งขอให้ใช้บัญชีจริงในบทจำลอง |
 | CC-S05 | โอนสายไปยังเจ้าหน้าที่ระดับสูงหรือส่งเอกสารราชการปลอม | ESCALATION_STEP | CC-01; FAKE_DOCUMENT/AUTHORITY_PRESSURE ไม่ใช่เรื่องใหม่ |
-| CC-S06 | ตัวอย่างสายปกติที่ประชาชนอาจได้รับจริง เช่น การยืนยันการจัดส่งหรือการแจ้งเตือนจากหน่วยงาน เพื่อนำมาใช้สุ่มร่วมกับสายหลอกลวง | OTHER | CC-N01/CC-N02 controls; second control เป็นการทำให้แนวคิดกว้างชัดขึ้นโดย RECOMMENDATION |
+| CC-S06 | ตัวอย่างสายปกติที่ประชาชนอาจได้รับจริง เช่น การยืนยันการจัดส่งหรือการแจ้งเตือนจากหน่วยงาน เพื่อนำมาใช้สุ่มร่วมกับสายหลอกลวง | OTHER | CC-N01 สายจัดส่ง source-derived; CC-N02 ใช้แนวคิด control ทั่วไป แต่บริบทธนาคารจับคู่ CC-02 เป็น RECOMMENDATION รอบ 2026-09-30 |
 | INV-S01 | โฆษณาการลงทุนที่รับประกันผลตอบแทนสูง | WARNING_SIGN | INV-01 |
 | INV-S02 | แอบอ้างผู้เชี่ยวชาญ นักลงทุน หรือบุคคลมีชื่อเสียง | PERSONA | INV-01 persona; ไม่สร้าง analyst/influencer families |
 | INV-S03 | เชิญเข้ากลุ่มสนทนาที่มีสมาชิกและรีวิวปลอม | TACTIC | INV-01 SOCIAL_PROOF/FAKE_REVIEW |
