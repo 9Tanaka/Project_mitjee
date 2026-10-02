@@ -33,19 +33,19 @@ async function fullSafePath(app: App, scenarioId: string) {
 }
 
 describe("additional playable scam scenarios", () => {
-  it("publishes nine distinct text scenarios with explicit public feedback", async () => {
-    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider());
+  it("publishes nine distinct scenarios with voice available only for Call Center", async () => {
+    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider(), Date.now, () => "SCAM_CALL");
     const listed = app.listScenarios();
     expect(listed).toHaveLength(9);
     expect(new Set(listed.map(s => s.category)).size).toBe(9);
     for (const template of additionalScamScenarios) {
       expect(validateTemplate(template)).toEqual(template);
-      expect(listed.find(s => s.id === template.id)?.communicationMode).toBe("TEXT");
+      expect(listed.find(s => s.id === template.id)?.communicationMode).toBe(template.category === "CALL_CENTER" ? "TEXT_VOICE" : "TEXT");
     }
   });
 
   it.each(additionalScamScenarios)("$id: full safe path, early stop, review and critical paths", async template => {
-    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider());
+    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider(), Date.now, () => "SCAM_CALL");
     const safe = await fullSafePath(app, template.id);
     expect(safe.status).toBe("COMPLETED");
     const safeResult = await app.result(safe.sessionId, learner);

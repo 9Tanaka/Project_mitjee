@@ -5,6 +5,7 @@ import { copy } from "../src/domain/copy.js";
 import type { TrainingRepository } from "../src/domain/training-repository.js";
 import type { ActionInput } from "../src/domain/training-action.js";
 import { smsPhishingDialogueFixture as fixture } from "../src/fixtures/sms-phishing-dialogue.js";
+import { normalCallFixture } from "../src/fixtures/normal-call.js";
 import { ScenarioDialogueOrchestrator } from "../src/dialogue/orchestrator.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 
@@ -125,7 +126,7 @@ export function repositoryContract(name: string, createRepository: () => Trainin
     });
     it("variant is part of the template key", async () => {
       const repository = createRepository(); const id = `variant-${randomUUID()}`;
-      await repository.publish({ ...fixture, id, category: "CALL_CENTER", variant: "NORMAL_CALL" });
+      await repository.publish({ ...normalCallFixture, id, version: 2 });
       await repository.publish({ ...fixture, id, category: "CALL_CENTER", variant: "SCAM_CALL" });
       expect((await repository.getTemplate(id, 2, "NORMAL_CALL")).variant).toBe("NORMAL_CALL");
       expect((await repository.getTemplate(id, 2, "SCAM_CALL")).variant).toBe("SCAM_CALL");

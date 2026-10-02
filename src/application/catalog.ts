@@ -7,10 +7,12 @@ import { ApplicationError } from "./errors.js";
 import { transitionAvailable } from "../domain/state-machine.js";
 import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js";
 import { additionalScamScenarios } from "../fixtures/scam-scenarios.js";
+import { normalCallFixture } from "../fixtures/normal-call.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
 export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios];
+export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates, normalCallFixture];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -31,6 +33,8 @@ function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
 }
 const none = z.strictObject({});
 export function publicScenario(t: ScenarioTemplate): PublicScenario {
+  if (t.category === "CALL_CENTER") return { id: t.id, category: t.category, title: "ฝึกรับสาย Call Center",
+    description: "ฝึกตรวจสอบบริบทและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง", learningObjectives: ["ตรวจสอบผู้โทร", "พิจารณาหลักฐาน", "เลือกวิธีตอบสนอง"], communicationMode: "TEXT_VOICE" };
   return { id: t.id, category: t.category, title: t.title,
     description: t.description ?? "ฝึกตรวจข้อความเกี่ยวกับพัสดุสมมติ และเลือกการตอบสนองในสถานการณ์ SMS / Phishing",
     learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" };
@@ -90,7 +94,7 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
 }
 
 function genericBindings(t: ScenarioTemplate): Binding[] {
-  if (!t.publicActionBindings || !playableTemplates.some(candidate => candidate.id === t.id && candidate.version === t.version && candidate.variant === t.variant)) {
+  if (!t.publicActionBindings || !registeredTemplates.some(candidate => candidate.id === t.id && candidate.version === t.version && candidate.variant === t.variant)) {
     throw new ApplicationError("SCENARIO_NOT_FOUND");
   }
   const result: Binding[] = [];

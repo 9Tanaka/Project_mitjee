@@ -28,7 +28,7 @@ export const opportunitySchema = z.discriminatedUnion("skill", [
   }),
   z.strictObject({
     ...common, skill: z.literal("W"),
-    assessmentRule: z.literal("ALL_WARNINGS_NO_FALSE_POSITIVES").optional(),
+    assessmentRule: z.enum(["ALL_WARNINGS_NO_FALSE_POSITIVES", "NO_WARNINGS_EXPECTED"]).optional(),
     safeFeedback: z.string().min(1).optional(), reviewFeedback: z.string().min(1).optional(),
     evidence: z.array(z.strictObject({
       id, text: z.string().min(1), warningSignId: id.nullable(),

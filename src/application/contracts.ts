@@ -15,7 +15,7 @@ export interface QuitTrainingInput { actionId: string; expectedRevision: number 
 
 export interface PublicScenario {
   id: string; category: string; title: string; description: string;
-  learningObjectives: string[]; communicationMode: "TEXT";
+  learningObjectives: string[]; communicationMode: "TEXT" | "TEXT_VOICE";
 }
 export interface PublicActionDefinition {
   id: string; label: string; input: "CHOICE" | "EVIDENCE" | "CONFIRM" | "NONE";

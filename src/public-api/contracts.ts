@@ -23,7 +23,7 @@ export type QuitRequest = z.infer<typeof quitRequest>;
 
 export const scenarioDto = z.strictObject({
   id: publicId, category: z.string(), title: z.string(), description: z.string(),
-  learningObjectives: z.array(z.string()), communicationMode: z.literal("TEXT"),
+  learningObjectives: z.array(z.string()), communicationMode: z.enum(["TEXT", "TEXT_VOICE"]),
 });
 const optionDto = z.strictObject({ id: publicId, label: z.string() });
 export const publicActionDto = z.strictObject({

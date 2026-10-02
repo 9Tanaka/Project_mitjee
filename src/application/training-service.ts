@@ -1,14 +1,16 @@
-import { createHash } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import type { TrainingCore } from "../core.js";
 import type { ScenarioDialogueOrchestrator } from "../dialogue/orchestrator.js";
 import { DomainError } from "../domain/types.js";
 import type { AuthenticatedPrincipal, SubmitActionInput, SendMessageInput, QuitTrainingInput, StartTrainingInput } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { actionBindings, playableTemplates, publicScenario } from "./catalog.js";
+import { actionBindings, playableTemplates, registeredTemplates, publicScenario } from "./catalog.js";
 import { projectResult, projectSession } from "./projections.js";
 
+export type CallVariantSelector = () => "NORMAL_CALL" | "SCAM_CALL";
 export class TrainingApplicationService {
-  constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator) {}
+  constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator,
+    private readonly selectCallVariant: CallVariantSelector = () => randomInt(2) === 0 ? "NORMAL_CALL" : "SCAM_CALL") {}
   listScenarios() { return playableTemplates.map(publicScenario); }
   scenario(id: string) {
     const template = playableTemplates.find(t => t.id === id);
@@ -22,9 +24,14 @@ export class TrainingApplicationService {
   }
   async start(scenarioId: string, user: AuthenticatedPrincipal, input: StartTrainingInput) {
     this.scenario(scenarioId);
-    const template = playableTemplates.find(t => t.id === scenarioId)!;
     // Backend identity, version and variant. Repeated startId is stable for this owner/scenario.
     const id = createHash("sha256").update(JSON.stringify([user.id, scenarioId, input.startId])).digest("hex");
+    try { return { session: await this.resume(id, user), duplicate: true }; }
+    catch (error) { if (!(error instanceof DomainError) || error.code !== "SESSION_NOT_FOUND") throw error; }
+    const base = playableTemplates.find(t => t.id === scenarioId)!;
+    const variant = base.category === "CALL_CENTER" ? this.selectCallVariant() : base.variant;
+    const template = registeredTemplates.find(t => t.id === scenarioId && t.version === base.version && t.variant === variant);
+    if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
     let duplicate = false;
     try { await this.core.start(id, user.id, template.id, template.version, template.variant); }
     catch (error) {

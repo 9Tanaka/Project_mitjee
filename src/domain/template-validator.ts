@@ -25,6 +25,11 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   unique(t.criticalFailureRules.map(r => r.id), "critical rule");
   unique(t.states.flatMap(s => s.transitions.map(tr => tr.id)), "transition");
   requireRule(t.category === "CALL_CENTER" ? t.variant !== "DEFAULT" : t.variant === "DEFAULT", "Variant/category mismatch");
+  if (t.variant === "NORMAL_CALL") {
+    requireRule(decisionRules && t.criticalFailureRules.length === 0, "Normal calls require decision rules and zero critical rules");
+    requireRule(t.states.every(s => s.allowedEventCodes.every(code => !isCritical(code))), "Normal calls cannot allow critical events");
+    requireRule(t.opportunities.filter(o => o.skill === "W").every(o => o.assessmentRule === "NO_WARNINGS_EXPECTED"), "Normal calls expect no warnings");
+  }
 
   const states = new Map(t.states.map(s => [s.id, s]));
   const opportunities = new Map(t.opportunities.map(o => [o.id, o]));
@@ -37,12 +42,14 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
     requireRule(state && o.state !== "end_scenario", `Invalid opportunity state: ${o.id}`);
     if (o.skill === "W") {
       if (t.publicFeedbackEnabled) requireRule(!!o.safeFeedback && !!o.reviewFeedback, `Missing warning feedback: ${o.id}`);
-      if (decisionRules) requireRule(o.assessmentRule === "ALL_WARNINGS_NO_FALSE_POSITIVES", `Missing warning assessment rule: ${o.id}`);
+      if (decisionRules) requireRule(o.assessmentRule !== undefined, `Missing warning assessment rule: ${o.id}`);
       unique(o.evidence.map(e => e.id), `evidence in ${o.id}`);
       const warnings = o.evidence.flatMap(e => e.warningSignId === null ? [] : [e.warningSignId]);
-      requireRule(warnings.length > 0, `No warning-sign maximum: ${o.id}`);
+      if (o.assessmentRule === "NO_WARNINGS_EXPECTED") {
+        requireRule(decisionRules && t.variant === "NORMAL_CALL" && warnings.length === 0, `No-warnings rule requires normal call and neutral evidence: ${o.id}`);
+      } else requireRule(warnings.length > 0, `No warning-sign maximum: ${o.id}`);
       unique(warnings, `warning sign in ${o.id}`);
-      requireRule(state.allowedEventCodes.includes("IDENTIFY_WARNING_SIGN"), `Warning event not allowed: ${o.id}`);
+      if (o.assessmentRule !== "NO_WARNINGS_EXPECTED") requireRule(state.allowedEventCodes.includes("IDENTIFY_WARNING_SIGN"), `Warning event not allowed: ${o.id}`);
     } else {
       const options = o.skill === "D" ? o.choices : o.actions;
       unique(options.map(option => option.id), `option in ${o.id}`);
@@ -103,7 +110,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
       // Event guards must be producible on this path by a noncritical explicit action.
       const availableEvents = new Set([...nextEligible].flatMap(id => {
         const o = opportunities.get(id)!;
-        return o.skill === "W" ? ["IDENTIFY_WARNING_SIGN"] : (o.skill === "D" ? o.choices : o.actions).flatMap(c => c.eventCodes);
+        return o.skill === "W" ? (o.assessmentRule === "NO_WARNINGS_EXPECTED" ? [] : ["IDENTIFY_WARNING_SIGN"]) : (o.skill === "D" ? o.choices : o.actions).flatMap(c => c.eventCodes);
       }));
       for (const code of tr.requiresEvents) requireRule(availableEvents.has(code), `Unproducible event guard: ${code}`);
       if (tr.safeResolution) {

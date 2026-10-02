@@ -142,6 +142,14 @@ describe("HTTP Route Handler integration", () => {
     const h = await harness();
     expect((await h.request("start", "sms-phishing-demo", { startId: randomUUID(), expectedRevision: 0, [field]: "injected" })).status).toBe(400);
   });
+  it.each(["variant", "callType", "seed", "probability"])("rejects browser Call Center selector field %s before creating a session", async field => {
+    const h = await harness();
+    const create = vi.spyOn(h.repository, "create");
+    const response = await h.request("start", "call-center-scam", { startId: randomUUID(), expectedRevision: 0, [field]: "NORMAL_CALL" });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe("INVALID_REQUEST");
+    expect(create).not.toHaveBeenCalled();
+  });
   it.each(["resume", "message", "action", "quit", "result"] as const)("owner isolation for %s uses identical 404 for missing/foreign resources", async op => {
     const h = await harness(); const s = await h.begin("user-b"); const before = await h.raw(s, "user-b");
     const bodies = { resume: undefined, result: undefined, message: { turnId: "t1", expectedRevision: 0, text: "hello" },
