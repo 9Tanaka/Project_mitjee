@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({ disconnect: vi.fn(), create: vi.fn(), assemble
 vi.mock("../src/persistence/prisma-client.js", () => ({ createPrismaClient: mocks.create }));
 vi.mock("../src/application/composition.js", () => ({ createApplication: mocks.assemble }));
 import { getRuntime } from "../src/server/runtime.js";
+import { createCallRuntime } from "../src/server/call-runtime.js";
 
 
 beforeEach(() => {
@@ -53,4 +54,20 @@ it("loopback RSA path remains an explicit composition-root option", async () => 
   const runtime = getRuntime(); await runtime.application();
   expect(mocks.create).toHaveBeenCalledWith("mysql://localhost/mitjee_test", { loopbackRsaPublicKey: "/trusted/local-public.pem" });
   await runtime.close();
+});
+it("custom-server runtime owns an isolated lazy pool while reusing its own concurrent initialization", async () => {
+  const http = getRuntime(), call = createCallRuntime();
+  expect(mocks.create).not.toHaveBeenCalled();
+  await http.application();
+  const [first, second] = await Promise.all([call.application(), call.application()]);
+  expect(first).toBe(second); expect(mocks.create).toHaveBeenCalledTimes(2);
+  await call.close(); await http.close(); expect(mocks.disconnect).toHaveBeenCalledTimes(2);
+});
+it("custom-server failed initialization closes its pool and can retry", async () => {
+  mocks.assemble.mockRejectedValueOnce(new Error("call startup failed"));
+  const call = createCallRuntime();
+  await expect(call.application()).rejects.toThrow("call startup failed");
+  expect(mocks.disconnect).toHaveBeenCalledOnce();
+  await call.application(); expect(mocks.create).toHaveBeenCalledTimes(2);
+  await call.close(); expect(mocks.disconnect).toHaveBeenCalledTimes(2);
 });
