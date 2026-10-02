@@ -58,7 +58,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 | Assumption / target | ค่า | Status |
 |---|---|---|
-| Call Center variants | NORMAL_CALL / SCAM_CALL; latest request specifies backend random 50/50 with injectable selector | SCAM_CALL text implemented; NORMAL_CALL evaluation policy needs user decision before implementation |
+| Call Center variants | NORMAL_CALL / SCAM_CALL; backend random 50/50 with injectable selector | Implemented; NORMAL policy explicitly approved in current task; persisted duplicate starts never reroll |
 | Non-AI backend response target | <1 วินาที | Target เท่านั้น ยังไม่มี benchmark รับรอง |
 | AI interaction target | <10 วินาทีใน test environment | Target เท่านั้น; Mock ไม่พิสูจน์ live latency |
 | Concurrent demo | 20 active sessions | Functional isolation test มีแล้ว; ไม่ใช่ production/load benchmark |
@@ -83,7 +83,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 รายละเอียด implementation อยู่ใน [Persistence](persistence.md) และ [Security](security.md)
 ## HTTP phase application choices
 
-- Next.js 16.3.5, React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
+- Next.js 16.3.8 (security patch 2 October), React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
 - Playable catalog มีเก้าประเภท; SMS v4/DEFAULT และอีกแปดประเภท v1 (Call Center ใช้ SCAM_CALL); เก็บ SMS v1–3 สำหรับประวัติ
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
@@ -110,7 +110,7 @@ Demo assumptions (not Proposal numeric requirements):
 - One random dummy hash per service for unknown-account compare; no claim of constant time.
 
 Planned / Not Implemented: profile, account deletion, password reset/change, email
-verification, MFA, recovery, production abuse controls/security review, OAuth, Voice/WebSocket.
+verification, MFA, recovery, production abuse controls/security review and OAuth.
 See [Authentication](authentication.md) and [Security](security.md) for limitations.
 
 ## Current model approval — 26 September 2026
@@ -120,3 +120,19 @@ gpt-5.6-luna, configurable through OPENAI_MODEL on the server. Official OpenAI D
 opened on 26 September and list Responses API and Structured Outputs support:
 [Luna capabilities](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
 Documentation support does not establish live account access or successful verification.
+
+## Live AI / voice / realtime choices — approved 27 September 2026
+
+Groq is an explicit free development alternative, using GROQ_API_KEY and required GROQ_MODEL
+(preferred openai/gpt-oss-120b; optional qwen/qwen3.8-27b). Neither is claimed equivalent to
+Luna. No automatic cross-provider fallback or model substitution. Proposal text remains unchanged.
+Azure Speech uses server-only key/region and Thai STT/TTS; F0 may be used within account limits.
+
+Demo technical limits, not Proposal numbers: 30-second recording, canonical PCM WAV only,
+960,044 audio bytes, 1,300,000 JSON bytes, 10-second audio-body read and STT/TTS deadlines,
+20 active speech operations, 20 sockets including pending handshakes, two sockets per owner,
+one operation per socket, 12 call messages/minute/owner, 200 rate-limit entries, 5-second
+handshake, 15-second heartbeat, 10-minute socket lifetime, 6 MiB outbound backpressure.
+Audio is sent as one bounded recording, not arbitrary streaming chunks. These bounds are
+not evidence of meeting the earlier latency/concurrency performance targets.
+See [Voice](voice.md), [WebSocket](websocket.md) and [verification](realtime-verification.md).

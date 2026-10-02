@@ -63,6 +63,31 @@ Public response ใช้ explicit fields แต่ข้อความสน�
 
 ## Storage and operational hygiene
 
+### Call voice and realtime boundary — 27 September 2026
+
+Final verification and dependency patches were completed on 2 October; see
+[realtime verification](realtime-verification.md). Next 16.3.8 and fast-uri 3.1.8 resolve the
+newly reported dependency advisories; npm audit returned zero known vulnerabilities.
+This does not establish production security or complete PII detection.
+
+Groq and Azure keys stay in outer server adapters. Groq uses a fixed HTTPS endpoint,
+dedicated key/model and strict schema; errors retain only allowlisted category/status.
+Azure uses its official Speech SDK with key/region on the server and telemetry disabled.
+No browser provider selection, server credential token, or arbitrary proxy endpoint exists.
+Client artifact audit rejects Groq/Azure/OpenAI key names and server implementation markers.
+
+Call sockets require the exact configured Origin/Host and verified Auth.js encrypted JWT
+cookie, including secure-cookie naming on HTTPS. Authorization/owner headers are ignored.
+The same trainingUserId claim used by HTTP becomes the principal. Each message rechecks
+cookie expiry and owned ACTIVE Call Center session. Foreign and missing sessions return
+the same public failure. Logout limitations of stateless JWTs still apply.
+
+Voice accepts only canonical mono 16 kHz signed 16-bit PCM WAV, at most 30 seconds;
+size/header checks run before provider work. Input and generated audio stay in memory.
+Only sanitized transcript and sanitized committed character text enter Dialogue storage.
+Limits and per-process rather than distributed abuse controls are documented in
+[WebSocket](websocket.md). STT failure cannot create a dialogue/action; TTS occurs after commit.
+
 Prisma client อ่าน credentials จาก URL ที่ caller ส่งเข้ามา อย่า log URL หรือ commit ลงเอกสาร
 CLI ใช้ DATABASE_URL; tests ใช้ MYSQL_TEST_DATABASE_URL; เก็บค่าใน private environment
 helper ยอม non-TLS เฉพาะ loopback ส่วน remote ต้องส่ง trusted tlsCa พร้อม certificate verification

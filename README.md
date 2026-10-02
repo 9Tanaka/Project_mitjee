@@ -3,11 +3,12 @@
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ข้อความ 9 ประเภท
+โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ 9 ประเภท
+Call Center รองรับ NORMAL_CALL / SCAM_CALL ที่ Backend เลือก พร้อมข้อความและเสียงผ่าน Azure Speech และ WebSocket
 เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
 ผลเก่าของ SMS template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่; เลข version ไม่ใช้เลือกระบบประเมิน
-สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
+สนทนาผ่าน Mock, OpenAI หรือ Groq Responses API adapter ตาม configuration ของ server
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
 Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
@@ -23,19 +24,20 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
 | Prisma/MySQL Persistence | Implemented but external verification pending — assessment recovery and Quiz snapshot fixes; dedicated test DB unavailable |
-| HTTP API / Public DTO | Implemented — 8 Training endpoints + 5 Quiz endpoints |
+| HTTP API / Public DTO | Implemented — Training/Quiz endpoints and bounded Call Center voice endpoint |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — registration/login, nine playable text scenarios, result/logout |
-| Live AI Provider | Implemented but external verification pending — approved gpt-5.6-luna; last live attempt FAILED with credit_balance_exhausted |
-| Call Center text | Implemented — scam-call text variant; normal-call selection and voice pending |
-| Voice Call Center | Planned / Not Implemented |
+| Live AI Provider | Implemented — Mock/OpenAI/Groq; Groq live NOT RUN (credentials absent); approved OpenAI gpt-5.6-luna pending paid credits |
+| Call Center text | Implemented — NORMAL_CALL + SCAM_CALL; backend 50/50 selection, persisted idempotent start |
+| Voice Call Center | Implemented — Azure STT/TTS adapters, microphone controls, text/HTTP fallback; live Azure NOT RUN (credentials absent) |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
-| WebSocket | Planned / Not Implemented |
+| WebSocket | Implemented — authenticated, owned active Call Center session, bounded transport and reconnect/replay |
 | Profile / Dashboard | Planned / Not Implemented |
 
-Call Center เล่นผ่านข้อความได้แล้ว แต่ยังไม่มีระบบเสียงจริงหรือการสุ่มสายปกติ/สายหลอกลวง
+มีระบบเสียงและตัวเชื่อมต่อผู้ให้บริการแล้ว แต่ยังไม่ได้ยืนยันบริการ Groq/Azure จริงใน environment นี้
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
+ผลรอบล่าสุดอยู่ใน [Live AI + Voice + WebSocket verification](docs/realtime-verification.md)
 
 ## Architecture summary
 
@@ -50,7 +52,12 @@ Browser / React UI [IMPLEMENTED; public DTOs only]
 
 ScenarioDialogueOrchestrator → ScenarioModelProvider
                               ├─ Mock Provider [IMPLEMENTED]
-                              └─ OpenAI Responses API Provider [IMPLEMENTED; network NOT VERIFIED]
+                              ├─ OpenAI Responses API Provider [pending credits]
+                              └─ Groq Responses API Provider [live credentials pending]
+
+Call Center microphone → authenticated WebSocket / bounded HTTP
+  → Azure STT → sanitized text → existing Dialogue → atomic commit
+  → Azure TTS → in-memory browser audio (text remains available)
 ```
 
 ดูขอบเขตหน้าที่และ Mermaid ใน [Architecture](docs/architecture.md)
@@ -65,6 +72,25 @@ Free Text และ AI candidate ไม่สามารถสร้าง irre
 การคุยหลาย turn ไม่ทำให้ข้าม checkpoint หรือได้คะแนนเอง
 
 ## Development
+
+`npm run dev` และ `npm start` ใช้ custom Node server ที่ให้ HTTP กับ WebSocket บน origin เดียวกัน
+`npm run dev:http` / `npm run start:http` คง HTTP-only fallback ไว้
+ตั้ง `AUTH_URL` ให้ตรงกับ browser origin (ค่าเริ่มต้น `http://127.0.0.1:3000`)
+ดู [Voice setup and limits](docs/voice.md) และ [WebSocket deployment](docs/websocket.md)
+
+Provider configuration เป็น server-only และต้องเลือกชัดเจน ไม่มีการสลับ provider อัตโนมัติ:
+
+| Selection | Required private settings |
+|---|---|
+| `AI_PROVIDER=mock` | ไม่มี provider key |
+| `AI_PROVIDER=openai` | `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5.6-luna` |
+| `AI_PROVIDER=groq` | `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` |
+| Azure Speech for voice | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` |
+
+Groq เป็น free development alternative ภายใน quota ของผู้ให้บริการ ไม่ได้อ้างว่าเทียบเท่า Luna
+Historical Proposal ยังคงอ้าง `gpt-5.4-mini`; ไม่มีการแก้ย้อนหลังเป็น Luna หรือ Groq
+Live opt-in: `npm run test:ai:groq:live` และ `npm run test:speech:live` หลังตั้ง private environment
+คำสั่ง live ไม่โหลด `.env.local` อัตโนมัติ; shell สามารถใช้ Node `--env-file=.env.local` เรียก launcher เดียวกันได้
 
 Node.js 24 เป็น tested development environment ไม่ใช่ Proposal Requirement
 เริ่มจากโฟลเดอร์นี้:
@@ -187,5 +213,5 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
 Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
-Quiz Pre-test/Post-test ทำแล้ว; Profile, Game, Knowledge Base, Review Quiz, Dashboard, OAuth, Voice และ WebSocket ยังไม่ทำ
+Quiz Pre-test/Post-test, Call Center Voice และ WebSocket ทำแล้ว; Profile, Game, Knowledge Base, Review Quiz, Dashboard และ OAuth ยังไม่ทำ
 งานที่ยังเหลือและลำดับดำเนินการอยู่ใน [Implementation gap and phases](docs/implementation-roadmap.md)

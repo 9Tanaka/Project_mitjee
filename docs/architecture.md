@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend / Quiz / OpenAI adapter (live verification pending; last 429 failure)
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend / Quiz / OpenAI / Groq / Call Center Voice / WebSocket. External verification is reported separately.
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -26,7 +26,7 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Cred
 | Backend กำกับลำดับและ AI ไม่มีสิทธิ์สร้าง State/ข้ามขั้นตอนเอง | 5.3.4 | Implemented ด้วย Demo State Model |
 | แนะนำเนื้อหาจากทักษะต่ำสุด โดยไม่ปรับความยากอัตโนมัติ | 4.1.4 และ 5.3.6 | คืน recommendation metadata แล้ว; เนื้อหาเต็มยัง Planned |
 | แนวโน้มคะแนนย้อนหลังไม่เกิน 3 ครั้ง | 4.1.4 และ 5.3.6 | Planned; Core คิดผลของ Session ปัจจุบันเท่านั้น |
-| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | Proposal v6 4.1.5 และขอบเขตโครงงาน | มี 9 text fixtures และ Mock/OpenAI text adapter; Call Center voice ยัง Planned |
+| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | Proposal v6 4.1.5 และขอบเขตโครงงาน | มี 9 public types; Call Center มี normal/scam + voice, Mock/OpenAI/Groq adapter; live speech pending credentials |
 | Signup/login, Auth.js Session/Cookie, bcrypt hash/compare, Zod email/password, MySQL user data | Backend/MySQL และ Auth.js, bcrypt, Zod | Implemented; exact policy values เป็น Demo Assumptions |
 | Moderation, การปิดบังข้อมูลและการทดสอบ Prompt Injection | 5.3.5 | มี local redaction/authority boundary บางส่วน ไม่ใช่ production implementation |
 
@@ -60,6 +60,13 @@ flowchart LR
     dialogue --> provider["ScenarioModelProvider port"]
     provider --> mock["Mock Provider - IMPLEMENTED"]
     provider --> live["OpenAI Responses adapter - IMPLEMENTED / network NOT VERIFIED"]
+    provider --> groq["Groq Responses adapter - IMPLEMENTED / live NOT RUN"]
+    browser --> socket["Owned Call Center WebSocket"]
+    socket --> voice["Voice Application Service"]
+    http --> voice
+    voice --> stt["SpeechToTextProvider / Azure"]
+    voice --> entry
+    voice --> tts["TextToSpeechProvider / Azure after commit"]
     dialogue --> core
     core --> validator["EventValidator / Critical rules"]
     core --> stateMachine["State Machine"]
@@ -123,7 +130,7 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
 HTTP/API, Email/Password Credentials, Frontend และ OpenAI adapter implement แล้ว (network NOT VERIFIED)
-Voice/WebSocket ยังไม่ implement
+Voice/WebSocket implement แล้วใน outer adapters และ application orchestration; ดู [Voice](voice.md) และ [WebSocket](websocket.md)
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
 หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)
@@ -169,3 +176,12 @@ Architecture tests additionally prohibit Core/Domain/Dialogue from reaching acco
 implementations. Shared server/database.ts owns one lazy pool; training and account runtimes
 compose independent services. No HTTP or server imports enter Application.
 Published templates, scoring, Event authority, CAS and Dialogue behavior remain unchanged.
+
+## Custom-server isolation (2 October 2026)
+
+The Node WebSocket server uses a separate lazy application/Prisma pool from Next's bundled HTTP
+runtime. This preserves module-local error identities and Auth.js request context. Both use the same
+repository contract and database CAS/receipts. HTTP training and accounts retain one shared pool;
+socket runtime adds one pool (eight connections each, at most sixteen per Node process).
+Only primitive in-flight voice and rate-limit maps are shared across the module graphs.
+See [WebSocket](websocket.md) for deployment limits and [Voice](voice.md) for the commit boundary.

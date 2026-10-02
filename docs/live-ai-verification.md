@@ -1,6 +1,44 @@
 # Live AI Provider Integration — verification
 
-## Current status — 26 September 2026 recovery
+## Current status — 2 October 2026 Live AI / Voice / WebSocket phase
+
+| Provider / verification | Current result |
+|---|---|
+| Mock | Deterministic local provider retained |
+| OpenAI | Approved implementation model `gpt-5.6-luna`; live verification pending paid credits |
+| Groq | Free development adapter implemented; LIVE GROQ VERIFICATION NOT RUN because private Groq key/model are absent |
+| Azure Speech | STT/TTS development adapters implemented; LIVE AZURE VERIFICATION NOT RUN because private Speech credentials are absent |
+| Groq automated tests | 52 PASS, three test files, fake clients/fetch only |
+| Groq model comparison | NOT RUN; no quality or equivalence claim |
+
+Current implementation uses explicit `AI_PROVIDER=mock|openai|groq`; each network provider
+requires its own server key and model. No automatic provider/model substitution occurs.
+Groq's preferred development model is `openai/gpt-oss-120b`, set using `GROQ_MODEL`.
+The secondary candidate `qwen/qwen3.8-27b` has not been comparison-tested.
+These are development alternatives, not claimed equivalents to Luna.
+
+[Official Groq Responses API](https://console.groq.com/docs/responses-api) and
+[Structured Outputs](https://console.groq.com/docs/structured-outputs), rechecked 2 October,
+document OpenAI SDK compatibility, Responses JSON schema and strict structured output for
+gpt-oss-120b. The adapter fixes its endpoint to `https://api.groq.com/openai/v1`; it does not
+accept a configurable proxy URL. Documentation support is distinct from successful live testing.
+
+`npm run test:ai:groq:live` is excluded from default tests and requires private
+`AI_PROVIDER=groq`, `GROQ_API_KEY` and `GROQ_MODEL`. It makes one synthetic dialogue invocation
+with at most two attempts. It checks strict schema, nonempty Thai text presence, unchanged
+state/result/assessment/events, committed receipt, and no fallback. Logs contain only status,
+model, attempts, latency and sanitized failure category/HTTP status. A 429 reports
+`RATE_LIMITED` / `429` and fails; it cannot count as PASS. Thai presence is not a language-quality
+benchmark. Missing credentials stop before a network request with NOT RUN.
+
+The current Call Center implementation includes NORMAL_CALL and SCAM_CALL, backend selection,
+Azure voice adapters and authenticated WebSocket transport with HTTP/text fallback. External
+Azure success is reported separately from fake adapter and transport tests. Full current test,
+build, audit, MySQL and E2E results are in [Realtime verification](realtime-verification.md).
+The following sections retain dated historical evidence; their counts and prior scope are not
+the current phase's results.
+
+## Historical status — 26 September 2026 recovery
 
 Approved implementation model: `gpt-5.6-luna`, still server-configurable through
 `OPENAI_MODEL`. Historical Proposal reference: `gpt-5.4-mini`; not retrospectively changed.
@@ -10,11 +48,11 @@ checked on 26 September confirms Responses API and Structured Outputs, not accou
 Last actual live verification: 25 September, FAIL — HTTP 429
 `credit_balance_exhausted`, two attempts, Luna; fallback is not a passing verification.
 No paid request was made in this recovery because restored credits have not been confirmed.
-The current 68 AI adapter tests use fake clients/transports and cannot establish live success.
+That recovery's 68 AI adapter tests used fake clients/transports and cannot establish live success.
 Real network/schema/nonempty output/no-fallback verification remains pending.
-Nine text scenarios and Quiz Pre/Post are now implemented. NORMAL_CALL assessment policy,
-voice, Profile and Dashboard remain pending; Game/Knowledge/Review are outside current scope.
-See [Recovery verification](recovery-verification.md) for current tests and external limitations.
+At that time nine text scenarios and Quiz Pre/Post were implemented; NORMAL_CALL assessment
+policy, voice, Profile and Dashboard remained pending. Game/Knowledge/Review were outside scope.
+See [Recovery verification](recovery-verification.md) for that dated recovery's evidence.
 
 ## Historical adapter delivery — 22 September 2026
 

@@ -1,9 +1,21 @@
 # Frontend Foundation + Authentication UI + Playable Training Flow
 
-STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine text scenarios. Backend remains authoritative.
+STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.
 
 ## Architecture and routes
+
+Call Center additionally shows a user-initiated “เริ่มโหมดเสียง” control. No microphone is
+requested during render or page load. Stop/send, cancel and unmount release all tracks;
+the AudioWorklet captures bounded mono samples and encodes PCM WAV in browser memory.
+Voice sends a fixed turnId/revision over the same-origin socket; transport failure retries
+the same request over HTTP. Uncertain submissions keep the original request for retry
+and block new training mutations until resolved or the user explicitly reloads the session.
+Committed text appears before TTS; a failed TTS never hides the text. Audio uses a temporary
+object URL, revoked on replacement/unmount. Raw audio is not written to browser storage.
+The other eight scenarios retain text-only controls. See [Voice](voice.md), [WebSocket](websocket.md)
+and [current verification](realtime-verification.md). Browser+database E2E status is separate
+from DOM/component tests and synthetic socket tests.
 
 Browser / React interactive components → same-origin Next HTTP API → Auth Boundary
 → Application → TrainingCore / Dialogue → Repository → MySQL.
@@ -30,7 +42,7 @@ Browser code never imports Core, Prisma, repository, internal templates/events o
 
 ## Dependencies and build
 
-Existing Next 16.3.5 / React 19.3.0 / Auth.js 5.0.0-beta.32 are unchanged.
+Current runtime: Next 16.3.8 (security patch on 2 October), React 19.3.0 and Auth.js 5.0.0-beta.32.
 Pinned dev tooling added: Tailwind 4.3.3, @tailwindcss/postcss 4.3.3,
 PostCSS 8.5.28, Playwright 1.63.0, Testing Library React 16.3.3, jsdom 30.1.1.
 No icon/UI/chart/animation framework or external font dependency was added.
@@ -173,8 +185,9 @@ No migration/reset/schema modification was required; test data remains synthetic
 Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Catalog](scenario-catalog.md).
 OpenAI text adapter is implemented; last live verification failed with HTTP 429 `credit_balance_exhausted`; it was not rerun in recovery.
 Quiz Pre-test/Post-test is now implemented at `/quiz` and `/quiz/:attemptId`; see [Quiz](quiz.md) for current content, persistence, comparison and verification.
-Voice Call Center, Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented; the latest user scope limits other modes to Pre-test/Post-test.
-No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
+Voice Call Center and WebSocket are implemented in the current phase; see [Voice](voice.md).
+Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented.
+No OAuth, reset/email verification/MFA, continuous audio streaming, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.
 Local sanitizer is not production-grade PII detection; never enter real sensitive data.

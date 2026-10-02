@@ -35,4 +35,22 @@ Published SMS template versions 1 and 2 remain immutable and use their original 
 
 ## Verification and limits
 
+### Approved NORMAL_CALL extension — 27 September 2026
+
+This is an explicit user-approved development rule, not a retroactive Proposal requirement.
+NORMAL_CALL uses DECISION_RULES_V1 with D1 verification/clarification, D2 fictional
+non-sensitive information and S1 normal ending or independently known callback channel.
+W1 uses NO_WARNINGS_EXPECTED: every evidence.warningSignId must be null; an empty
+finalized selection is SAFE, any selected neutral evidence is REVIEW. It emits no
+IDENTIFY_WARNING_SIGN event, preserves incorrectEvidenceIds for audit, and still finalizes
+only once. The validator rejects warning-sign evidence under this rule and rejects
+critical rules/critical allowed events in NORMAL_CALL. NO_WARNINGS_EXPECTED cannot be
+used to manufacture an IDENTIFY_WARNING_SIGN transition guard.
+
+Required checkpoints cannot be skipped. Incomplete paths remain UNASSESSED; a safe
+completed path is PASSED, any encountered REVIEW gives NEEDS_PRACTICE. No percentage,
+new penalty or automatic difficulty adjustment is introduced. ALL_WARNINGS_NO_FALSE_POSITIVES
+retains scam behavior; SCAM_CALL critical failure still requires explicit simulated confirmation.
+Neither spoken text after STT nor an AI candidate can assess a checkpoint or cause failure.
+
 Regression covers early safe stop, complete safe path, reviewed choices, an unanswered optional checkpoint, critical override, AI/free-text authority across all nine templates, legacy version availability, API projection, and UI wording. Decoder tests separately cover version independence. Database migration validation and generated Prisma types pass. Real MySQL integration tests require a dedicated `MYSQL_TEST_DATABASE_URL`; they are skipped when it is absent. The current UI presents encountered checkpoint explanations but has no cross-scenario dashboard yet. Current results are in [recovery verification](recovery-verification.md).
