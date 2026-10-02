@@ -25,6 +25,6 @@ export function ScenarioList() {
           <button className="button mt-7 w-full" disabled={start.blocked} onClick={() => void start.run(new MutationAttempt("/api/scenarios/" + encodeURIComponent(scenario.id) + "/start", { startId: crypto.randomUUID(), expectedRevision: 0 }))}>{start.busy ? "กำลังเริ่มรอบฝึก…" : "เริ่มฝึกสถานการณ์"}<span aria-hidden="true">→</span></button>
         </div>
       </article>)}</div>}
-    <p className="muted text-sm">สถานการณ์ทั้งเก้าประเภทเล่นผ่านข้อความจำลองได้ ระบบเสียง Call Center ยังอยู่ระหว่างพัฒนา</p>
+    <p className="muted text-sm">สถานการณ์ทั้งเก้าประเภทเล่นผ่านข้อความจำลองได้ โหมดเสียง Call Center ต้องตั้งค่าบริการเสียงบนเซิร์ฟเวอร์ก่อนใช้งาน</p>
   </div>;
 }

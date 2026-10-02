@@ -13,5 +13,7 @@ const files = await walk(".next/static");
 assert.ok(files.length, "Build client artifacts before auditing");
 const forbidden = /PrismaClient|@prisma\/|bcrypt|AUTH_SECRET|DATABASE_URL|MYSQL_TEST_DATABASE_URL|passwordHash|PrismaTrainingRepository|TrainingCore|credentialsAuthorize|OPENAI_API_KEY|OPENAI_MODEL|AI_PROVIDER|OpenAIScenarioModelProvider|MITJEE_SCENARIO_DIALOGUE_V1|api\.openai\.com|dangerouslyAllowBrowser|OpenAIProviderError/;
 for (const file of files) assert.ok(!forbidden.test(await readFile(file, "utf8")), "Server dependency or secret-name marker in " + file);
+const voiceServerMarkers = /GROQ_API_KEY|GROQ_MODEL|AZURE_SPEECH_KEY|AZURE_SPEECH_REGION|GroqScenarioModelProvider|GroqProviderError|AzureSpeechProvider|microsoft-cognitiveservices-speech-sdk|api\.groq\.com|Ocp-Apim-Subscription-Key/;
+for (const file of files) assert.ok(!voiceServerMarkers.test(await readFile(file, "utf8")), "Speech/Groq server marker in " + file);
 for (const file of files) assert.ok(!(await readFile(file, "utf8")).includes("กลุ่มลงทุนรับรองกำไรวันละ 8%"), "Private Quiz bank included in client bundle: " + file);
 console.log("Client bundle audit passed: " + files.length + " JavaScript artifacts; server dependency/secret markers absent.");
