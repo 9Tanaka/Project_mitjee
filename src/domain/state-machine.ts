@@ -6,10 +6,17 @@ import type { ScenarioState, TrainingSession } from "./types.js";
 type Edge = ScenarioTemplate["states"][number]["transitions"][number];
 
 function guardSatisfied(session: TrainingSession, t: ScenarioTemplate, edge: Edge): boolean {
-  const requiredHere = t.opportunities.filter(o => o.state === session.state && o.required).map(o => o.id);
+  const requiredHere = edge.earlySafeResolution ? [] : t.opportunities.filter(o => o.state === session.state && o.required).map(o => o.id);
   const required = new Set([...requiredHere, ...edge.requiresFinalized]);
   return [...required].every(id => session.opportunities.some(o => o.definitionId === id && o.finalizedAt !== null))
     && edge.requiresEvents.every(code => session.events.some(e => e.code === code));
+}
+
+/** Read-only availability hint; advanceState repeats the authoritative guard. */
+export function transitionAvailable(session: TrainingSession, t: ScenarioTemplate, transitionId: string): boolean {
+  if (session.status !== "ACTIVE") return false;
+  const edge = t.states.find(state => state.id === session.state)?.transitions.find(tr => tr.id === transitionId);
+  return !!edge && guardSatisfied(session, t, edge);
 }
 
 export function advanceState(session: TrainingSession, t: ScenarioTemplate, transitionId: string): { state: ScenarioState; safeResolution: boolean } {

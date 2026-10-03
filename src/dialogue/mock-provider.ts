@@ -22,7 +22,8 @@ const lines: Record<ScenarioState, readonly [string, string]> = {
 
 export function normalMockResponse(context: ScenarioAIContext): AICharacterResponse {
   const turnsHere = context.recentSanitizedMessages.filter(m => m.role === "character" && m.state === context.currentState).length;
-  const line = lines[context.currentState][turnsHere % 2]!;
+  const line = context.scenario.category === "SMS_PHISHING" ? lines[context.currentState][turnsHere % 2]!
+    : context.allowedBehaviors[turnsHere % Math.max(context.allowedBehaviors.length, 1)] ?? `ข้อความจำลองของ ${context.scenario.title}`;
   return {
     character_message: `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage.text.slice(0, 160)}`,
     observed_intent: "continue", candidate_event: "NONE", event_code: null, confidence: null,

@@ -1,4 +1,4 @@
-import type { Outcome, Recommendation, SessionStatus, Skill } from "../domain/types.js";
+import type { DecisionFeedback, EvaluationMode, Outcome, Recommendation, SessionStatus, Skill } from "../domain/types.js";
 
 /** Identity already verified by an outer adapter. Never a client-supplied owner ID. */
 export interface AuthenticatedPrincipal { id: string }
@@ -15,7 +15,7 @@ export interface QuitTrainingInput { actionId: string; expectedRevision: number 
 
 export interface PublicScenario {
   id: string; category: string; title: string; description: string;
-  learningObjectives: string[]; communicationMode: "TEXT";
+  learningObjectives: string[]; communicationMode: "TEXT" | "TEXT_VOICE";
 }
 export interface PublicActionDefinition {
   id: string; label: string; input: "CHOICE" | "EVIDENCE" | "CONFIRM" | "NONE";
@@ -31,6 +31,9 @@ export interface PublicTrainingResult {
   sessionId: string; revision: number;
   D: number | null; W: number | null; S: number | null; trainingScore: number | null;
   outcome: Outcome; weakestSkills: Skill[]; recommendation: Recommendation;
+  evaluationMode?: EvaluationMode;
+  decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number; critical?: number;
+    checkpoints?: (Omit<DecisionFeedback, "ruleId" | "checkpointId"> & { ruleRef: string })[] } | null;
 }
 export interface TrainingMutation { session: PublicTrainingSession; duplicate: boolean }
 export interface TrainingMessageReply extends TrainingMutation {

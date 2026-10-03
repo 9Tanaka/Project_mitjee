@@ -4,10 +4,21 @@ import type { TrainingSession } from "../domain/types.js";
 import type { ActionInput } from "../domain/training-action.js";
 import type { PublicActionDefinition, PublicActionPayload, PublicScenario } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { smsPhishingDialogueFixture } from "../fixtures/sms-phishing-dialogue.js";
+import { transitionAvailable } from "../domain/state-machine.js";
+import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js";
+import { additionalScamScenarios } from "../fixtures/scam-scenarios.js";
+import { normalCallFixture } from "../fixtures/normal-call.js";
 
-// Presentation-only catalog for this playable version. No scores, events or guards here.
-export const playableTemplate = smsPhishingDialogueFixture;
+// Presentation-only bindings. Core templates own assessments, events and guards.
+export const playableTemplate = smsPhishingFeedbackFixture;
+// Published v1 configuration remains unchanged for old sessions. New starts use neutral v2 copy.
+const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenarios.find(t => t.category === "CALL_CENTER")!),
+  version: 2, description: "ฝึกตรวจสอบและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง",
+  characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
+const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
+export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER" ? callScamV2 : t)];
+export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates,
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -18,6 +29,7 @@ type Binding = {
   public: PublicActionDefinition;
   state: TrainingSession["state"];
   opportunityId?: string;
+  transitionId?: string;
   toDomain(payload: PublicActionPayload): ActionInput;
 };
 function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
@@ -27,12 +39,15 @@ function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
 }
 const none = z.strictObject({});
 export function publicScenario(t: ScenarioTemplate): PublicScenario {
+  if (t.category === "CALL_CENTER") return { id: t.id, category: t.category, title: "ฝึกรับสาย Call Center",
+    description: "ฝึกตรวจสอบบริบทและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง", learningObjectives: ["ตรวจสอบผู้โทร", "พิจารณาหลักฐาน", "เลือกวิธีตอบสนอง"], communicationMode: "TEXT_VOICE" };
   return { id: t.id, category: t.category, title: t.title,
-    description: "ฝึกตรวจข้อความเกี่ยวกับพัสดุสมมติ และเลือกการตอบสนองในสถานการณ์ SMS / Phishing",
+    description: t.description ?? "ฝึกตรวจข้อความเกี่ยวกับพัสดุสมมติ และเลือกการตอบสนองในสถานการณ์ SMS / Phishing",
     learningObjectives: [...t.learningObjectives], communicationMode: "TEXT" };
 }
 export function actionBindings(t: ScenarioTemplate): Binding[] {
-  if (t.id !== playableTemplate.id || t.version !== 2 || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
+  if (t.id !== playableTemplate.id) return genericBindings(t);
+  if (t.id !== playableTemplate.id || ![2, 3, 4].includes(t.version) || t.variant !== "DEFAULT") throw new ApplicationError("SCENARIO_NOT_FOUND");
   const result: Binding[] = [];
   for (const [internalId, publicId] of [["d1", "a01"], ["w1", "a03"], ["d2", "a05"], ["d3", "a07"], ["s1", "a08"], ["w-extra", "a11"]]) {
     const o = t.opportunities.find(o => o.id === internalId)!;
@@ -67,6 +82,10 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
     result.push({ state: state.id, public: { id: publicId!, label: label!, input: "NONE", options: [] },
       toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: internalId! }; } });
   }
+  if (t.evaluationMode === "DECISION_RULES_V1") {
+    result.push({ state: "contact", public: { id: "a15", label: "ยุติการติดต่ออย่างปลอดภัย", input: "NONE", options: [] },
+      toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: "end-contact-early" }; } });
+  }
   for (const [ruleId, publicId, label] of [
     ["confirm-simulated-otp", "a12", "ยืนยันการส่งรหัส OTP จำลอง (ไม่ใช้รหัสจริง)"],
     ["confirm-simulated-password", "a13", "ยืนยันการกรอกรหัสผ่านจำลอง (ไม่ใช้รหัสจริง)"],
@@ -79,8 +98,51 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
   }
   return result;
 }
+
+function genericBindings(t: ScenarioTemplate): Binding[] {
+  if (!t.publicActionBindings || !registeredTemplates.some(candidate => candidate.id === t.id && candidate.version === t.version && candidate.variant === t.variant)) {
+    throw new ApplicationError("SCENARIO_NOT_FOUND");
+  }
+  const result: Binding[] = [];
+  for (const [position, o] of t.opportunities.entries()) {
+    const options = o.skill === "W" ? o.evidence.map((item, index) => ({ id: `o${index + 1}`, label: item.text }))
+      : (o.skill === "D" ? o.choices : o.actions).map((choice, index) => ({ id: `o${index + 1}`, label: choice.publicLabel! }));
+    result.push({ state: o.state, opportunityId: o.id,
+      public: { id: `a${String(position + 1).padStart(2, "0")}`, label: o.publicCheckpointLabel!,
+        input: o.skill === "W" ? "EVIDENCE" : "CHOICE", options },
+      toDomain(input) {
+        if (o.skill === "W") {
+          const selected = payload(z.strictObject({ selectedEvidenceIds: z.array(z.string()).max(100) }), input).selectedEvidenceIds;
+          return { kind: "WARNING_FINALIZE", opportunityId: o.id, selectedEvidenceIds: selected.map(id => {
+            const index = options.findIndex(option => option.id === id);
+            if (index < 0) throw new ApplicationError("INVALID_ACTION");
+            return o.evidence[index]!.id;
+          }) };
+        }
+        const selected = payload(z.strictObject({ choiceId: z.string() }), input).choiceId;
+        const index = options.findIndex(option => option.id === selected);
+        if (index < 0) throw new ApplicationError("INVALID_ACTION");
+        return o.skill === "D" ? { kind: "DECISION", opportunityId: o.id, choiceId: o.choices[index]!.id }
+          : { kind: "SAFE_ACTION", opportunityId: o.id, actionId: o.actions[index]!.id };
+      },
+    });
+  }
+  let next = t.opportunities.length + 1;
+  for (const state of t.states) for (const edge of state.transitions) {
+    result.push({ state: state.id, transitionId: edge.id, public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
+      toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: edge.id }; } });
+  }
+  for (const rule of t.criticalFailureRules) {
+    result.push({ state: rule.state, opportunityId: rule.opportunityId,
+      public: { id: `a${String(next++).padStart(2, "0")}`, label: rule.publicLabel!, input: "CONFIRM", options: [] },
+      toDomain(input) { return { kind: "SIMULATED_ACTION", ruleId: rule.id,
+        confirmed: payload(z.strictObject({ confirmed: z.boolean() }), input).confirmed }; } });
+  }
+  return result;
+}
 export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
-    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null))).map(b => b.public);
+    o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null)) &&
+    (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId))).map(b => b.public);
 }

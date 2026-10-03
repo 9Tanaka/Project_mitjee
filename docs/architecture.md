@@ -1,6 +1,6 @@
 # Architecture
 
-STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend / OpenAI adapter (network NOT VERIFIED)
+STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Credentials / Frontend / Quiz / OpenAI / Groq / Call Center Voice / WebSocket. External verification is reported separately.
 
 [กลับ README](../README.md) · [Demo Assumptions](demo-assumptions.md)
 
@@ -22,11 +22,11 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN — Core / Mock / Persistence / HTTP / Cred
 
 | สาระจาก Proposal v4 | ตำแหน่ง | สถานะใน MVP |
 |---|---|---|
-| D/W/S, น้ำหนัก 50/30/20, ผ่านตั้งแต่ 70, Critical Failure override | 4.1.4 และ 5.3.6 | Implemented |
+| D/W/S, น้ำหนัก 50/30/20, ผ่านตั้งแต่ 70, Critical Failure override | Proposal v6 4.1.4 และ 5.3.6 | เก็บไว้เฉพาะ SMS รุ่น 1–2; เลือก semantics ด้วย evaluationMode ไม่ใช่เลข version ตาม [Decision Evaluation](decision-evaluation.md) |
 | Backend กำกับลำดับและ AI ไม่มีสิทธิ์สร้าง State/ข้ามขั้นตอนเอง | 5.3.4 | Implemented ด้วย Demo State Model |
 | แนะนำเนื้อหาจากทักษะต่ำสุด โดยไม่ปรับความยากอัตโนมัติ | 4.1.4 และ 5.3.6 | คืน recommendation metadata แล้ว; เนื้อหาเต็มยัง Planned |
 | แนวโน้มคะแนนย้อนหลังไม่เกิน 3 ครั้ง | 4.1.4 และ 5.3.6 | Planned; Core คิดผลของ Session ปัจจุบันเท่านั้น |
-| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | 4.1.5 และขอบเขตโครงงาน | ทำเฉพาะ SMS fixture + Mock/OpenAI text adapter; ส่วนอื่น Planned |
+| ระบบเว็บ, สถานการณ์ 9 ประเภท, ข้อความและเสียงเฉพาะ Call Center | Proposal v6 4.1.5 และขอบเขตโครงงาน | มี 9 public types; Call Center มี normal/scam + voice, Mock/OpenAI/Groq adapter; live speech pending credentials |
 | Signup/login, Auth.js Session/Cookie, bcrypt hash/compare, Zod email/password, MySQL user data | Backend/MySQL และ Auth.js, bcrypt, Zod | Implemented; exact policy values เป็น Demo Assumptions |
 | Moderation, การปิดบังข้อมูลและการทดสอบ Prompt Injection | 5.3.5 | มี local redaction/authority boundary บางส่วน ไม่ใช่ production implementation |
 
@@ -52,9 +52,21 @@ flowchart LR
     tests["Tests / trusted caller"] --> entry
     entry --> dialogue["ScenarioDialogueOrchestrator"]
     entry --> core["TrainingCore"]
+    entry --> quiz["QuizService"]
+    quiz --> quizRepository["QuizRepository port"]
+    quizRepository --> quizMemory["InMemoryQuizRepository"]
+    quizRepository --> quizPrisma["PrismaQuizRepository"]
+    quizPrisma --> mysql
     dialogue --> provider["ScenarioModelProvider port"]
     provider --> mock["Mock Provider - IMPLEMENTED"]
     provider --> live["OpenAI Responses adapter - IMPLEMENTED / network NOT VERIFIED"]
+    provider --> groq["Groq Responses adapter - IMPLEMENTED / live NOT RUN"]
+    browser --> socket["Owned Call Center WebSocket"]
+    socket --> voice["Voice Application Service"]
+    http --> voice
+    voice --> stt["SpeechToTextProvider / Azure"]
+    voice --> entry
+    voice --> tts["TextToSpeechProvider / Azure after commit"]
     dialogue --> core
     core --> validator["EventValidator / Critical rules"]
     core --> stateMachine["State Machine"]
@@ -70,13 +82,14 @@ flowchart LR
 | Next.js Server pages + interactive Client Components | Thai presentation, auth UX, public DTO fetch/mutations; no state/scoring/identity authority |
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
 | RequestAuthenticator | Auth.js verified session → minimal principal; Credentials + verified JWT/cookie; session resolver mock อยู่เฉพาะ tests |
-| Application service / catalog | เลือก playable v2/DEFAULT, derive domain command จาก opaque public action ID; project public response |
+| Application service / catalog | เลือก SMS v4 และอีก 8 scenario v1; derive command จาก opaque public action ID; project public response |
 | Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
-| Template Validator | ตรวจ schema, graph, score mappings และ D/W/S บนทุก Safe Resolution path |
+| Template Validator | ตรวจ schema/graph และ policy ตาม evaluationMode; D/W/S invariant สำหรับ legacy weighted; categorical อนุญาต early safe exit ตามกฎที่อนุมัติ |
 | EventValidator + Critical rules | ตรวจ explicit actions; candidate เป็น hint ไม่มีสิทธิ์สร้าง Event |
 | State Machine | ตรวจ transition ID, required checkpoints และ event guards |
-| Scoring Engine | คำนวณ D/W/S, outcome, weakestSkills และ recommendation |
+| Evaluation Engine | DECISION_RULES_V1 ตัดสินจาก checkpoint ที่พบจริงโดยไม่อิง version; SMS v1/v2 คง weighted D/W/S ตามประวัติ |
+| QuizService / QuizRepository | 210 questions, 7 groups, 20-question attempts; server scoring, frozen Pre/Post baseline, CAS/idempotency; Prisma reads rows/receipts in one repeatable-read snapshot |
 | Dialogue Orchestrator | ตรวจ request/session, สร้าง context, รอ Provider, validate/sanitize/fallback แล้วส่งให้ Core commit |
 | Model Provider | คืน AICharacterResponse เท่านั้น ไม่ได้รับ callback หรือ reference ไป Core |
 | OpenAI outer adapter | allowlisted context → Responses API non-streaming → strict schema; ไม่มี state/event/score authority |
@@ -88,7 +101,8 @@ flowchart LR
 HTTP request → RequestAuthenticator → strict Zod DTO → TrainingApplicationService
 → Core/Dialogue → repository → explicit public response projection
 ownerId มาจาก authenticator เท่านั้น; catalog เป็น presentation/application policy ไม่ใช่ scoring rules
-Template ไม่มี label ของ decision options จึงเพิ่ม label ใน catalog โดยไม่แก้ published configuration
+SMS templates ใช้ catalog labels; อีกแปด template ใช้ publicActionBindings/publicLabel ที่ validate แล้ว
+ทั้งสองทางคืน opaque public choices ไม่เผย answer keys/rules และไม่แก้ published configuration
 คำขอเริ่มใช้ expectedRevision=0 และ startId; Session ใหม่เริ่ม revision 0 ตาม Core เดิม
 
 Explicit action → Core.submit → parseAction → ownership/lifecycle/idempotency/revision
@@ -116,7 +130,7 @@ Repository ไม่ตัดสินคะแนนแทน Scoring Engine; t
 - [Prisma adapter](../src/persistence/prisma-repository.ts), [shared repository tests](../tests/repository-contract.ts)
 
 HTTP/API, Email/Password Credentials, Frontend และ OpenAI adapter implement แล้ว (network NOT VERIFIED)
-Voice/WebSocket ยังไม่ implement
+Voice/WebSocket implement แล้วใน outer adapters และ application orchestration; ดู [Voice](voice.md) และ [WebSocket](websocket.md)
 ดู [API contract](api.md), [Security limitations](security.md) และ [Assumptions](demo-assumptions.md)
 หลักฐานเพิ่ม: [Application](../src/application/training-service.ts), [Runtime](../src/server/runtime.ts),
 [HTTP adapter](../src/http/handler.ts), [HTTP tests](../tests/http.integration.test.ts)
@@ -162,3 +176,12 @@ Architecture tests additionally prohibit Core/Domain/Dialogue from reaching acco
 implementations. Shared server/database.ts owns one lazy pool; training and account runtimes
 compose independent services. No HTTP or server imports enter Application.
 Published templates, scoring, Event authority, CAS and Dialogue behavior remain unchanged.
+
+## Custom-server isolation (2 October 2026)
+
+The Node WebSocket server uses a separate lazy application/Prisma pool from Next's bundled HTTP
+runtime. This preserves module-local error identities and Auth.js request context. Both use the same
+repository contract and database CAS/receipts. HTTP training and accounts retain one shared pool;
+socket runtime adds one pool (eight connections each, at most sixteen per Node process).
+Only primitive in-flight voice and rate-limit maps are shared across the module graphs.
+See [WebSocket](websocket.md) for deployment limits and [Voice](voice.md) for the commit boundary.

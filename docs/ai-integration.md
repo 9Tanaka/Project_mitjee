@@ -1,6 +1,6 @@
 # AI / Dialogue Integration
 
-STATUS: MOCK + LIVE PROVIDER IMPLEMENTED / REAL OPENAI NETWORK NOT VERIFIED
+STATUS (2 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; GROQ LIVE NOT RUN; OPENAI LIVE PENDING CREDITS
 
 [กลับ README](../README.md) · [Security](security.md)
 
@@ -20,24 +20,42 @@ MockScenarioModelProvider ใช้ข้อความ deterministic ตาม
 ไม่มี network client และไม่มี callback เข้า Core
 OpenAIScenarioModelProvider เป็น outer adapter ที่ inject thin ResponsesClient ได้
 ใช้ official SDK openai@7.21.0 กับ Responses API non-streaming เท่านั้น
+GroqScenarioModelProvider เป็น outer adapter อีกตัว ใช้ SDK เดียวกันผ่าน fixed Groq endpoint
+และยังส่งผลผ่าน ScenarioDialogueOrchestrator เดิม
 Core/Domain/Dialogue ไม่มี SDK import; Provider ไม่มี Core/repository reference
 Server composition เลือก provider แล้วส่งให้ createApplication(repository, provider); ไม่มี implicit Mock
-ยังไม่มี streaming, Voice หรือการทดสอบกับโมเดลผ่านเครือข่ายจริง
+Call Center voice ใช้ Azure STT → sanitized text → Dialogue → committed text → Azure TTS
+ดู [Voice](voice.md) และ [WebSocket transport](websocket.md); ไม่มี native model audio หรือ token streaming
 
 ## Configuration and model
 
 - `AI_PROVIDER=mock`: deterministic local provider; ไม่มี OpenAI call
 - `AI_PROVIDER=openai`: ต้องกำหนด `OPENAI_API_KEY` และ `OPENAI_MODEL` ผ่าน private server environment
+- `AI_PROVIDER=groq`: ต้องกำหนด `GROQ_API_KEY` และ `GROQ_MODEL` ของตนเอง; ไม่ใช้ OpenAI key แทน
 - ค่าว่าง/ผิดหรือขาด key/model ทำให้ initialization fail ก่อนเปิด Training DB; ไม่เปลี่ยนเป็น Mock เงียบ ๆ
 - HTTP คืน generic INTERNAL_ERROR ไม่คืนชื่อ config/key; ห้ามใช้ NEXT_PUBLIC_* สำหรับค่าเหล่านี้
-- Endpoint ตรึงที่ https://api.openai.com/v1; ไม่อ่าน OPENAI_BASE_URL ไปเปลี่ยนปลายทาง
+- OpenAI endpoint ตรึงที่ `https://api.openai.com/v1`; Groq endpoint ตรึงที่ `https://api.groq.com/openai/v1`
+- ไม่ใช้ `OPENAI_BASE_URL`, `GROQ_BASE_URL` หรือค่าจาก browser เปลี่ยนปลายทาง
 - SDK logging off; ไม่ส่ง organization/project จาก implicit environment และไม่มี browser configuration
 
-ตรวจ Proposal v4 ซ้ำวันที่ 22 กันยายน 2026: runtime `gpt-5.4-mini`,
-final-test snapshot `gpt-5.4-mini-2026-03-17`. Official model page ยังระบุ Responses API,
-Structured Outputs และ snapshot นี้ ณ วันที่ตรวจ แต่ไม่ได้ยืนยันสิทธิ์เข้าถึงของบัญชี
+Proposal historical reference คือ `gpt-5.4-mini` และ final-test snapshot
+`gpt-5.4-mini-2026-03-17`; ไม่ได้ระบุ Luna และไม่มีการแก้ประวัติ Proposal
+Approved implementation decision คือ `gpt-5.6-luna` ผ่าน `OPENAI_MODEL` ที่ยัง configurable
+[Official Luna model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
+ที่ตรวจวันที่ 26 กันยายน 2026 ระบุ Responses API และ Structured Outputs
+การรองรับในเอกสารไม่ได้ยืนยัน credits หรือสิทธิ์เข้าถึงของบัญชีจริง
 ไม่มี default model หรือ silent substitution; tests ใช้ชื่อสมมติ ไม่ผูกกับ real model
-หาก model ใช้ไม่ได้ ให้รายงานและขออนุมัติก่อนเปลี่ยน ไม่ implement provider สำรองอื่นใน phase นี้
+หาก model ใช้ไม่ได้ ให้รายงาน category ที่ตัดข้อมูลลับออก; ไม่มีการสลับ model หรือ provider อัตโนมัติ
+
+Groq เป็น **free development alternative** ที่ผู้ใช้อนุมัติสำหรับรอบนี้ โดยใช้
+`GROQ_MODEL=openai/gpt-oss-120b` เป็นค่าที่ต้องกำหนดเอง ไม่ใช่ default ในโค้ด
+`qwen/qwen3.8-27b` เป็นเพียง secondary test candidate; ยังไม่มีการรัน comparison หรือเลือกแทนให้
+ไม่อ้างว่าโมเดลทั้งสองเทียบเท่า GPT-5.6 Luna และไม่แก้ข้อความ Proposal ย้อนหลัง
+เอกสาร [Groq Responses API](https://console.groq.com/docs/responses-api) ที่ตรวจวันที่
+27 กันยายน 2026 แสดง OpenAI JavaScript SDK, fixed endpoint และ Responses `text.format` JSON schema
+ส่วน [Groq Structured Outputs](https://console.groq.com/docs/structured-outputs) ระบุ strict mode
+สำหรับ gpt-oss-120b; adapter ใช้ `strict:true` และตรวจ Zod ซ้ำ ไม่มี regex extraction
+เอกสารระบุ Responses API เป็น beta; การรองรับตามเอกสารไม่ใช่หลักฐาน live compatibility ของบัญชีนี้
 
 ## Request construction
 
@@ -90,6 +108,9 @@ Refusal content part map เป็น ProviderRefusal ด้วยข้อค�
 Incomplete/failed envelope, tool output, หลาย text parts, malformed JSON หรือ field เกิน ถูก reject
 Adapter-side invalid output/SDK error ใช้ OpenAIProviderError ข้อความคงที่ → existing ERROR category;
 ไม่เพิ่ม error contract หรือเปลี่ยน Core. INVALID_OUTPUT เดิมยังใช้กรณี provider คืน invalid value ถึง Orchestrator
+GroqProviderError เก็บเฉพาะ category และ HTTP status ที่ปลอดภัย: RATE_LIMITED, AUTHENTICATION,
+API_INCOMPATIBLE, INVALID_OUTPUT หรือ UNAVAILABLE; HTTP 429 รายงาน RATE_LIMITED / 429
+Orchestrator ยังคง retry/fallback และ receipt contract เดิม ไม่ส่ง raw body, headers หรือ error cause
 Raw output/error/refusal/usage/model request metadata ไม่ถูกเก็บหรือส่งออก public DTO
 Core นำ event_code/confidence ไปสร้าง AICandidateEvent projection โดยกำหนด sourceMessageId เอง
 และใช้ opportunityId=null ใน Dialogue path; candidate_event/observed_intent ไม่ถูกใช้เป็น authoritative action
@@ -117,7 +138,7 @@ candidate ถูกตรวจแล้วได้ NO_EVENT / REJECTED / CLARI
 แต่ละครั้งมี AbortController และ requestId รูปแบบ sessionId:turnId:attempt
 ใช้ opaque IDs เท่านั้น ห้ามใส่ข้อมูลส่วนบุคคลใน identifiers
 Orchestrator abort เมื่อ timeout; Mock รองรับทั้ง signal ที่ abort ไปแล้วและการ abort ระหว่าง timeout simulation
-OpenAI adapter ส่ง signal เดิมให้ SDK และตรวจ abort ทั้งก่อน/หลัง await
+OpenAI และ Groq adapters ส่ง signal เดิมให้ SDK และตรวจ abort ทั้งก่อน/หลัง await
 SDK timeout เป็น backup 20 วินาที และ maxRetries=0 ทั้ง client/request (SDK default retry ถูกปิด)
 Correlation ที่ออกไปเป็น HMAC แบบ opaque ใน X-Client-Request-Id ด้วย random per-process key
 ไม่ส่ง raw sessionId/turnId หรือ PII; เปลี่ยน worker แล้ว correlation key เปลี่ยน
@@ -168,14 +189,32 @@ Evidence: [contracts](../src/dialogue/contracts.ts), [orchestrator](../src/dialo
 timeout late-response, CAS stale rejection, duplicate HTTP retry และ safe D/W/S path
 ชุดปกติไม่เรียก OpenAI; MySQL/Auth/browser smoke บังคับ AI_PROVIDER=mock
 
+`npm run test:groq`: 52 tests ผ่านด้วย fake Responses client/fake fetch ณ 27 กันยายน 2026
+ครอบคลุม explicit config, dedicated key/model, fixed endpoint, strict schema, sanitized errors,
+single transport attempt, cancellation/late response, retry/fallback, HTTP input rejection,
+idempotency และ unchanged backend assessment/state/events; ไม่มีการเรียก Groq จริง
+
+`npm run test:ai:groq:live`: opt-in synthetic in-memory turn ใช้ private
+`AI_PROVIDER=groq`, `GROQ_API_KEY`, `GROQ_MODEL` สูงสุดสอง provider attempts
+ตรวจ schema, ข้อความไม่ว่าง/มีภาษาไทย, unchanged State/result/opportunity assessments/events,
+receipt commit และ no fallback; รายงาน category/status/latency โดยไม่พิมพ์ raw response/key
+การตรวจมีตัวอักษรไทยไม่ใช่ benchmark คุณภาพภาษาไทย; คุณภาพสนทนายังต้องประเมินจากการใช้งานจริง
+หาก config ขาด ให้ NOT RUN และ exit nonzero โดยไม่เรียกเครือข่าย
+
 `npm run test:ai:live`: opt-in synthetic in-memory session หนึ่ง turn ไม่ต้องใช้บัญชีหรือ DB จริง
 ต้องกำหนด private env ทั้งสามตัว; cap สอง attempts ตาม Orchestrator เดิม ไม่มี outer retry/load test
 ตรวจ nonempty/schema, committed receipt, unchanged State/score/events/opportunities และ no Critical Failure
 ไม่ assert exact wording/confidence; รายงานเฉพาะ model, attempts, schema result, latency ไม่ log prompt/response
 Fallback ไม่ถือว่าผ่าน live verification; missing config exit nonzero พร้อม NOT RUN
 
-**รอบนี้: adapter tests ผ่าน; Real OpenAI network verification NOT RUN — ไม่มี API key ใน environment.
-Model used for live test: none.** ไม่อ้างว่า prompt injection/production moderation/PII detection สมบูรณ์
+**ตรวจซ้ำ 2 ตุลาคม: LIVE GROQ VERIFICATION NOT RUN เนื่องจากไม่มี Groq key/model ใน private
+environment; LIVE AZURE VERIFICATION NOT RUN เนื่องจากไม่มี Speech credentials**
+OpenAI ยังคงรอ credits; ผล live ล่าสุดวันที่ 25 กันยายนคือ FAIL:
+HTTP 429 `credit_balance_exhausted` สำหรับ `gpt-5.6-luna` (สอง attempts; fallback ไม่ใช่ PASS)
+ไม่อ้างว่าไม่มี key หรือว่า real network ผ่านแล้ว ไม่ log secret/raw response
+ดู [Current realtime verification](realtime-verification.md) สำหรับ test matrix รอบนี้
+และ [Historical recovery](recovery-verification.md) สำหรับรอบ 26 กันยายน
+ไม่อ้าง production moderation/PII/injection certification
 
 Official sources checked 22 September 2026:
 

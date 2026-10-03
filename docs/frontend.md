@@ -1,9 +1,21 @@
 # Frontend Foundation + Authentication UI + Playable Training Flow
 
-STATUS: IMPLEMENTED SCENARIO SIMULATION UI — SMS / Phishing only. Backend remains authoritative.
+STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.
 
 ## Architecture and routes
+
+Call Center additionally shows a user-initiated “เริ่มโหมดเสียง” control. No microphone is
+requested during render or page load. Stop/send, cancel and unmount release all tracks;
+the AudioWorklet captures bounded mono samples and encodes PCM WAV in browser memory.
+Voice sends a fixed turnId/revision over the same-origin socket; transport failure retries
+the same request over HTTP. Uncertain submissions keep the original request for retry
+and block new training mutations until resolved or the user explicitly reloads the session.
+Committed text appears before TTS; a failed TTS never hides the text. Audio uses a temporary
+object URL, revoked on replacement/unmount. Raw audio is not written to browser storage.
+The other eight scenarios retain text-only controls. See [Voice](voice.md), [WebSocket](websocket.md)
+and [current verification](realtime-verification.md). Browser+database E2E status is separate
+from DOM/component tests and synthetic socket tests.
 
 Browser / React interactive components → same-origin Next HTTP API → Auth Boundary
 → Application → TrainingCore / Dialogue → Repository → MySQL.
@@ -30,7 +42,7 @@ Browser code never imports Core, Prisma, repository, internal templates/events o
 
 ## Dependencies and build
 
-Existing Next 16.3.5 / React 19.3.0 / Auth.js 5.0.0-beta.32 are unchanged.
+Current runtime: Next 16.3.8 (security patch on 2 October), React 19.3.0 and Auth.js 5.0.0-beta.32.
 Pinned dev tooling added: Tailwind 4.3.3, @tailwindcss/postcss 4.3.3,
 PostCSS 8.5.28, Playwright 1.63.0, Testing Library React 16.3.3, jsdom 30.1.1.
 No icon/UI/chart/animation framework or external font dependency was added.
@@ -69,7 +81,7 @@ in presentation is not a security mechanism.
 
 Catalog comes exclusively from GET /api/scenarios. Only backend-returned playable
 cards exist. Public opaque IDs are passed through, not interpreted as safe/critical.
-D/W/S, total, weakest skills and outcome come exclusively from result DTO.
+D/W/S, total, weakest skills and outcome come exclusively from result DTO for legacy results. Version 3 displays categorical outcome and decision summary from the same backend DTO; it does not calculate a score in the browser.
 UI formats numbers and maps display labels; it never computes scores or pass/fail.
 
 Each explicit start/message/action/quit creates a UUID once and snapshots a serialized
@@ -94,8 +106,8 @@ synchronization and offline durable retry are not implemented.
 
 Messages display sanitized public history only; a local unsent draft remains on error.
 Use fictional data only; the UI explicitly warns against real OTP/password/PII.
-Server selects Mock/OpenAI explicitly; browser uses the same public DTO with no model/provider selector.
-OpenAI adapter is implemented; real network verification NOT RUN. Footer now describes Scenario Simulation
+Server selects Mock/OpenAI/Groq explicitly; browser uses the same public DTO with no model/provider selector.
+OpenAI adapter is implemented; last live verification failed with 429 credit_balance_exhausted. Footer describes Scenario Simulation
 without claiming a specific provider. No UI redesign or direct browser AI integration.
 
 Public action inputs:
@@ -170,12 +182,18 @@ overflow in captured views. Keyboard skip-link focus/activation was tested in br
 All/production npm audits reported 0 known vulnerabilities on this date.
 No migration/reset/schema modification was required; test data remains synthetic.
 
-Demo Credentials implemented. Playable scenario: SMS / Phishing only.
-OpenAI text adapter is implemented; real OpenAI network verification NOT RUN.
-Voice/Call Center, Profile, remaining 8 scenario fixtures, Pre/Post-test,
-Review Quiz, Investigation Game, Knowledge Base and Dashboard: NOT IMPLEMENTED.
-No OAuth, reset/email verification/MFA, streaming, WebSocket, WebRTC or admin.
+Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Catalog](scenario-catalog.md).
+OpenAI text adapter is implemented; last live verification failed with HTTP 429 `credit_balance_exhausted`; it was not rerun in recovery.
+Quiz Pre-test/Post-test is now implemented at `/quiz` and `/quiz/:attemptId`; see [Quiz](quiz.md) for current content, persistence, comparison and verification.
+Voice Call Center and WebSocket are implemented in the current phase; see [Voice](voice.md).
+Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented.
+No OAuth, reset/email verification/MFA, continuous audio streaming, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.
 Local sanitizer is not production-grade PII detection; never enter real sensitive data.
-No backend security refactor was made. Stop for review before the next phase.
+No backend security refactor was made in the original frontend phase; current phase status is in [Implementation Roadmap](implementation-roadmap.md).
+
+Recovery on 26 September adds a fifth browser test: real Investment safe actions with
+refreshes after finalized checkpoints and a categorical PASSED result. Five tests are
+discoverable, including the persisted Quiz Pre/Post flow; discovery is not execution.
+Historical recovery result (26 September): Browser + MySQL E2E NOT RUN — MYSQL_TEST_DATABASE_URL unavailable; frontend subset 59 passed, build and client artifact audit passed. See [Recovery verification](recovery-verification.md). ผลรอบปัจจุบันแยกไว้ใน [Live AI + Voice + WebSocket verification](realtime-verification.md); ไม่ได้นำผล recovery เดิมมานับเป็นการรันใหม่

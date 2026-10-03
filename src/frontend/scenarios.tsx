@@ -18,13 +18,13 @@ export function ScenarioList() {
     {!resource.data?.length ? <div className="panel empty-state"><h2>ยังไม่มีสถานการณ์ที่เปิดให้ฝึก</h2><p className="muted">กรุณากลับมาตรวจสอบภายหลัง</p></div> :
       <div className="scenario-grid">{resource.data.map(scenario => <article key={scenario.id} className="scenario-card">
         <div className="scenario-visual" aria-hidden="true"><div className="visual-grid" /><div className="message-symbol"><span className="message-dots">•••</span><span className="mini-shield"><Shield /></span></div><span className="visual-caption">หยุดคิด · ตรวจสอบ · ตัดสินใจ</span></div>
-        <div className="scenario-content"><div className="flex flex-wrap gap-2"><span className="tag">ฝึกผ่านข้อความ</span><span className="tag tag-neutral">{scenario.category}</span></div>
+        <div className="scenario-content"><div className="flex flex-wrap gap-2"><span className="tag">{scenario.communicationMode === "TEXT_VOICE" ? "ฝึกผ่านข้อความหรือเสียง" : "ฝึกผ่านข้อความ"}</span><span className="tag tag-neutral">{scenario.category}</span></div>
           <h2>{scenario.title}</h2><p className="muted">{scenario.description}</p>
           <h3 className="mt-6 text-sm font-semibold">สิ่งที่จะได้ฝึก</h3>
           <ul className="objectives">{scenario.learningObjectives.map((objective, i) => <li key={i}><span aria-hidden="true">✓</span>{objective}</li>)}</ul>
           <button className="button mt-7 w-full" disabled={start.blocked} onClick={() => void start.run(new MutationAttempt("/api/scenarios/" + encodeURIComponent(scenario.id) + "/start", { startId: crypto.randomUUID(), expectedRevision: 0 }))}>{start.busy ? "กำลังเริ่มรอบฝึก…" : "เริ่มฝึกสถานการณ์"}<span aria-hidden="true">→</span></button>
         </div>
       </article>)}</div>}
-    <p className="muted text-sm">ขณะนี้เปิดฝึก SMS / Phishing เท่านั้น สถานการณ์เพิ่มเติมอยู่ระหว่างพัฒนา</p>
+    <p className="muted text-sm">สถานการณ์ทั้งเก้าประเภทเล่นผ่านข้อความจำลองได้ โหมดเสียง Call Center ต้องตั้งค่าบริการเสียงบนเซิร์ฟเวอร์ก่อนใช้งาน</p>
   </div>;
 }

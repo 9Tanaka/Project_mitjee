@@ -17,11 +17,19 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   const parsed = scenarioTemplateSchema.safeParse(input);
   requireRule(parsed.success, parsed.success ? "" : parsed.error.message);
   const t = parsed.data;
+  const decisionRules = t.evaluationMode === "DECISION_RULES_V1";
+  requireRule(!t.publicFeedbackEnabled || decisionRules, "Public feedback requires decision rules");
+  requireRule(!t.publicActionBindings || (decisionRules && t.publicFeedbackEnabled && !!t.description), "Public bindings require described decision rules");
   unique(t.states.map(s => s.id), "state");
   unique(t.opportunities.map(o => o.id), "opportunity");
   unique(t.criticalFailureRules.map(r => r.id), "critical rule");
   unique(t.states.flatMap(s => s.transitions.map(tr => tr.id)), "transition");
   requireRule(t.category === "CALL_CENTER" ? t.variant !== "DEFAULT" : t.variant === "DEFAULT", "Variant/category mismatch");
+  if (t.variant === "NORMAL_CALL") {
+    requireRule(decisionRules && t.criticalFailureRules.length === 0, "Normal calls require decision rules and zero critical rules");
+    requireRule(t.states.every(s => s.allowedEventCodes.every(code => !isCritical(code))), "Normal calls cannot allow critical events");
+    requireRule(t.opportunities.filter(o => o.skill === "W").every(o => o.assessmentRule === "NO_WARNINGS_EXPECTED"), "Normal calls expect no warnings");
+  }
 
   const states = new Map(t.states.map(s => [s.id, s]));
   const opportunities = new Map(t.opportunities.map(o => [o.id, o]));
@@ -29,20 +37,32 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   requireRule(states.get("end_scenario")!.transitions.length === 0, "Terminal state has outgoing transitions");
 
   for (const o of t.opportunities) {
+    if (t.publicFeedbackEnabled) requireRule(!!o.publicCheckpointLabel && !!o.unassessedFeedback, `Missing public checkpoint feedback: ${o.id}`);
     const state = states.get(o.state);
     requireRule(state && o.state !== "end_scenario", `Invalid opportunity state: ${o.id}`);
     if (o.skill === "W") {
+      if (t.publicFeedbackEnabled) requireRule(!!o.safeFeedback && !!o.reviewFeedback, `Missing warning feedback: ${o.id}`);
+      if (decisionRules) requireRule(o.assessmentRule !== undefined, `Missing warning assessment rule: ${o.id}`);
       unique(o.evidence.map(e => e.id), `evidence in ${o.id}`);
       const warnings = o.evidence.flatMap(e => e.warningSignId === null ? [] : [e.warningSignId]);
-      requireRule(warnings.length > 0, `No warning-sign maximum: ${o.id}`);
+      if (o.assessmentRule === "NO_WARNINGS_EXPECTED") {
+        requireRule(decisionRules && t.variant === "NORMAL_CALL" && warnings.length === 0, `No-warnings rule requires normal call and neutral evidence: ${o.id}`);
+      } else requireRule(warnings.length > 0, `No warning-sign maximum: ${o.id}`);
       unique(warnings, `warning sign in ${o.id}`);
-      requireRule(state.allowedEventCodes.includes("IDENTIFY_WARNING_SIGN"), `Warning event not allowed: ${o.id}`);
+      if (o.assessmentRule !== "NO_WARNINGS_EXPECTED") requireRule(state.allowedEventCodes.includes("IDENTIFY_WARNING_SIGN"), `Warning event not allowed: ${o.id}`);
     } else {
       const options = o.skill === "D" ? o.choices : o.actions;
       unique(options.map(option => option.id), `option in ${o.id}`);
-      requireRule(options.some(option => option.score === o.maxScore), `Maximum not attainable: ${o.id}`);
+      if (decisionRules) requireRule(o.maxScore === undefined && options.every(option => option.score === undefined), `Numeric rubric forbidden in decision rules: ${o.id}`);
+      else {
+        requireRule(o.maxScore !== undefined && options.every(option => option.score !== undefined), `Missing legacy score: ${o.id}`);
+        requireRule(options.some(option => option.score === o.maxScore), `Maximum not attainable: ${o.id}`);
+      }
       for (const option of options) {
-        requireRule(option.score <= o.maxScore, `Score above maximum: ${o.id}`);
+        if (t.publicFeedbackEnabled) requireRule(!!option.publicFeedback, `Missing option feedback: ${o.id}:${option.id}`);
+        if (t.publicActionBindings) requireRule(!!option.publicLabel, `Missing public option label: ${o.id}:${option.id}`);
+        if (decisionRules) requireRule(option.assessment !== undefined, `Missing decision assessment: ${o.id}:${option.id}`);
+        if (!decisionRules) requireRule(option.score! <= o.maxScore!, `Score above maximum: ${o.id}`);
         unique(option.eventCodes, `option event in ${o.id}`);
         for (const code of option.eventCodes) {
           requireRule(!isCritical(code), "Critical events require explicit simulated-action rules, not scoring mappings");
@@ -50,19 +70,24 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
         }
       }
       if (o.skill === "D") {
-        requireRule(new Set(o.choices.map(c => c.rating)).size === 3, `D must expose all three ratings: ${o.id}`);
-        for (const c of o.choices) requireRule(c.score === DECISION_POINTS[c.rating], `Invalid 10/5/0 mapping: ${o.id}`);
+        if (!decisionRules) {
+          requireRule(new Set(o.choices.map(c => c.rating)).size === 3, `D must expose all three ratings: ${o.id}`);
+          for (const c of o.choices) requireRule(c.score === DECISION_POINTS[c.rating], `Invalid 10/5/0 mapping: ${o.id}`);
+        }
       }
     }
   }
 
   for (const rule of t.criticalFailureRules) {
+    if (t.publicFeedbackEnabled) requireRule(!!rule.publicLabel && !!rule.publicFeedback, `Missing critical feedback: ${rule.id}`);
     requireRule(states.get(rule.state)?.allowedEventCodes.includes(rule.eventCode), `Critical event not allowed: ${rule.id}`);
     requireRule(opportunities.get(rule.opportunityId)?.state === rule.state, `Critical action requires a current-state opportunity: ${rule.id}`);
   }
   for (const s of t.states) {
     unique(s.allowedEventCodes, `allowed event in ${s.id}`);
     for (const tr of s.transitions) {
+      if (t.publicActionBindings) requireRule(!!tr.publicLabel, `Missing public transition label: ${tr.id}`);
+      requireRule(!tr.earlySafeResolution || (decisionRules && tr.safeResolution && tr.requiresFinalized.length === 0 && tr.requiresEvents.length === 0), `Invalid early safe resolution: ${tr.id}`);
       requireRule(states.has(tr.target), `Unknown target ${tr.target}`);
       requireRule(tr.safeResolution === (tr.target === "end_scenario"), "Only safe-resolution transitions may target end_scenario");
       for (const id of tr.requiresFinalized) requireRule(opportunities.has(id), `Unknown guard opportunity: ${id}`);
@@ -85,13 +110,13 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
       // Event guards must be producible on this path by a noncritical explicit action.
       const availableEvents = new Set([...nextEligible].flatMap(id => {
         const o = opportunities.get(id)!;
-        return o.skill === "W" ? ["IDENTIFY_WARNING_SIGN"] : (o.skill === "D" ? o.choices : o.actions).flatMap(c => c.eventCodes);
+        return o.skill === "W" ? (o.assessmentRule === "NO_WARNINGS_EXPECTED" ? [] : ["IDENTIFY_WARNING_SIGN"]) : (o.skill === "D" ? o.choices : o.actions).flatMap(c => c.eventCodes);
       }));
       for (const code of tr.requiresEvents) requireRule(availableEvents.has(code), `Unproducible event guard: ${code}`);
       if (tr.safeResolution) {
         safePaths++;
         const skills = new Set([...nextEligible].map(id => opportunities.get(id)!.skill));
-        for (const skill of SKILLS) requireRule(skills.has(skill), `Safe Resolution path missing eligible ${skill}: ${[...path, stateId, tr.target].join(" -> ")}`);
+        if (!decisionRules) for (const skill of SKILLS) requireRule(skills.has(skill), `Safe Resolution path missing eligible ${skill}: ${[...path, stateId, tr.target].join(" -> ")}`);
       }
       visit(tr.target, [...path, stateId], nextEligible);
     }

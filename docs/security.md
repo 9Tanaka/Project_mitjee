@@ -63,6 +63,31 @@ Public response ใช้ explicit fields แต่ข้อความสน�
 
 ## Storage and operational hygiene
 
+### Call voice and realtime boundary — 27 September 2026
+
+Final verification and dependency patches were completed on 2 October; see
+[realtime verification](realtime-verification.md). Next 16.3.8 and fast-uri 3.1.8 resolve the
+newly reported dependency advisories; npm audit returned zero known vulnerabilities.
+This does not establish production security or complete PII detection.
+
+Groq and Azure keys stay in outer server adapters. Groq uses a fixed HTTPS endpoint,
+dedicated key/model and strict schema; errors retain only allowlisted category/status.
+Azure uses its official Speech SDK with key/region on the server and telemetry disabled.
+No browser provider selection, server credential token, or arbitrary proxy endpoint exists.
+Client artifact audit rejects Groq/Azure/OpenAI key names and server implementation markers.
+
+Call sockets require the exact configured Origin/Host and verified Auth.js encrypted JWT
+cookie, including secure-cookie naming on HTTPS. Authorization/owner headers are ignored.
+The same trainingUserId claim used by HTTP becomes the principal. Each message rechecks
+cookie expiry and owned ACTIVE Call Center session. Foreign and missing sessions return
+the same public failure. Logout limitations of stateless JWTs still apply.
+
+Voice accepts only canonical mono 16 kHz signed 16-bit PCM WAV, at most 30 seconds;
+size/header checks run before provider work. Input and generated audio stay in memory.
+Only sanitized transcript and sanitized committed character text enter Dialogue storage.
+Limits and per-process rather than distributed abuse controls are documented in
+[WebSocket](websocket.md). STT failure cannot create a dialogue/action; TTS occurs after commit.
+
 Prisma client อ่าน credentials จาก URL ที่ caller ส่งเข้ามา อย่า log URL หรือ commit ลงเอกสาร
 CLI ใช้ DATABASE_URL; tests ใช้ MYSQL_TEST_DATABASE_URL; เก็บค่าใน private environment
 helper ยอม non-TLS เฉพาะ loopback ส่วน remote ต้องส่ง trusted tlsCa พร้อม certificate verification
@@ -87,7 +112,8 @@ User/history text เป็น untrusted input; prompt ช่วยจำกั�
 Safety flags เป็น model self-report ไม่ใช่ moderation service; sanitizer ไม่ครอบคลุม PII ทุกแบบ
 ส่งข้อมูลสมมติเท่านั้น แม้ store:false ก็ไม่ใช่ Zero Data Retention guarantee
 ไม่มี raw conversation/provider logs; HMAC request correlation ไม่ส่ง raw owner/session/turn IDs
-ดู [AI integration](ai-integration.md) สำหรับ retry, cancellation และ real-network NOT RUN
+ดู [AI integration](ai-integration.md) สำหรับ retry, cancellation และ live failure ล่าสุด
+HTTP 429 `credit_balance_exhausted`; recovery ไม่ได้ retry หรืออ้าง live PASS
 
 ไม่มี retention job แม้เลือกใช้ DEMO_DATA_RETENTION_DAYS=30 เป็น planned assumption
 จึงไม่อ้างว่าข้อมูลถูกลบหลัง 30 วันแล้ว และไม่ควรเก็บข้อมูลจริงในฐานทดสอบ

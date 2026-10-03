@@ -7,12 +7,14 @@ import { useMutation, useResource } from "./hooks.js";
 import { MutationAttempt } from "./api.js";
 import { ActionControl, type ActionPayload } from "./actions.js";
 import { Failure, Loading, Notice } from "./ui.js";
+import { VoiceControls } from "./voice.js";
 
 const replySchema = z.union([mutationDto, messageDto]);
 export function Training({ sessionId }: { sessionId: string }) {
   const path = "/api/training/" + encodeURIComponent(sessionId);
   const resource = useResource(path, sessionDto);
   const [text, setText] = useState(""); const [quitting, setQuitting] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const mutation = useMutation(replySchema, reply => {
     resource.setData(reply.session); setQuitting(false);
@@ -25,12 +27,12 @@ export function Training({ sessionId }: { sessionId: string }) {
   if (!s) return <Notice>ยังไม่มีข้อมูลรอบฝึก</Notice>;
   if (s.status === "ABANDONED" || s.status === "EXPIRED") return <div className="panel terminal-panel">
     <p className="eyebrow">สถานะรอบฝึก</p><h1>{s.status === "ABANDONED" ? "ออกจากรอบฝึกแล้ว" : "รอบฝึกหมดอายุแล้ว"}</h1>
-    <p className="muted mt-4">รอบนี้ไม่มีผลประเมินอย่างเป็นทางการ คุณสามารถเลือกเริ่มสถานการณ์ใหม่ได้</p><Link className="button mt-6" href="/scenarios">กลับไปเลือกสถานการณ์ →</Link></div>;
+    <p className="muted mt-4">รอบนี้ยังประเมินไม่ได้เพราะยังไม่จบด้วยการกระทำที่ประเมินได้ คุณสามารถเลือกเริ่มสถานการณ์ใหม่ได้</p><Link className="button mt-6" href="/scenarios">กลับไปเลือกสถานการณ์ →</Link></div>;
   if (s.status === "COMPLETED" || s.status === "FAILED") return <div className="panel terminal-panel">
     <span className="tag">สิ้นสุดรอบฝึก</span><h1 className="mt-5">พร้อมทบทวนผลการฝึก</h1>
     <p className="muted mt-4">ระบบบันทึกรอบฝึกแล้ว ดูผลประเมินและคำแนะนำจากการตัดสินใจของคุณ</p>
     <Link className="button mt-6" href={"/training/" + encodeURIComponent(sessionId) + "/result"}>ดูผลการฝึก →</Link></div>;
-  const blocked = mutation.blocked;
+  const blocked = mutation.blocked || voiceBusy;
   function action(actionDefinitionId: string, payload: ActionPayload) {
     if (!s || blocked) return;
     void mutation.run(new MutationAttempt(path + "/action", { actionId: crypto.randomUUID(), expectedRevision: s.revision, actionDefinitionId, payload }));
@@ -43,6 +45,7 @@ export function Training({ sessionId }: { sessionId: string }) {
     <Link href="/scenarios" className="back-link">← สถานการณ์ฝึก</Link>
     <div className="training-heading"><div><p className="eyebrow">พื้นที่ฝึกสถานการณ์จำลอง</p><h1>{s.scenario.title}</h1></div><span className="tag tag-active"><span className="status-dot" />กำลังฝึก</span></div>
     <Notice>ใช้ข้อมูลสมมติเท่านั้น ห้ามส่ง OTP รหัสผ่าน หรือข้อมูลส่วนบุคคลจริง การสนทนาไม่ใช่การยืนยันการกระทำ</Notice>
+    {s.scenario.category === "CALL_CENTER" && <VoiceControls session={s} disabled={mutation.blocked} onReply={reply => resource.setData(reply.session)} onBusy={setVoiceBusy} reload={resource.reload} />}
     {mutation.error && <Failure error={mutation.error} retry={mutation.retryable ? () => void mutation.retry() : undefined} />}
     <div className="training-grid">
       <section className="chat-panel" aria-label="บทสนทนา">

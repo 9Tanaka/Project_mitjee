@@ -133,6 +133,7 @@ export class TrainingCore {
       opportunity.finalizedByActionId = command.actionId;
       opportunity.correctWarningSignIds = plan.correctWarningSignIds;
       opportunity.incorrectEvidenceIds = plan.incorrectEvidenceIds;
+      if (template.evaluationMode === "DECISION_RULES_V1") opportunity.assessment = plan.assessment;
     }
     for (const code of plan.eventCodes) {
       session.events.push({

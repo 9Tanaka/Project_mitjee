@@ -32,13 +32,13 @@ function reached(file: string, seen = new Set<string>()): Set<string> {
   }
   return seen;
 }
-it.each(["application/", "core.ts", "domain/", "dialogue/", "persistence/"])("%s cannot reach forbidden outer layers, including through barrels", layer => {
+it.each(["application/", "core.ts", "domain/", "dialogue/", "persistence/", "quiz/"])("%s cannot reach forbidden outer layers, including through barrels", layer => {
   const forbidden = layer === "application/" ? /^(http|auth|server|app|frontend|providers)\// : /^(application|http|auth|server|app|frontend|providers)\//;
   const selected = [...sources.keys()].filter(file => localName(file).startsWith(layer));
   expect(selected.length).toBeGreaterThan(0);
   for (const file of selected) for (const dependency of reached(file)) {
     expect(forbidden.test(localName(dependency)), `${localName(file)} reaches ${localName(dependency)}`).toBe(false);
-    expect(/^(next|next-auth|openai)(\/|$)/.test(dependency), `${localName(file)} reaches framework/auth/provider SDK`).toBe(false);
+    expect(/^(next|next-auth|openai|microsoft-cognitiveservices-speech-sdk|ws)(\/|$)/.test(dependency), `${localName(file)} reaches framework/auth/provider SDK`).toBe(false);
   }
 });
 it("Application has no HTTP/Next global types or transport errors", () => {
@@ -52,8 +52,8 @@ it("browser roots and public contracts cannot reach server, domain, credentials 
   expect(roots.length).toBeGreaterThan(10);
   for (const [file, source] of roots) {
     for (const dependency of reached(file)) {
-      expect(localName(dependency), localName(file)).not.toMatch(/^(http|application|auth|accounts|server|domain|dialogue|persistence|generated|fixtures|security|providers)\/|^core\.ts$/);
-      expect(dependency, localName(file)).not.toMatch(/^(node:|bcrypt|@prisma|mariadb|openai|next-auth$|next-auth\/(?!react$))/);
+      expect(localName(dependency), localName(file)).not.toMatch(/^(http|application|auth|accounts|server|domain|quiz|dialogue|persistence|generated|fixtures|security|providers)\/|^core\.ts$/);
+      expect(dependency, localName(file)).not.toMatch(/^(node:|bcrypt|@prisma|mariadb|openai|microsoft-cognitiveservices-speech-sdk|ws$|next-auth$|next-auth\/(?!react$))/);
     }
     expect(source, localName(file)).not.toMatch(/localStorage|sessionStorage|document\.cookie|process\.env|dangerouslySetInnerHTML|x-owner-id|x-user-id/);
   }

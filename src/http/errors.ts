@@ -1,8 +1,15 @@
 import { AccountError } from "../accounts/contracts.js";
+import { QuizError } from "../quiz/contracts.js";
 import { DomainError } from "../domain/types.js";
 import { ApplicationError } from "../application/errors.js";
+import { SpeechError } from "../speech/contracts.js";
 
 const errors = {
+  SPEECH_UNAVAILABLE: [503, "Speech is temporarily unavailable; text mode remains available."],
+  STT_FAILED: [503, "Unable to transcribe this recording; retry or use text."],
+  EMPTY_TRANSCRIPT: [422, "No speech was recognized."], INVALID_AUDIO: [400, "Invalid audio format."],
+  AUDIO_TOO_LARGE: [413, "Recording is too large."], VOICE_NOT_ALLOWED: [422, "Voice is only available for Call Center."],
+  VOICE_BUSY: [429, "Please wait before sending another call request."],
   ACCOUNT_ALREADY_EXISTS: [409, "Account already exists."],
   INVALID_REQUEST: [400, "Invalid request."], UNAUTHENTICATED: [401, "Authentication required."],
   INVALID_ORIGIN: [403, "Request origin is not allowed."],
@@ -25,7 +32,7 @@ const actionErrors = new Set([
 ]);
 export function publicError(error: unknown) {
   let code: ApiErrorCode = "INTERNAL_ERROR";
-  if (error instanceof ApiError || error instanceof ApplicationError || error instanceof AccountError) code = error.code;
+  if (error instanceof ApiError || error instanceof ApplicationError || error instanceof AccountError || error instanceof QuizError || error instanceof SpeechError) code = error.code;
   else if (error instanceof DomainError) {
     if (["SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
     else if (actionErrors.has(error.code)) code = "INVALID_ACTION";

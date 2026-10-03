@@ -8,7 +8,7 @@ HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
 Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว
-Server เลือก Mock/OpenAI adapter โดย contract เดิม; ไม่มี streaming และยังไม่ verify OpenAI network จริง
+Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม; ไม่มี token streaming การลอง OpenAI Luna ครั้งก่อนติด `429 credit_balance_exhausted` ส่วน live Groq ยัง NOT RUN ดู [ผล verification](realtime-verification.md)
 
 ## Authentication and composition
 
@@ -90,7 +90,7 @@ POST ที่ส่ง Origin ต่างจาก request origin ถูก re
 ## Public scenario and action projection
 
 Scenario มี id/category/title/description/learningObjectives/communicationMode=TEXT เท่านั้น
-Backend กำหนด SMS / Phishing version 2, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
+Backend เลือก template ที่เผยแพร่แล้วจาก catalog เก้าประเภท; SMS / Phishing ใช้ version 4 และอีกแปดประเภทใช้ version 1; client เลือก version/variant เองไม่ได้
 Catalog เพิ่ม label/description สำหรับ presentation เพราะ published Template เดิมไม่มีข้อความตัวเลือก D/S
 ไม่เพิ่ม score, Event, State guard หรือกฎใหม่ใน catalog
 
@@ -106,11 +106,12 @@ public definition มี id, label, input, options เท่านั้น; IDs
 
 ตัวอย่าง initial action: actionDefinitionId=a01, payload={choiceId:"o1"}; ต้องใช้ actionId ใหม่และ revision ที่อ่านมา
 NONE เป็นคำขอไปต่อ ไม่รับ target State; Core ยังบังคับ checkpoints/event guards
-progress control อาจแสดงก่อน checkpoint ครบ แล้ว Core ตอบ 422 INVALID_STATE เมื่อยังไปต่อไม่ได้
+อีกแปด scenario ที่ใช้ publicActionBindings ซ่อน progress จน checkpoints/event guards ครบ
+SMS ที่ใช้ catalog bindings เดิมอาจแสดง progress ก่อนครบ; Core ยังคงตอบ 422 INVALID_STATE และห้ามข้าม checkpoint
 ไม่มี endpoint สำหรับ direct transition/scoring/Event CRUD/Opportunity CRUD/Result creation
 ไม่คืน scores ก่อนตอบ, answer flags, event codes, rule IDs, target State, hidden opportunities/transitions,
 prompts, fallback configuration, candidate confidence หรือ provider error metadata
-Terminal result คืน D/W/S normalized, Training Score, Outcome, weakestSkills และ recommendation type/key/reason เท่านั้น
+ผลที่ template กำหนด `evaluationMode=DECISION_RULES_V1` คืน categorical Outcome และ decisionSummary; SMS v4 และอีกแปดประเภท v1 มี feedback ของจุดที่พบจริงและรหัสอ้างอิงกฎแบบ opaque; SMS v3 มีจำนวนสรุปแต่ไม่มี feedback รายจุด ทั้งหมดมี D/W/S และ trainingScore เป็น null ส่วน historical SMS v1/v2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response เลข version เพียงอย่างเดียวไม่กำหนด semantics
 ไม่มี internal event/rule mapping หรือเฉลยของ Session ที่ยังเล่นอยู่
 
 ## Revision, retry and lifecycle
@@ -149,7 +150,7 @@ concurrent duplicates อาจเรียก Provider หลายครั้
 
 Known action/transition/lifecycle errors map ตามหมวด; unexpected errors ใช้ข้อความคงที่
 ไม่ echo Zod issues, raw input, SQL, Prisma errors, stack trace หรือ provider raw output
-Mock/OpenAI failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
+Mock/OpenAI/Groq failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
 Invalid server provider configuration เป็น generic 500; public response ไม่มี model ID, usage,
 request context/ID, raw output/refusal/error หรือ provider configuration
 HTTP layer ไม่มี raw request/response/error logging
@@ -168,8 +169,9 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Credentials login และ Frontend ทำแล้ว; OpenAI adapter ทำแล้วแต่ network NOT VERIFIED
-Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login, Frontend และ Mock/OpenAI/Groq adapters ทำแล้ว รวมถึง [Voice endpoints](voice.md), [authenticated WebSocket และ HTTP fallback](websocket.md)
+Live Azure/Groq และ dedicated MySQL/browser E2E ยัง NOT RUN; OpenAI Luna ครั้งก่อนติดข้อจำกัดเครดิต ดู [ผล verification](realtime-verification.md) ไม่ใช่การยืนยัน production readiness
+Continuous audio/token streaming, production moderation และ distributed deployment/rate-limit coordination ยัง Planned; ขีดจำกัด request/session ที่ทำแล้วเป็น demo controls
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 
@@ -179,6 +181,10 @@ Evidence: [routes](../src/app/api/scenarios/route.ts), [DTOs](../src/http/dto.ts
 [HTTP tests](../tests/http.integration.test.ts), [lifecycle tests](../tests/http.runtime.test.ts)
 
 Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
+
+## Quiz API — 26 September 2026
+
+Five authenticated Quiz routes are implemented alongside the eight Training routes. They support publication/history, start, resume/result, save and submit. See [Quiz HTTP contract](quiz.md#http-and-storage) for strict requests, idempotency, CAS and frozen result behavior. Quiz scoring never changes Scenario decision outcomes.
 
 ## Application / HTTP contract ownership
 

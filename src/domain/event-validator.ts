@@ -6,7 +6,7 @@ import type { ScenarioTemplate } from "./schema.js";
 import { requireOpenOpportunity } from "./session-opportunity.js";
 import type { ActionInput } from "./training-action.js";
 import { DomainError } from "./types.js";
-import type { EventCode, TrainingSession, ValidationStatus } from "./types.js";
+import type { DecisionAssessment, EventCode, TrainingSession, ValidationStatus } from "./types.js";
 
 export interface ValidatedPlan {
   status: ValidationStatus;
@@ -17,13 +17,14 @@ export interface ValidatedPlan {
   critical: boolean;
   correctWarningSignIds: string[];
   incorrectEvidenceIds: string[];
+  assessment: DecisionAssessment | null;
 }
 
 export function validateAction(action: ActionInput, session: TrainingSession, t: ScenarioTemplate): ValidatedPlan {
   if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
   const plan: ValidatedPlan = {
     status: "NO_EVENT", opportunityId: null, earned: 0, eventCodes: [],
-    ruleId: action.kind, critical: false, correctWarningSignIds: [], incorrectEvidenceIds: [],
+    ruleId: action.kind, critical: false, correctWarningSignIds: [], incorrectEvidenceIds: [], assessment: null,
   };
   // Free-text interpretation can NEVER commit a Critical Failure (even explicit-sounding text).
   if (action.kind === "FREE_TEXT") return { ...plan, status: "CLARIFICATION_REQUIRED" };
@@ -41,15 +42,17 @@ export function validateAction(action: ActionInput, session: TrainingSession, t:
   if (action.kind === "DECISION" && definition.skill === "D") {
     const choice = definition.choices.find(c => c.id === action.choiceId);
     if (!choice) throw new DomainError("UNKNOWN_CHOICE");
-    plan.earned = choice.score;
+    plan.earned = t.evaluationMode === "DECISION_RULES_V1" ? 0 : choice.score!;
     plan.eventCodes = [...choice.eventCodes];
     plan.ruleId = `${definition.id}:${choice.id}`;
+    if (t.evaluationMode === "DECISION_RULES_V1") plan.assessment = choice.assessment ?? "UNASSESSED";
   } else if (action.kind === "SAFE_ACTION" && definition.skill === "S") {
     const choice = definition.actions.find(c => c.id === action.actionId);
     if (!choice) throw new DomainError("UNKNOWN_SAFE_ACTION");
-    plan.earned = choice.score;
+    plan.earned = t.evaluationMode === "DECISION_RULES_V1" ? 0 : choice.score!;
     plan.eventCodes = [...choice.eventCodes];
     plan.ruleId = `${definition.id}:${choice.id}`;
+    if (t.evaluationMode === "DECISION_RULES_V1") plan.assessment = choice.assessment ?? "UNASSESSED";
   } else if (action.kind === "WARNING_FINALIZE" && definition.skill === "W") {
     if (new Set(action.selectedEvidenceIds).size !== action.selectedEvidenceIds.length) throw new DomainError("DUPLICATE_EVIDENCE");
     for (const id of action.selectedEvidenceIds) {
@@ -58,9 +61,15 @@ export function validateAction(action: ActionInput, session: TrainingSession, t:
       if (evidence.warningSignId === null) plan.incorrectEvidenceIds.push(id);
       else plan.correctWarningSignIds.push(evidence.warningSignId);
     }
-    plan.earned = plan.correctWarningSignIds.length; // No invented false-positive penalty.
-    plan.eventCodes = plan.earned > 0 ? ["IDENTIFY_WARNING_SIGN"] : [];
+    plan.earned = t.evaluationMode === "DECISION_RULES_V1" ? 0 : plan.correctWarningSignIds.length;
+    plan.eventCodes = plan.correctWarningSignIds.length > 0 ? ["IDENTIFY_WARNING_SIGN"] : [];
     plan.ruleId = `${definition.id}:finalize`;
+    if (t.evaluationMode === "DECISION_RULES_V1") {
+      const expected = definition.evidence.filter(e => e.warningSignId !== null).map(e => e.warningSignId!);
+      plan.assessment = plan.incorrectEvidenceIds.length === 0 &&
+        expected.length === plan.correctWarningSignIds.length &&
+        expected.every(id => plan.correctWarningSignIds.includes(id)) ? "SAFE" : "REVIEW";
+    }
   } else throw new DomainError("ACTION_OPPORTUNITY_MISMATCH");
 
   const allowed = t.states.find(s => s.id === session.state)!.allowedEventCodes;
