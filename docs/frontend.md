@@ -1,6 +1,9 @@
 # Frontend Foundation + Authentication UI + Playable Training Flow
 
 STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
+
+UI refresh on 3 October 2026 follows Proposal figures 7–26 without changing backend contracts.
+See [UI refresh](ui-refresh.md) for the full route/reference mapping, current checks and explicit UI-only limitations.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.
 
 ## Architecture and routes
@@ -30,9 +33,17 @@ Route guard is UX only; backend 401/ownership checks remain the security boundar
 | / | Thai landing; honest current demo scope |
 | /register | Email/password/confirmation; registration API |
 | /login | Official Auth.js v5 Credentials client |
-| /scenarios | Authenticated API catalog; explicit start |
+| /scenarios | Authenticated API catalog; local search/category filter; detail links |
+| /scenarios/[scenarioId] | Existing API metadata, objectives and communication mode |
+| /scenarios/[scenarioId]/prepare | Explicit safety acknowledgment before the existing idempotent start request |
 | /training/[sessionId] | Resume, messages, generic actions, lifecycle/quit |
 | /training/[sessionId]/result | Authoritative result and recommendation metadata |
+| /quiz; /quiz/details/pre; /quiz/details/post; /quiz/[attemptId] | Existing Quiz catalog/overview, detail/start, saved attempts and real results |
+| /dashboard | Existing Quiz history and per-round results only; no aggregate scenario analytics |
+| /settings | Read-only session data; no unsupported edit form |
+| /faq | Searchable, categorized native disclosures |
+| /games; /games/preview; /games/preview/result | Labeled UI-only fixtures; no scoring or persistence |
+| /knowledge; /knowledge/preview | Empty published catalog plus separate labeled UI reading example |
 
 src/public-api/contracts.ts owns the existing browser-safe Zod contracts.
 src/http/dto.ts re-exports them unchanged. Account policy is likewise shared through
@@ -186,7 +197,9 @@ Demo Credentials implemented. Nine text scenarios are playable; see [Scenario Ca
 OpenAI text adapter is implemented; last live verification failed with HTTP 429 `credit_balance_exhausted`; it was not rerun in recovery.
 Quiz Pre-test/Post-test is now implemented at `/quiz` and `/quiz/:attemptId`; see [Quiz](quiz.md) for current content, persistence, comparison and verification.
 Voice Call Center and WebSocket are implemented in the current phase; see [Voice](voice.md).
-Profile, Review Quiz, Investigation Game, Knowledge Base and Dashboard remain unimplemented.
+Profile editing, Investigation Game backend and Knowledge Base publishing remain unimplemented.
+Current UI includes read-only account settings, a Quiz-backed dashboard, and clearly labeled game/knowledge previews.
+These additions do not establish full Proposal module completion or production readiness.
 No OAuth, reset/email verification/MFA, continuous audio streaming, WebRTC or admin.
 Current backlog unchanged: production rate limits, duplicate-registration enumeration,
 privacy-safe auth telemetry, immediate JWT revocation and shared DB pool lifecycle.

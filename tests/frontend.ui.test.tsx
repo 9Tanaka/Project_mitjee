@@ -9,7 +9,7 @@ const router = { push: mocks.push, replace: mocks.replace, refresh: mocks.refres
 vi.mock("next-auth/react", () => ({ useSession: () => ({ status: mocks.status }), signIn: mocks.signIn, signOut: mocks.signOut, SessionProvider: ({ children }: { children: ReactNode }) => children }));
 vi.mock("next/link.js", () => ({ default: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a> }));
 import { AuthForm, AuthGate, AuthNavigation } from "../src/frontend/auth.js";
-import { ScenarioList } from "../src/frontend/scenarios.js";
+import { ScenarioList, ScenarioStart } from "../src/frontend/scenarios.js";
 import { Training } from "../src/frontend/training.js";
 import { Result } from "../src/frontend/result.js";
 import { ActionControl } from "../src/frontend/actions.js";
@@ -83,10 +83,13 @@ it.each(["unauthenticated", "loading"])("gate hides protected content while %s",
   expect(screen.queryByText("private training content")).toBeNull();
   if (status === "unauthenticated") expect(mocks.replace).toHaveBeenCalledWith("/login");
 });
-it("scenario catalog renders only API data; double-click start produces one request", async () => {
+it("scenario preparation renders API data; acknowledgement and double-click start produce one request", async () => {
   let finish!: (value: Response) => void;
-  fetcher.mockResolvedValueOnce(reply([scenario])).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
-  render(<ScenarioList />); const start = await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ });
+  fetcher.mockResolvedValueOnce(reply(scenario)).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+  render(<ScenarioStart scenarioId={scenario.id} />); const start = await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ });
+  expect((start as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(start); expect(fetcher).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("checkbox"));
   expect(screen.getByText("สถานการณ์จาก API")).toBeTruthy();
   fireEvent.click(start); fireEvent.click(start);
   expect(fetcher).toHaveBeenCalledTimes(2);
@@ -95,8 +98,8 @@ it("scenario catalog renders only API data; double-click start produces one requ
   expect(mocks.push).toHaveBeenCalledWith("/training/public-session");
 });
 it("start network retry reuses exact request ID/body", async () => {
-  fetcher.mockResolvedValueOnce(reply([scenario])).mockRejectedValueOnce(new Error("lost")).mockResolvedValueOnce(reply({ session: snapshot(), duplicate: true }));
-  render(<ScenarioList />); fireEvent.click(await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ }));
+  fetcher.mockResolvedValueOnce(reply(scenario)).mockRejectedValueOnce(new Error("lost")).mockResolvedValueOnce(reply({ session: snapshot(), duplicate: true }));
+  render(<ScenarioStart scenarioId={scenario.id} />); await screen.findByRole("checkbox"); fireEvent.click(screen.getByRole("checkbox")); fireEvent.click(screen.getByRole("button", { name: /เริ่มฝึกสถานการณ์/ }));
   fireEvent.click(await screen.findByRole("button", { name: "ลองอีกครั้ง" }));
   await waitFor(() => expect(mocks.push).toHaveBeenCalled());
   expect(fetcher.mock.calls[1]![1].body).toBe(fetcher.mock.calls[2]![1].body);

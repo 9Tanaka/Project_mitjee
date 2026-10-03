@@ -1,18 +1,18 @@
 import Link from "next/link.js";
-import { Shield } from "../frontend/ui.js";
+import { Icon } from "../frontend/ui.js";
 export default function Home() {
-  return <div>
-    <section className="hero"><div className="hero-copy"><span className="tag">พื้นที่ฝึกรู้ทันภัยไซเบอร์</span><h1>รู้ทันก่อนเชื่อ<br /><span>ฝึกคิดก่อนคลิก</span></h1><p className="hero-description">ลองรับมือกับการหลอกลวงในพื้นที่จำลอง<br className="hidden sm:block" />ฝึกสังเกต ตัดสินใจ และเลือกการตอบสนอง<br className="hidden sm:block" />ก่อนเจอสถานการณ์จริง</p>
-      <div className="flex flex-wrap gap-3 mt-8"><Link href="/register" className="button">เริ่มต้นฝึกกับ MITJEE <span aria-hidden="true">→</span></Link><Link href="/login" className="button button-secondary">มีบัญชีแล้ว? เข้าสู่ระบบ</Link></div>
-      <p className="field-hint mt-5">ฝึกด้วยข้อมูลสมมติ · เรียนรู้จากการตัดสินใจของตัวเอง</p></div>
-      <div className="hero-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="hero-shield"><Shield /></div><div className="art-label art-label-one"><span>01</span> สังเกต</div><div className="art-label art-label-two"><span>02</span> ตรวจสอบ</div><div className="art-label art-label-three"><span>03</span> ตัดสินใจ</div><p className="art-caption">A SAFER CHOICE STARTS WITH YOU</p></div>
+  return <div className="landing-content">
+    <section className="hero">
+      <div className="hero-copy"><p className="eyebrow">SAFE SIMULATION ENVIRONMENT</p><h1>ฝึกจับสัญญาณ<br />ก่อนมิจฉาชีพ<br /><span>จะใช้มันกับคุณ</span></h1><p className="hero-description">เรียนรู้ผ่านบทสนทนา ลองตัดสินใจ และทบทวนผล<br className="hidden sm:block" />ในพื้นที่จำลอง ก่อนเจอสถานการณ์จริง</p><div className="hero-links"><Link href="/scenarios" className="button button-mint">เริ่มฝึกกับ MITJEE <Icon name="arrow" /></Link><Link href="/login" className="hero-login">มีบัญชีแล้ว? เข้าสู่ระบบ</Link></div><p className="hero-note">ไม่มีธุรกรรมจริง · ใช้ข้อมูลสมมติเท่านั้น</p></div>
+      <div className="hero-preview" aria-label="ตัวอย่างหน้าตาบทสนทนา ไม่ใช่รอบฝึกจริง"><div className="preview-heading"><span>SCENARIO PREVIEW</span><span className="tag tag-light">ตัวอย่างหน้าจอ</span></div><div className="preview-contact"><span className="avatar"><Icon name="chat" /></span><div><strong>ข้อความจากผู้ติดต่อ</strong><p>ตัวละครและเหตุการณ์สมมติ</p></div></div><div className="preview-bubble">สวัสดีค่ะ ติดต่อมาเรื่องรายการที่คุณต้องตรวจสอบค่ะ</div><div className="preview-bubble preview-user">ขอทราบรายละเอียดเพิ่มเติมได้ไหมคะ?</div><div className="preview-decision"><p className="eyebrow">YOUR NEXT MOVE</p><h2>หยุดคิด แล้วเลือกวิธีตอบสนอง</h2><p>สังเกตบริบท พิจารณาหลักฐาน<br />และตัดสินใจด้วยตัวเอง</p><div className="preview-steps"><span>01 สังเกต</span><span>02 ตรวจสอบ</span><span>03 ตัดสินใจ</span></div></div><p className="preview-caption">ข้อความตัวอย่างเพื่อแนะนำ UI ไม่ใช่ผลการประเมิน</p></div>
+      <div className="hero-categories">CALL CENTER <span>·</span> PHISHING <span>·</span> INVESTMENT <span>·</span> ROMANCE <span>·</span> และอีก 5 หมวด</div>
     </section>
-    <section className="learning-strip" aria-label="แนวทางการฝึก">{[
-      ["01", "เลือกสถานการณ์", "เลือกฝึกจากการหลอกลวงผ่านข้อความจำลองทั้งเก้าประเภท"],
-      ["02", "ลองตัดสินใจ", "โต้ตอบผ่านข้อความและเลือกการกระทำจำลอง"],
-      ["03", "ทบทวนสิ่งที่ได้เรียนรู้", "ดูผลประเมินและคำแนะนำหลังสิ้นสุดรอบฝึก"],
-    ].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h2>{title}</h2><p>{description}</p></div>)}</section>
-    <section className="panel mt-6"><p className="eyebrow">QUIZ · PRE-TEST / POST-TEST</p><h2 className="section-heading mt-3">วัดความรู้ก่อนและหลังฝึก</h2><p className="muted mt-3">ทำข้อสอบ 20 ข้อจาก 7 หมวด ดูเฉลย และเปรียบเทียบผลหลังฝึกกับผลเริ่มต้น</p><Link className="button button-secondary mt-5" href="/quiz">ไปหน้า Quiz →</Link></section>
-    <div className="scope-note"><span className="status-dot" /> เปิดฝึกข้อความ 9 ประเภท และ Quiz ก่อน/หลังฝึก โหมดเสียง Call Center ต้องตั้งค่าบริการเสียงบนเซิร์ฟเวอร์ก่อนใช้งาน</div>
+    <section className="learning-section"><div className="section-heading-row"><div><p className="eyebrow">LEARN. PRACTICE. REFLECT.</p><h2>เรียนรู้ในแบบที่เหมาะกับคุณ</h2></div><Link href="/faq" className="text-link">รู้จัก MITJEE →</Link></div><div className="learning-mode-grid">{[
+      { icon: "chat", title: "สถานการณ์จำลอง AI", text: "ฝึกโต้ตอบและตัดสินใจจาก 9 หมวดใกล้ตัว พร้อมทบทวนผลหลังจบ", href: "/scenarios", ready: true },
+      { icon: "quiz", title: "แบบทดสอบ", text: "ทำ Pre-test / Post-test บันทึกคำตอบ ทำต่อ และดูเฉลยจากรอบของคุณ", href: "/quiz", ready: true },
+      { icon: "search", title: "เกมสืบสวน", text: "แนวทางฝึกพิจารณาหลักฐานและสืบหาความจริงในคดีจำลอง", href: "/games", ready: false },
+      { icon: "book", title: "คลังความรู้", text: "พื้นที่สำหรับบทเรียนและเนื้อหาทบทวนทักษะรับมือการหลอกลวง", href: "/knowledge", ready: false },
+    ].map(item => <article className="learning-mode" key={item.href}><span className="category-icon"><Icon name={item.icon} /></span><span className={"tag " + (item.ready ? "tag-active" : "tag-neutral")}>{item.ready ? "เปิดใช้งาน" : "กำลังพัฒนา"}</span><h3>{item.title}</h3><p>{item.text}</p><Link href={item.href}>{item.ready ? "เข้าใช้งาน" : "ดูสถานะและตัวอย่าง UI"} <Icon name="arrow" /></Link></article>)}</div></section>
+    <section className="learning-strip" aria-label="แนวทางการฝึก">{[["01", "เลือกสถานการณ์", "อ่านบริบทและคำเตือนก่อนเริ่ม"], ["02", "ลองตัดสินใจ", "พิมพ์สนทนาและเลือกการกระทำจำลอง"], ["03", "ทบทวนสิ่งที่เรียนรู้", "ดูผลจากระบบและเลือกฝึกเพิ่มเติม"]].map(([number,title,description]) => <div key={number}><span className="step-number">{number}</span><h2>{title}</h2><p>{description}</p></div>)}</section>
   </div>;
 }

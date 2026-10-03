@@ -14,6 +14,11 @@ Call Center รองรับ NORMAL_CALL / SCAM_CALL ที่ Backend เล�
 Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
 ดู [Authentication](docs/authentication.md) และ [Frontend](docs/frontend.md) — ยังไม่ใช่ production-ready
 
+UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรกสีเข้ม/ม่วง ปุ่มมิ้นต์, sidebar และเมนูมือถือ,
+รายละเอียดสถานการณ์ → ยืนยันคำเตือน → ฝึก, Quiz และแดชบอร์ดจากประวัติ Quiz จริง
+ดู [UI refresh: หน้าที่ทำแล้ว / ข้อจำกัด / หลักฐานการตรวจ](docs/ui-refresh.md)
+เกมสืบสวนและคลังความรู้เป็น **ตัวอย่าง UI ที่ระบุป้ายชัดเจน** ไม่ใช่ระบบเกม/บทเรียนที่บันทึกผลได้
+
 ## Current implementation status
 
 | Component | Status |
@@ -27,13 +32,14 @@ Training API รับ UUID จาก verified session เท่านั้น;
 | HTTP API / Public DTO | Implemented — Training/Quiz endpoints and bounded Call Center voice endpoint |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
-| Frontend UI | Implemented — registration/login, nine playable text scenarios, result/logout |
+| Frontend UI | Implemented — Proposal-aligned shell, responsive navigation, registration/login, searchable nine-scenario catalog, details/safety acknowledgment, training/result, Quiz and FAQ |
 | Live AI Provider | Implemented — Mock/OpenAI/Groq; Groq live NOT RUN (credentials absent); approved OpenAI gpt-5.6-luna pending paid credits |
 | Call Center text | Implemented — NORMAL_CALL + SCAM_CALL; backend 50/50 selection, persisted idempotent start |
 | Voice Call Center | Implemented — Azure STT/TTS adapters, microphone controls, text/HTTP fallback; live Azure NOT RUN (credentials absent) |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
 | WebSocket | Implemented — authenticated, owned active Call Center session, bounded transport and reconnect/replay |
-| Profile / Dashboard | Planned / Not Implemented |
+| Account / Dashboard UI | Read-only session account; dashboard uses existing Quiz history (up to 50 rounds), not aggregated scenario history or overall mastery |
+| Investigation Game / Knowledge Base | UI-only labeled previews and honest empty states; backend/content publishing/progress not implemented |
 
 มีระบบเสียงและตัวเชื่อมต่อผู้ให้บริการแล้ว แต่ยังไม่ได้ยืนยันบริการ Groq/Azure จริงใน environment นี้
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน

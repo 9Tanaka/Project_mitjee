@@ -6,7 +6,7 @@ import { quizAttempt, quizMutation, quizOverview } from "../public-api/quiz.js";
 import type { PublicQuizAttempt } from "../public-api/quiz.js";
 import { useMutation, useResource } from "./hooks.js";
 import { MutationAttempt } from "./api.js";
-import { Failure, Loading, Notice, PageIntro } from "./ui.js";
+import { Failure, Icon, Loading, Notice, PageIntro } from "./ui.js";
 
 const modeLabel = (mode: string) => mode === "PRE_TEST" ? "Pre-test · ก่อนฝึก" : "Post-test · หลังฝึก";
 const dateLabel = (at: number) => new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short" }).format(at);
@@ -21,9 +21,9 @@ export function QuizHome() {
   </PageIntro>
     {start.error && <Failure error={start.error} retry={start.retryable ? () => void start.retry() : undefined} />}
     <div className="quiz-mode-grid">{(["PRE_TEST", "POST_TEST"] as const).map(mode => <section className="panel" key={mode}>
-      <p className="eyebrow">{mode === "PRE_TEST" ? "ก่อนเริ่มฝึก" : "หลังฝึกเสร็จ"}</p><h2 className="section-heading mt-3">{modeLabel(mode)}</h2>
+      <span className="category-icon"><Icon name={mode === "PRE_TEST" ? "quiz" : "book"} /></span><p className="eyebrow">{mode === "PRE_TEST" ? "ก่อนเริ่มฝึก" : "หลังฝึกเสร็จ"}</p><h2 className="section-heading mt-3">{modeLabel(mode)}</h2>
       <p className="muted mt-3">{mode === "PRE_TEST" ? "เก็บผลเริ่มต้น แล้วกลับมาทำ Post-test หลังฝึกสถานการณ์" : "เปรียบเทียบกับ Pre-test ล่าสุดที่เสร็จก่อนเริ่มรอบนี้และใช้คลังรุ่นเดียวกัน"}</p>
-      <button className="button mt-6" disabled={start.blocked} onClick={() => void start.run(new MutationAttempt("/api/quiz/attempts", { requestId: crypto.randomUUID(), mode }))}>{start.busy ? "กำลังเริ่ม…" : `เริ่ม ${mode === "PRE_TEST" ? "Pre-test" : "Post-test"}`}</button>
+      <div className="flex flex-wrap gap-3 mt-6"><Link className="button button-secondary" href={"/quiz/details/"+(mode === "PRE_TEST" ? "pre" : "post")}>ดูรายละเอียด</Link><button className="button" disabled={start.blocked} onClick={() => void start.run(new MutationAttempt("/api/quiz/attempts", { requestId: crypto.randomUUID(), mode }))}>{start.busy ? "กำลังเริ่ม…" : `เริ่ม ${mode === "PRE_TEST" ? "Pre-test" : "Post-test"}`}</button></div>
     </section>)}</div>
     <section className="panel"><h2 className="section-heading">หมวดข้อสอบในแต่ละรอบ</h2><ul className="quiz-categories mt-4">{catalog.categories.map(c => <li key={c.id}><span>{c.label}</span><span>{c.perAttempt} ข้อ</span></li>)}</ul>
       <p className="field-hint mt-4">ข้อสอบและลำดับตัวเลือกสุ่มใหม่ทุกครั้ง ผลเปรียบเทียบเป็นจำนวนข้อถูกในชุดที่สุ่มได้ ใช้ประกอบการทบทวนความรู้</p>

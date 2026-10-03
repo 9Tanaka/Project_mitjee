@@ -49,7 +49,7 @@ export function Training({ sessionId }: { sessionId: string }) {
     {mutation.error && <Failure error={mutation.error} retry={mutation.retryable ? () => void mutation.retry() : undefined} />}
     <div className="training-grid">
       <section className="chat-panel" aria-label="บทสนทนา">
-        <div className="chat-header"><span className="avatar" aria-hidden="true">ม</span><div><h2>ตัวละครในสถานการณ์</h2><p className="text-xs muted">บทสนทนาจำลองสำหรับการฝึก</p></div><span className="tag tag-neutral ml-auto">ข้อความ</span></div>
+        <div className="chat-header"><span className="avatar" aria-hidden="true">ม</span><div><h2>ตัวละครในสถานการณ์</h2><p className="text-xs muted">บทสนทนาจำลองสำหรับการฝึก</p></div><span className="tag tag-neutral ml-auto">{s.scenario.category === "CALL_CENTER" ? "ข้อความ / บทถอดเสียง" : "ข้อความ"}</span></div>
         <div className="chat-log" role="log" aria-label="ประวัติการสนทนา" aria-live="polite" aria-relevant="additions">
           {s.messages.length === 0 && <div className="chat-empty"><span className="chat-empty-symbol" aria-hidden="true">“</span><h3>เริ่มจากการสังเกต</h3><p>พิจารณาตัวเลือกในขั้นตอนนี้ หรือส่งข้อความเพื่อโต้ตอบกับตัวละครจำลอง</p></div>}
           {s.messages.map(message => <div className={"message message-" + message.role} key={message.turnId + message.role}><span className="message-role">{message.role === "user" ? "คุณ" : "ตัวละครจำลอง"}</span><p>{message.text}</p></div>)}

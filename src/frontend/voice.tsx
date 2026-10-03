@@ -5,6 +5,7 @@ import type { sessionDto, messageDto } from "../public-api/contracts.js";
 import { startMicrophone, type Recording } from "./microphone.js";
 import { encodeAudio, httpVoice, socketVoice, type VoiceRequest, type VoiceResponse } from "./call-transport.js";
 import { ApiFailure } from "./api.js";
+import { Icon } from "./ui.js";
 
 export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
   session: z.infer<typeof sessionDto>; disabled: boolean; onReply: (reply: z.infer<typeof messageDto>) => void;
@@ -70,7 +71,10 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
     } catch { if (mounted.current && controller.current === abort && !abort.signal.aborted) { setNotice("เปิดไมโครโฟนไม่ได้ กรุณาตรวจสิทธิ์หรือใช้ช่องข้อความ"); setPhase("idle"); onBusy(false); } }
   }
   function cancel() { controller.current?.abort(); recorder.current?.cancel(); recorder.current = null; pending.current = null; setRetry(false); setPhase("idle"); onBusy(false); setNotice("หยุดโหมดเสียงแล้ว สามารถพิมพ์ข้อความต่อได้"); }
-  return <section className="panel space-y-3" aria-label="เสียง Call Center">
+  return <section className="panel voice-panel space-y-3" aria-label="เสียง Call Center">
+    <span className="voice-avatar"><Icon name="phone" /></span>
+    <p className="tag tag-neutral">สายสนทนาจำลอง · ไม่ใช่การโทรจริง</p>
+    <p className="voice-status" role="status">{phase === "idle" ? "ไมโครโฟนปิด · พร้อมเมื่อคุณเริ่ม" : phase === "opening" ? "กำลังขออนุญาตไมโครโฟน" : phase === "recording" ? "กำลังรับเสียงจากไมโครโฟน" : "กำลังส่งเสียงเพื่อประมวลผล"}</p>
     <h2>โหมดเสียง Call Center</h2><p className="field-hint">กดเริ่มก่อนอนุญาตไมโครโฟน พูดครั้งละหนึ่งประโยค ข้อความที่ถอดเสียงยังไม่ใช่การยืนยันการกระทำ</p>
     <div className="flex flex-wrap gap-2">
       {phase === "idle" && <button className="button button-secondary" disabled={disabled || retry} onClick={() => void begin()}>เริ่มโหมดเสียง</button>}
