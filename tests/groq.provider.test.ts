@@ -36,7 +36,8 @@ it("explicit Groq configuration accepts a namespaced model without substituting 
   expect(headers.get("authorization")).toBe(`Bearer ${key}`);
   expect(headers.has("openai-organization")).toBe(false); expect(headers.has("openai-project")).toBe(false);
   const request = JSON.parse(options.body);
-  expect(request).toMatchObject({ model: "openai/gpt-oss-120b", store: false, stream: false,
+  expect(Object.hasOwn(request, "store")).toBe(false);
+  expect(request).toMatchObject({ model: "openai/gpt-oss-120b", stream: false,
     text: { format: { type: "json_schema", strict: true } } });
   expect(request.text.format.schema.additionalProperties).toBe(false);
   expect(request).not.toHaveProperty("tools"); expect(request).not.toHaveProperty("user");

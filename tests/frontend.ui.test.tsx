@@ -22,6 +22,10 @@ const reply = (data: unknown, status = 200) => Response.json({ data }, { status 
 const failure = (code: string, status: number) => Response.json({ error: { code, message: "PRIVATE_DETAILS" } }, { status });
 const password = () => randomUUID();
 const fetcher = vi.fn();
+it.each([['TEXT', 'ฝึกผ่านข้อความ'], ['TEXT_VOICE', 'ฝึกผ่านข้อความหรือเสียง']])("catalog shows %s communication badge", async (communicationMode, label) => {
+  fetcher.mockResolvedValue(reply([{ ...scenario, communicationMode }]));
+  render(<ScenarioList />); expect(await screen.findByText(label, { selector: 'span' })).toBeTruthy();
+});
 beforeEach(() => {
   vi.clearAllMocks(); mocks.status = "unauthenticated"; mocks.signIn.mockResolvedValue({ ok: true }); mocks.signOut.mockResolvedValue({ url: "/login" });
   vi.stubGlobal("fetch", fetcher); fetcher.mockReset();

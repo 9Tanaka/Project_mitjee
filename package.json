@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --import tsx scripts/serve.mjs",
     "dev:http": "next dev --webpack --hostname 127.0.0.1",
-    "build": "next build --webpack",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build --webpack",
     "start": "node --import tsx scripts/serve.mjs --production",
     "start:http": "next start --hostname 127.0.0.1",
     "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts tests/accounts.http.test.ts tests/quiz.http.test.ts",

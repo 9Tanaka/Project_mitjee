@@ -11,8 +11,14 @@ import { normalCallFixture } from "../fixtures/normal-call.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
-export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios];
-export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates, normalCallFixture];
+// Published v1 configuration remains unchanged for old sessions. New starts use neutral v2 copy.
+const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenarios.find(t => t.category === "CALL_CENTER")!),
+  version: 2, description: "ฝึกตรวจสอบและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง",
+  characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
+const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
+export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER" ? callScamV2 : t)];
+export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates,
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],

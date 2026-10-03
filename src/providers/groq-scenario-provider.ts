@@ -35,7 +35,9 @@ export class GroqScenarioModelProvider implements ScenarioModelProvider {
     try {
       options?.signal?.throwIfAborted();
       const opaque = createHmac("sha256", this.#correlationKey).update(options?.requestId ?? randomUUID()).digest("hex");
-      const raw = await this.client.create(buildOpenAIRequest(context, this.model), {
+      // Groq does not accept OpenAI's storage option, including store:false.
+      const { store: _openAIStorage, ...request } = buildOpenAIRequest(context, this.model);
+      const raw = await this.client.create(request, {
         ...(options?.signal ? { signal: options.signal } : {}), headers: { "X-Client-Request-Id": `scenario-${opaque}` },
         maxRetries: 0, timeout: 20_000,
       });

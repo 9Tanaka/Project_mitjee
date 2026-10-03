@@ -1,5 +1,8 @@
 # MITJEE
 
+Minimal Vercel Preview setup and verification scope: [Vercel Preview](docs/vercel-preview.md).
+Installation and production builds generate the ignored Prisma client automatically; database migrations remain an explicit operation.
+
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง

@@ -1,5 +1,6 @@
 import { createDatabase } from "./database.js";
 import { createScenarioProvider } from "./scenario-provider.js";
+import { demoCallVariant } from "./call-variant.js";
 import { PrismaTrainingRepository } from "../persistence/prisma-repository.js";
 import { createApplication } from "../application/composition.js";
 import type { TrainingApplicationService } from "../application/training-service.js";
@@ -14,7 +15,7 @@ export function createCallRuntime() {
       return pending ??= (async () => {
         const provider = createScenarioProvider();
         client = createDatabase();
-        return createApplication(new PrismaTrainingRepository(client), provider);
+        return createApplication(new PrismaTrainingRepository(client), provider, Date.now, demoCallVariant());
       })().catch(async error => { await client?.$disconnect(); client = undefined; pending = undefined; throw error; });
     },
     async close() { try { await pending; } catch { /* Initialization disposed its pool. */ }

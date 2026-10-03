@@ -6,6 +6,7 @@ import type { RequestAuthenticator } from "../http/auth.js";
 import type { TrainingApplicationService } from "../application/training-service.js";
 import { createApplication } from "../application/composition.js";
 import { createScenarioProvider } from "./scenario-provider.js";
+import { demoCallVariant } from "./call-variant.js";
 
 export interface ApplicationRuntime {
   authenticator: RequestAuthenticator;
@@ -22,7 +23,7 @@ function createRuntime(): ApplicationRuntime {
       pending ??= (async () => {
         const provider = createScenarioProvider();
         client = getDatabase();
-        return createApplication(new PrismaTrainingRepository(client), provider);
+        return createApplication(new PrismaTrainingRepository(client), provider, Date.now, demoCallVariant());
       })().catch(async error => {
         await closeDatabase(client); client = undefined; pending = undefined;
         throw error;

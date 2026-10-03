@@ -63,7 +63,8 @@ describe("backend-selected Call Center variants", () => {
     expect(catalog.filter(s => s.category === "CALL_CENTER")).toHaveLength(1);
     expect(catalog.filter(s => s.communicationMode === "TEXT_VOICE").map(s => s.id)).toEqual([callId]);
     expect(catalog.filter(s => s.category !== "CALL_CENTER").every(s => s.communicationMode === "TEXT")).toBe(true);
-    expect(registeredTemplates.filter(t => t.id === callId).map(t => t.variant).sort()).toEqual(["NORMAL_CALL", "SCAM_CALL"]);
+    expect([...new Set(registeredTemplates.filter(t => t.id === callId).map(t => t.variant))].sort()).toEqual(["NORMAL_CALL", "SCAM_CALL"]);
+    for (const version of [1, 2]) expect(registeredTemplates.filter(t => t.id === callId && t.version === version).map(t => t.variant).sort()).toEqual(["NORMAL_CALL", "SCAM_CALL"]);
     expect(JSON.stringify(catalog)).not.toMatch(/NORMAL_CALL|SCAM_CALL|criticalFailureRules|assessmentRule/);
   });
 
