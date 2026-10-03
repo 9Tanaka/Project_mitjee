@@ -1,6 +1,6 @@
 # Implementation gap and phases
 
-## Current implementation status — 27 September 2026
+## Current implementation status — ตรวจ alignment 2 October 2026
 
 | Area | Status |
 |---|---|
@@ -17,6 +17,9 @@
 | P14 Game/Knowledge/Review | Excluded by latest user scope; do not implement from historical Proposal alone |
 
 The subsequent user task approved NORMAL_CALL rules and Voice/WebSocket implementation.
+
+Target storyboard 21 เรื่องยังไม่ใช่ runtime 21 flows: ปัจจุบันมีเก้าประเภทและ Call Center NORMAL/SCAM variant โดย NORMAL_CALL ยังเป็นห้องสมุดนัดรับหนังสือ ไม่ใช่ matched controls CC-N01/CC-N02 ดู [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment)
+
 See [current verification](realtime-verification.md); [Recovery verification](recovery-verification.md)
 is the historical checkpoint before this phase. Stop after pushing this phase for review;
 Profile/Dashboard remain outside the authorized work.

@@ -1,7 +1,7 @@
 # MySQL verification recovery and documentation cleanup
 
 Date: 26 September 2026. Repository: `9Tanaka/Project_mitjee`.
-This report records current recovery work, not historical phase results.
+**Historical baseline:** รายงานนี้บันทึกผล recovery วันที่ 26 กันยายน 2026 ไม่ใช่สถานะ runtime ล่าสุด ข้อความ NORMAL_CALL/Voice/WebSocket ที่ยังไม่ทำและตัวเลขทดสอบด้านล่างเป็นผล ณ วันนั้น ดู [สถานะการทดสอบล่าสุด](realtime-verification.md) และ [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment) สำหรับ implementation ปัจจุบัน
 
 ## Delivery and scope (items 1–14)
 

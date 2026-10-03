@@ -8,7 +8,7 @@ HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
 Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว
-Server เลือก Mock/OpenAI adapter โดย contract เดิม; ไม่มี streaming และยังไม่ verify OpenAI network จริง
+Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม; ไม่มี token streaming การลอง OpenAI Luna ครั้งก่อนติด `429 credit_balance_exhausted` ส่วน live Groq ยัง NOT RUN ดู [ผล verification](realtime-verification.md)
 
 ## Authentication and composition
 
@@ -150,7 +150,7 @@ concurrent duplicates อาจเรียก Provider หลายครั้
 
 Known action/transition/lifecycle errors map ตามหมวด; unexpected errors ใช้ข้อความคงที่
 ไม่ echo Zod issues, raw input, SQL, Prisma errors, stack trace หรือ provider raw output
-Mock/OpenAI failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
+Mock/OpenAI/Groq failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
 Invalid server provider configuration เป็น generic 500; public response ไม่มี model ID, usage,
 request context/ID, raw output/refusal/error หรือ provider configuration
 HTTP layer ไม่มี raw request/response/error logging
@@ -169,8 +169,9 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Credentials login และ Frontend ทำแล้ว; OpenAI adapter ทำแล้วแต่ network NOT VERIFIED
-Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login, Frontend และ Mock/OpenAI/Groq adapters ทำแล้ว รวมถึง [Voice endpoints](voice.md), [authenticated WebSocket และ HTTP fallback](websocket.md)
+Live Azure/Groq และ dedicated MySQL/browser E2E ยัง NOT RUN; OpenAI Luna ครั้งก่อนติดข้อจำกัดเครดิต ดู [ผล verification](realtime-verification.md) ไม่ใช่การยืนยัน production readiness
+Continuous audio/token streaming, production moderation และ distributed deployment/rate-limit coordination ยัง Planned; ขีดจำกัด request/session ที่ทำแล้วเป็น demo controls
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 

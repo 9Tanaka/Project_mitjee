@@ -106,7 +106,7 @@ synchronization and offline durable retry are not implemented.
 
 Messages display sanitized public history only; a local unsent draft remains on error.
 Use fictional data only; the UI explicitly warns against real OTP/password/PII.
-Server selects Mock/OpenAI explicitly; browser uses the same public DTO with no model/provider selector.
+Server selects Mock/OpenAI/Groq explicitly; browser uses the same public DTO with no model/provider selector.
 OpenAI adapter is implemented; last live verification failed with 429 credit_balance_exhausted. Footer describes Scenario Simulation
 without claiming a specific provider. No UI redesign or direct browser AI integration.
 
@@ -196,5 +196,4 @@ No backend security refactor was made in the original frontend phase; current ph
 Recovery on 26 September adds a fifth browser test: real Investment safe actions with
 refreshes after finalized checkpoints and a categorical PASSED result. Five tests are
 discoverable, including the persisted Quiz Pre/Post flow; discovery is not execution.
-Browser + MySQL E2E: NOT RUN — MYSQL_TEST_DATABASE_URL unavailable. Current frontend
-subset: 59 passed; build and client artifact audit pass. See [Recovery verification](recovery-verification.md).
+Historical recovery result (26 September): Browser + MySQL E2E NOT RUN — MYSQL_TEST_DATABASE_URL unavailable; frontend subset 59 passed, build and client artifact audit passed. See [Recovery verification](recovery-verification.md). ผลรอบปัจจุบันแยกไว้ใน [Live AI + Voice + WebSocket verification](realtime-verification.md); ไม่ได้นำผล recovery เดิมมานับเป็นการรันใหม่

@@ -1,8 +1,8 @@
 # MITJEE Scenario Story Bank
 
-Content curation only | 2026-09-27 | PROPOSED_FOR_REVIEW
+Content curation only | เริ่มจัดทำ 2026-09-27 | PROPOSED_FOR_REVIEW | runtime alignment ตรวจซ้ำ 2026-10-02
 
-Branch: `feat/rule-based-evaluation`; start SHA: `491a48bcaa15260eb3837a50ca46b15d24ac4488`.
+Branch: `feat/rule-based-evaluation`; historical baseline ของงานคัดเนื้อหา: `491a48bcaa15260eb3837a50ca46b15d24ac4488` ไม่ใช่ current runtime HEAD. ฐานโค้ดที่ fetch และตรวจล่าสุดก่อนแก้เอกสาร: `7ce29f87d247c457789489a3e0e7091e005c24b2` (2026-10-02).
 เอกสารนี้ไม่ใช่ runtime specification และไม่อนุมัติการสร้าง dataset หรือ State/Checkpoint โดยอัตโนมัติ. ดู [Deduplication Report](scenario-deduplication-report.md) สำหรับ original-item ledger และ candidate audit.
 
 ## 1. Method
@@ -33,7 +33,7 @@ Branch: `feat/rule-based-evaluation`; start SHA: `491a48bcaa15260eb3837a50ca46b1
 
 1. **USER_SOURCE:** `E:/locate/Listขอscenarioกับตำรวจ.txt` เป็นแนวคิดเดิม ไม่ใช่ final specification. Original IDs อ้าง source ledger ในรายงานคู่กัน.
 2. **CURRENT_PROPOSAL:** `MITJEE_Proposal_Update_Qwen_Game_2026-09-26.docx` กำหนดทิศทาง Qwen, dialogue 9 categories และ investigation game 8 cases แยก domain.
-3. **CURRENT_CODE:** repository ณ start SHA ใช้ยืนยันสิ่งที่เล่นได้ ไม่ใช้ versions เก่าเพิ่มจำนวนเรื่อง.
+3. **CURRENT_CODE:** ใช้ฐานโค้ดที่ตรวจล่าสุดใน [Current runtime alignment](#18-current-runtime-alignment) เพื่อยืนยันสิ่งที่เล่นได้; source/provenance ของการออกแบบเดิมยังคงไว้ ไม่ใช้ revisions เก่าเพิ่มจำนวนเรื่อง.
 4. **NEWS_VALIDATED:** แหล่งกำกับดูแล/รัฐและข่าวที่อ้างหน่วยงานโดยตรง สนับสนุน pattern; ข่าวเก่าไม่ถูกอ้างเป็นสถิติความชุกปัจจุบัน.
 5. **RECOMMENDATION / DETAIL_PENDING:** สิ่งที่เสนอเติมและส่วนรอผู้ทบทวนตัดสิน ต้องไม่ถูกอ่านเป็น requirement ของผู้ใช้.
 
@@ -402,7 +402,7 @@ Matched-control refinement | 2026-09-30 | base HEAD `4062a8b837728a3aed56df48ea3
 
 **ข้อจำกัด controls:** ไม่มีคำขอ OTP, password, transfer, upfront fee, remote access หรือ app install; ไม่มีคำขู่ secrecy/isolation เส้นตายปลอม warning ปลอม หรือ critical action ความยากมาจากบริบทใกล้กัน ไม่ใช่แต่งพฤติกรรมอันตรายให้สายปกติ การรับสาย การขอตรวจ และการวางสายอย่างสุภาพไม่ใช่ความผิด ความสุภาพเพียงอย่างเดียวก็ไม่ยืนยันตัวตน
 
-**การเลือกเรื่องในอนาคต [RECOMMENDATION]:** PARCEL CONTEXT → CC-01 หรือ CC-N01; BANK CONTEXT → CC-02 หรือ CC-N02 ไม่มีการพัฒนาระบบสุ่มและไม่กำหนดอัตรา 50/50 ในรอบเนื้อหานี้ ใช้หน้าจอเริ่มต้นและชื่อบริบทกลางที่ใกล้เคียงกัน ไม่ให้ป้าย “normal/scam” หรือรูปแบบหน้าจอเป็นคำเฉลย
+**การเลือกคู่บริบทในอนาคต [RECOMMENDATION]:** PARCEL CONTEXT → CC-01 หรือ CC-N01; BANK CONTEXT → CC-02 หรือ CC-N02 ยังเป็น target design ไม่ใช่ runtime selector ของ Story IDs เหล่านี้. **CURRENT_CODE:** Backend เลือก NORMAL_CALL / SCAM_CALL ด้วย `randomInt(2)` อัตรา 50/50 แล้ว แต่คู่ปัจจุบันคือห้องสมุดนัดรับหนังสือกับผู้แอบอ้างธนาคารขอ OTP ไม่ใช่ matched controls ข้างต้น. การจับคู่บริบทใหม่ยังไม่กำหนดอัตราแยกรายเรื่อง; ใช้หน้าจอเริ่มต้นและชื่อบริบทกลาง ไม่ให้ป้าย “normal/scam” เป็นคำเฉลย.
 
 ### CC-N01
 - storyFamilyId: CC-N01; type: CONTROL_NORMAL; category / primaryCategory: Call Center; titleThai: สายยืนยันการจัดส่งปกติ; titleEnglish: Normal delivery confirmation.
@@ -483,23 +483,67 @@ Extended-only: **JOB-02 จำนวน 1**. คงไว้เพราะ data
 
 Whole bank = 19 scam families (18 core + 1 extended). ไม่สร้าง 30–50 เรื่องจากการเปลี่ยนประเทศ สินทรัพย์หรือจำนวนเงิน. QR direct-payment, standalone wrong-goods dispute และ independent task mechanisms เป็น research gaps ไม่ใช่ accepted families. 32 variants อยู่ส่วน 4.
 
-## 18. Current Repo Mapping
+<a id="18-current-repo-mapping"></a>
 
-**CURRENT_CODE ณ start SHA:** 9 playable scenarios; versions ไม่ใช่ story count. แปดหมวดใช้ generic factory 5 states / 4 checkpoints; SMS มี 6 states / 6 checkpoint definitions (เส้นทางตรงผ่าน 5 และมี optional อีก 1). Semantic mappings ด้านล่างไม่ยืนยันว่า authored outline ทั้งหมด implement แล้ว.
+## 18. Current runtime alignment
 
-| Current scenario | Family | What matches / limitation |
-|---|---|---|
-| call-center-scam v1 | CC-02 | ผู้แอบอ้างธนาคาร/OTP; text SCAM_CALL เท่านั้น ไม่มี voice/normal |
-| investment-scam v1 | INV-01 | ลงทุนและค่าถอน; ลำดับยาว/variants ยังไม่ครบ |
-| romance-scam v1 | ROM-01 | ขอเงินช่วยฉุกเฉิน ไม่ใช่ gift-fee หรือ hybrid investment |
-| ecommerce-scam v1 | ECO-01 | ร้าน/ชำระเสี่ยง ไม่ใช่ learner-as-seller |
-| sms-phishing-demo v4 | PHI-01 | พัสดุ/ลิงก์/ข้อมูล; v1–v3 เป็น revisions เรื่องเดียว |
-| task-scam v1 | TASK-01 | สำรองเงิน/ถอน ไม่ใช่หลายเรื่องตามชื่อภารกิจ |
-| fake-loan-scam v1 | LOAN-02 | ขอสิทธิ์/ข้อมูลเครื่อง; contact harassment ยังไม่ใช่ flow เต็ม |
-| recovery-scam v1 | REC-02 | remote-assistance request; source เดิมไม่ได้แจกแจง remote |
-| job-scam v1 | JOB-01 | ค่าฝึกอบรม; description กล่าวถึงบัญชีแต่ไม่เท่ากับ JOB-03 implement |
+**CURRENT_CODE ตรวจ 2026-10-02 ที่ `7ce29f87d247c457789489a3e0e7091e005c24b2`:** เรียก `app.listScenarios()` ด้วย in-memory repository ได้ 9 cards / 9 categories. ทั้งเก้าหมวดมีเส้นทางฝึกผ่าน [Frontend](../src/frontend/training.tsx); [catalog](../src/application/catalog.ts) ใช้ SMS v4 และ scam fixtures v1 อีกแปดหมวด. `registeredTemplates` มี 10 tuples เพราะเพิ่ม NORMAL_CALL ในหมวด Call Center เดิม ไม่ใช่ card ที่สิบ และไม่ใช่ 21 runtime stories.
 
-ไม่ใช้ CURRENT_GENERIC_TEMPLATE เพื่อกลบความหมาย main request ที่ตรวจพบได้ แต่ต้องใช้ป้ายนี้หากรอบถัดไปพบ fixture ผสมจนเลือก family ไม่ได้. Code path/source references ตรวจย้อนจาก `docs/scenario-catalog.md` และ `docs/qwen-proposal-recheck.md`. รอบนี้ไม่แก้ fixture ใด.
+### Demo vs target — canonical summary
+
+| Scope | Count / status |
+|---|---|
+| Public scenario cards | 9 |
+| Public categories | 9; เล่นเป็น category-level demo ผ่านข้อความได้ |
+| Target storyboard stories | 21; แบบเนื้อหา ไม่ใช่จำนวนเรื่องที่เล่นได้แล้ว |
+| Scam story families | 19 ใน content taxonomy |
+| Normal matched controls | 2 เป้าหมาย: CC-N01 / CC-N02 |
+| Current dedicated 21-story runtime | ยังไม่มี; ไม่มีการเลือก Story ID ทั้ง 21 ใน Frontend |
+| Call Center backend NORMAL/SCAM selection | Implemented: `randomInt(2)` ให้โอกาส 50/50 ต่อการเริ่มใหม่ |
+| Call Center target controls CC-N01/CC-N02 | ออกแบบแล้ว แต่ยังไม่เป็น runtime story แยก |
+| Current runtime normal control | ห้องสมุดสมมตินัดรับหนังสือ; ต่างจาก target controls ทั้งสอง |
+
+### Current runtime mapping ราย Story ID
+
+สถานะต่อไปนี้ใช้ตรวจเอกสารเท่านั้น ไม่ใช่ enum ใหม่ในระบบ: `IMPLEMENTED_CLOSE_MATCH` หมายถึงกลไกหลักใกล้เคียง ไม่รับรอง parity ทุกเฟรม; `IMPLEMENTED_PARTIAL` หมายถึงตรงเพียงบางแนวคิด; `NOT_IMPLEMENTED_AS_SEPARATE_STORY` คือออกแบบไว้แต่ไม่มี runtime story แยก; `TARGET_CONTROL_NOT_IMPLEMENTED` คือ matched control ที่ยังไม่ถูกนำมาใช้. Story IDs เป็น content IDs ไม่ใช่ runtime template IDs.
+
+| Story ID | Current runtime status | Current implementation mapping | Notes |
+|---|---|---|---|
+| CC-01 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี fixture คดีปลอม/พัสดุพาเข้าเรื่องคดีโดยเฉพาะ | ไม่ใช่ main request ของ SCAM_CALL ปัจจุบัน |
+| CC-02 | IMPLEMENTED_CLOSE_MATCH | `call-center-scam` v1 / SCAM_CALL | แอบอ้างเจ้าหน้าที่การเงิน แจ้งรายการผิดปกติ ขู่ระงับบัญชี ขอ OTP; ไม่ครบทุกเฟรมของ storyboard |
+| CC-N01 | TARGET_CONTROL_NOT_IMPLEMENTED | ไม่มี runtime สายจัดส่งปกติ | NORMAL_CALL ปัจจุบันเป็นห้องสมุด ไม่ใช่ delivery control |
+| CC-N02 | TARGET_CONTROL_NOT_IMPLEMENTED | ไม่มี runtime สายธนาคารปกติ | NORMAL_CALL ปัจจุบันไม่ใช่ bank-transaction control |
+| INV-01 | IMPLEMENTED_CLOSE_MATCH | `investment-scam` v1 | รับรองกำไร/ยอดกำไร/ค่าปลดล็อกถอน; ยังไม่ใช่ progression ยาวครบทุกเฟรม |
+| INV-02 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี recruitment-return flow แยก | คงเป็น target content |
+| ROM-01 | IMPLEMENTED_CLOSE_MATCH | `romance-scam` v1 | ความสัมพันธ์ออนไลน์ ขอเงินฉุกเฉินและให้เก็บเป็นความลับ |
+| ROM-02 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี gift/parcel-fee flow แยก | ไม่เพิ่มจาก persona variants |
+| ECO-01 | IMPLEMENTED_CLOSE_MATCH | `ecommerce-scam` v1 | ร้านค้า/รีวิวตรวจไม่ได้/ให้จ่ายนอกแพลตฟอร์ม |
+| ECO-02 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี unknown-order COD flow แยก | คงเป็น target content |
+| ECO-03 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี learner-as-seller/fake-slip flow แยก | ไม่เท่ากับ runtime ที่ผู้เรียนเป็นผู้ซื้อ |
+| PHI-01 | IMPLEMENTED_CLOSE_MATCH | `sms-phishing-demo` v4; dedicated SMS fixture | ข้อความพัสดุ ลิงก์ รหัสผ่าน/OTP; ไม่รับรองหน้าจอ form ครบตาม storyboard; v1–v3 คือ revisions |
+| PHI-02 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี SMS app-install story แยก | แนวคิดติดตั้งแอปในหมวดอื่นไม่ทำให้เรื่องนี้ implement แล้ว |
+| TASK-01 | IMPLEMENTED_CLOSE_MATCH | `task-scam` v1 | ภารกิจ ค่าตอบแทนเล็กน้อย เติมเงินเพื่อถอน |
+| LOAN-01 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี fee-before-loan story แยก | description กล่าวค่าธรรมเนียม ไม่ใช่ flow แยก |
+| LOAN-02 | IMPLEMENTED_PARTIAL | `fake-loan-scam` v1 | ติดตั้งแอปไม่รู้ที่มา/สิทธิ์ข้อมูล; critical คือ INSTALL_UNTRUSTED_APP; ยังไม่มี contacts-coercion progression เต็ม |
+| REC-01 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี recovery-fee story แยก | ไม่อนุมานจาก description เรื่องค่าดำเนินการ |
+| REC-02 | IMPLEMENTED_PARTIAL | `recovery-scam` v1 | ขอควบคุมเครื่องเพื่อช่วยเงินคืน; critical คือ GRANT_REMOTE_CONTROL; ไม่ครบฉากแอปแจ้งความ/การกู้คืนทุกขั้น |
+| JOB-01 | IMPLEMENTED_CLOSE_MATCH | `job-scam` v1 | ตรวจบริษัทไม่ได้/เรียกค่าฝึกอบรมก่อนเริ่ม |
+| JOB-02 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี data-only recruitment flow แยก | คงเป็น EXTENDED / CONDITIONAL_CONTENT |
+| JOB-03 | NOT_IMPLEMENTED_AS_SEPARATE_STORY | ไม่มี money-mule job flow แยก | description กล่าวบัญชีไม่เท่ากับ implement เรื่องนี้ |
+
+**CURRENT_RUNTIME_CONTROL_DIFFERS:** [normal-call.ts](../src/fixtures/normal-call.ts) ระบุ `characterRole` ว่า “เจ้าหน้าที่ห้องสมุดสมมติติดต่อยืนยันช่วงเวลานัดรับหนังสือ ผู้ใช้ไม่ต้องให้ข้อมูลส่วนบุคคล”. ใช้ `call-center-scam` v1 / NORMAL_CALL, D1 ตรวจบริบท, W1 `NO_WARNINGS_EXPECTED` (ไม่เลือกหลักฐาน = SAFE, เลือก neutral evidence = REVIEW), D2 ข้อมูลนัดหมายสมมติที่ไม่อ่อนไหว, S1 จบสายหรือติดต่อกลับทางการ; critical rules = 0. กฎของ fixture นี้ implement แล้ว แต่ไม่ใช่การอนุมัติหรือ implement rubric ของ CC-N01/CC-N02 โดยอัตโนมัติ. ไม่เปลี่ยนแบบ target ทั้งสองให้กลับเป็นห้องสมุด.
+
+[training-service.ts](../src/application/training-service.ts) เลือก variant ที่ Backend ด้วย injectable selector; ค่าเริ่มต้น `randomInt(2)`. 50/50 เป็นโอกาสต่อ start ใหม่ ไม่ใช่รับรองสัดส่วนตัวอย่างสั้น ๆ. owner/scenario/startId เดิมคืน session และ variant ที่บันทึกแล้ว ไม่สุ่มซ้ำ; concurrent insert ใช้ผู้ชนะที่ persisted. Browser และ AI ไม่มีสิทธิ์เลือก variant. ยังไม่มี selector จับคู่ PARCEL/BANK กับสี่ Story IDs.
+
+**TARGET STORY FLOW != CURRENT GENERIC RUNTIME FLOW:** [scam-scenarios.ts](../src/fixtures/scam-scenarios.ts) สร้างแปด non-SMS scam templates ด้วย `contact → build_trust → request_action → user_verification → end_scenario` และ 4 checkpoints (`d1`, `w1`, `d2`, `s1`). การตรวจผู้ติดต่อ/หลักฐาน/คำขอ/ยุติและตรวจหรือรายงานเป็นกฎ deterministic ของ Backend. NORMAL_CALL เป็น fixture แยกที่ใช้ห้าชื่อ state และสี่ checkpoint เช่นกัน ไม่ได้สร้างจาก scam factory. SMS มี 6 states / 6 checkpoint definitions (เส้นทางตรง 5, optional อีก 1). Frame และ evidence screens ใน storyboard ไม่ใช่ state/หน้าจอที่ implement ครบแล้ว; ชื่อ state เป็น Demo model ไม่ใช่ชื่อที่ Proposal บังคับโดยตรง.
+
+Critical Failure ต้องมาจาก explicit simulated action ที่ Backend validate; free text/AI candidate ไม่ให้คะแนน ไม่ finalize checkpoint และไม่เปลี่ยน state เอง. [tests/additional-scenarios.test.ts](../tests/additional-scenarios.test.ts) ครอบคลุม generic paths; การ map family ข้างต้นเป็นการเทียบความหมายกับโค้ด ไม่ใช่ผลทดลอง content parity.
+
+**ข้อความเก่าที่พบในโค้ด:** description/characterRole ของ SCAM_CALL v1 ใน `scam-scenarios.ts` ยังกล่าวถึงการใช้ข้อความก่อนเปิดเสียง แม้ public catalog กำหนด `TEXT_VOICE` และ voice infrastructure มีแล้ว จึงไม่ใช้ข้อความเก่านี้สรุปว่าเสียงยังไม่ implement งาน documentation นี้ไม่แก้ published fixture; การทบทวนเนื้อหา/ออก version ใหม่ต้องเป็นงานแยก
+
+**Infrastructure implemented, live verification แยกต่างหาก:** Call Center text, Voice UI/Azure STT-TTS adapter, authenticated WebSocket, HTTP/text fallback และ Mock/OpenAI/Groq adapters มีแล้ว. ตาม [รายงาน 2026-10-02](realtime-verification.md) Live Azure/Groq = NOT RUN (ไม่มี private credentials), current dedicated MySQL/Auth live/browser E2E = NOT RUN (ไม่มี test DB); OpenAI Luna ผล live ก่อนหน้าเป็น `credit_balance_exhausted` และยังรอเครดิต. ไม่แปลง skipped tests เป็นผ่าน ไม่อ้าง production-ready และไม่รัน live ใหม่ในงานเอกสารนี้. Voice readback/แก้ transcript/ยืนยัน action ด้วยเสียงตาม storyboard ยังเป็น target UX; runtime ปัจจุบันใช้เสียงเพื่อสนทนาและยังยืนยัน action ผ่าน controls เดิม.
+
+**ขอบเขตอื่น:** Quiz ปัจจุบันจาก `quizBank` มี 210 ข้อ, 7 กลุ่ม × 30, สุ่ม 20 ด้วยสัดส่วน 3+3+3+3+3+3+2. หากใช้แผนคลัง 200 ข้อ (29+29+29+29+29+29+26) ต้องแยกเป็น PROPOSED / DOCUMENT TARGET ไม่ใช่ค่าของ runtime และไม่ใช่การอนุมัติให้ลดคลังปัจจุบัน; ดู [Quiz](quiz.md). Game 8 และ Knowledge Base 16 เป็น planned domains แยก ยังไม่ implement. ชุด storyboard ไม่ได้สร้างตาราง DB, migration หรือ dataset ใหม่.
 
 ## 19. Dataset Family Guidance
 

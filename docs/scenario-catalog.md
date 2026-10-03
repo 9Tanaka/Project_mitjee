@@ -21,9 +21,11 @@ The new scenarios share a small, reviewed state pattern but have distinct role, 
 For the eight new templates with publicActionBindings, the action list shows progression
 only after required checkpoint/event guards are satisfied. SMS retains its original catalog
 bindings and may expose a progress request that Core rejects until its guards pass.
-The early safe stop is available at first contact. Backend guards always apply, including crafted requests.
+The early safe stop is available at first contact for scam templates, not the NORMAL_CALL control. Backend guards always apply, including crafted requests.
 
 Call Center uses one public card and a neutral public title/description for both variants.
+
+เก้ารายการนี้เป็น category-level runtime scenarios ไม่ใช่ target storyboard ทั้ง 21 เรื่อง: SCAM_CALL ใกล้เคียง CC-02 ส่วน NORMAL_CALL เป็นเจ้าหน้าที่ห้องสมุดสมมตินัดรับหนังสือ CC-01/CC-N01/CC-N02 ยังไม่เป็น runtime story แยก ดู [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment)
 The stable historical scenario ID is retained to preserve old session/start identities.
 Backend selection uses crypto.randomInt(2), with an injected selector for deterministic tests.
 The persisted session is authoritative: same owner/scenario/startId replays without reroll;
@@ -39,4 +41,4 @@ Tests exercise the catalog's nine distinct categories, each new template's full 
 Recovery adds nine multi-turn/high-confidence candidate authority tests and conditional
 fresh-client MySQL safe-path regression tests for all eight new version-1 templates plus
 SMS versions 3/4. Legacy SMS versions 1/2 have separate compatibility round-trip tests.
-MySQL and real browser execution remain NOT RUN; see [Recovery verification](recovery-verification.md).
+Dedicated MySQL integration และ authenticated browser E2E ยัง NOT RUN เพราะไม่มี dedicated test DB; anonymous browser smoke ที่ผ่านไม่ใช่การยืนยัน persisted training E2E ดู [ผล verification ล่าสุด](realtime-verification.md)

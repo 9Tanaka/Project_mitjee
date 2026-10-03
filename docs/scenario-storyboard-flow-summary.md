@@ -4,21 +4,27 @@
 
 **PRIMARY DRAWING DOCUMENT | LEVEL 1: DRAWING STORYBOARD FLOW**
 
+**Target content ไม่ใช่ runtime inventory — ตรวจเทียบโค้ด 2026-10-02:** เอกสารนี้คง 21 story flows เพื่อวาดและทบทวนเนื้อหา ไม่ได้ระบุว่าทั้ง 21 เรื่องเล่นได้แล้ว. Runtime ปัจจุบันเปิด 9 category-level demo scenarios; บาง fixture ใกล้เคียง story, บางเรื่องตรงเพียงบางส่วน และบางเรื่องยังไม่มี runtime แยก. ดู [Current runtime alignment และตารางนับกลาง](scenario-story-bank.md#18-current-runtime-alignment).
+
+Backend เลือก NORMAL_CALL/SCAM_CALL 50/50 ด้วย `randomInt(2)` แล้ว แต่ NORMAL_CALL ยังเป็นห้องสมุดสมมตินัดรับหนังสือ ส่วน SCAM_CALL ใกล้ CC-02 ธนาคารปลอมขอ OTP. CC-N01 จัดส่งปกติ และ CC-N02 ธนาคารปกติยังเป็น matched-control targets ไม่ใช่ fixture ปัจจุบัน. Voice UI/Azure adapter/WebSocket/HTTP fallback implement แล้ว; Live Azure/Groq และ current dedicated MySQL/browser E2E ยัง NOT RUN ตาม [รายงานล่าสุด](realtime-verification.md). Transcript preview/readback/voice-action confirmation และหน้าหลักฐานเฉพาะเรื่องด้านล่างยังเป็น target design ไม่ใช่ทุกหน้าที่มีใน runtime.
+
 เอกสารหลักสำหรับนักศึกษา อาจารย์ คนวาด Storyboard และผู้ออกแบบหน้าจอ ใช้เห็นว่าแต่ละเรื่องเริ่มอย่างไร ผู้เล่นเลือกอะไรได้ และจบอย่างไร โดยไม่ต้องรู้ระบบภายใน แต่ละเรื่องย่อเป็น 5–8 ขั้น ซึ่งอาจนำไปวาดหลายภาพได้ ไม่ใช่จำนวนหน้าจอที่บังคับให้ผู้เล่นกดผ่านทั้งหมด
 
 รายละเอียดระดับ 2 หรือ **DETAILED INTERACTION SPECIFICATION** ยังคงอยู่ครบใน [ไฟล์รายหมวด](storyboards/README.md) และ [ข้อกำหนดร่วม](scenario-storyboard-spec.md) ใช้เปิดดูเมื่อจะกำหนดองค์ประกอบหน้าจอ บทพูด และรายละเอียดการโต้ตอบ ทั้งสองระดับไม่ได้อนุมัติเนื้อหาหรือเพิ่มการทำงานของระบบ
 
-- ตรวจ remote แล้ว ณ เริ่มงาน 2026-09-30: branch `feat/rule-based-evaluation`, local และ remote HEAD ตรงกันที่ `4062a8b837728a3aed56df48ea35eaeaf0c3fa87`; ไม่เปลี่ยนจากฐานที่ร้องขอ
+- Historical baseline ของ matched-control revision เมื่อ 2026-09-30: `4062a8b837728a3aed56df48ea35eaeaf0c3fa87`. ฐาน runtime ที่ fetch และตรวจรอบ 2026-10-02 คือ `7ce29f87d247c457789489a3e0e7091e005c24b2` บน `feat/rule-based-evaluation`; ไม่ใช้ SHA เก่าเป็นสถานะปัจจุบัน
 - ยึด [Story Bank](scenario-story-bank.md) ก่อน [รายงานความซ้ำซ้อน](scenario-deduplication-report.md), ข้อกำหนดร่วม และรายละเอียดรายหมวด ไม่เพิ่มหรือรวมเรื่อง รอบ matched control เปลี่ยนชื่อและเนื้อหา CC-N02 โดยคง ID เดิมตามคำขอ ไม่เก็บเรื่องเดิมเป็นเรื่องที่เปิดใช้เพิ่ม
 - ครอบคลุม 9 หมวด, 19 เรื่องหลอกลวง และ 2 สายปกติ รวม 21 เรื่อง / 141 ขั้น เฉลี่ย 6.71 ขั้นต่อเรื่อง: 5 ขั้น 0 เรื่อง, 6 ขั้น 9 เรื่อง, 7 ขั้น 9 เรื่อง, 8 ขั้น 3 เรื่อง
 - DEMO / CORE / EXTENDED / CONTROL คือระดับการเลือกใช้เรื่อง ไม่ใช่ผลอนุมัติ ทั้ง 21 เรื่องวาดร่างได้ แต่ 14 เรื่องยังเป็น NEEDS_CONTENT_REVIEW และ 7 เรื่องเป็น CONDITIONAL_CONTENT
-- เวลาเป็นประมาณการเพื่อออกแบบจากเอกสารเดิม ยังไม่ได้วัดจากการเล่นจริง โหมด TEXT_OR_VOICE เป็นเป้าหมายสำหรับ Call Center; ไม่หมายความว่าระบบเสียงหรือสายปกติเปิดใช้งานแล้ว
+- เวลาเป็นประมาณการเพื่อออกแบบ ยังไม่ได้วัดจากการเล่นจริง โหมด TEXT_OR_VOICE ของ 4 target stories ไม่ได้ยืนยันว่าบทเหล่านั้น implement ครบ แม้โครงสร้างเสียงและ NORMAL_CALL/SCAM_CALL ของ category-level demo จะ implement แล้ว
 - ชื่อเรื่องที่มีคำว่า “ปลอม” และป้ายเส้นทางเป็นข้อมูลคนวาด ไม่ใช้เฉลยบนหน้าจอก่อนเล่น ให้ใช้ชื่อกลางและบอกบทบาทผู้เล่นตามรายละเอียดรายหมวด
 - ตัวละคร ข้อมูล เอกสาร ยอดเงิน และบริการทั้งหมดเป็นเรื่องสมมติ ช่องทางที่ผู้เล่น “หาเอง” หมายถึงช่องทางอิสระที่เตรียมไว้ภายในระบบ ไม่เปิดลิงก์ภายนอก ติดตั้งแอป เข้าถึงเครื่อง ส่งสินค้า หรือทำธุรกรรมจริง
 
 ## Overall Flow
 
-**Category → Story Family → Narrative interaction → Decision → Result**
+**Target design: Category → Story Family → Narrative interaction → Decision → Result**
+
+Runtime ปัจจุบันเลือก category แล้วเริ่ม template ที่กำหนดไว้ (Call Center เลือก internal variant ที่ Backend); ยังไม่มีหน้าเลือก 21 Story IDs. Generic non-SMS flow คือ `contact → build_trust → request_action → user_verification → end_scenario` ไม่ใช่หน้าจอ narrative ทุกภาพด้านล่าง.
 
 เลือกหมวดและเรื่อง → เห็นบทบาทกับบริบทสมมติ → อ่านหลักฐานและพิมพ์โต้ตอบกับตัวละคร → เลือกตรวจสอบ ปฏิเสธ ยุติ หรือทำรายการจำลอง → อ่านผลและเหตุผลตามสิ่งที่พบจริง
 
@@ -34,7 +40,7 @@
 
 **Matched controls:** CC-01 ↔ CC-N01 ใช้บริบทพัสดุ; CC-02 ↔ CC-N02 ใช้บริบทธนาคาร ผู้เล่นต้องสังเกตคำขอข้อมูลลับ/เงิน การยอมให้ตรวจอิสระ แรงกดดัน ความลับ และการวางสาย ไม่เดาจากอาชีพหรือชื่อหน่วยงาน
 
-CC-N01 และ CC-N02 มีเรื่องย่อ 6 ภาพต่อเรื่อง ส่วนรายละเอียด 8 เฟรมเดิมอยู่ระดับ 2 ทั้งคู่ยังรออนุมัติ CC-N02 แบบธนาคารเป็นข้อเสนอ matched control ที่ต่อยอดจากแนวคิดสายปกติทั่วไป ไม่ใช่บทที่ต้นฉบับผู้ใช้ระบุไว้โดยตรง การเลือกเรื่องสลับ normal/scam ในบริบทเดียวกันเป็นแผนอนาคต ยังไม่ทำระบบสุ่มหรือกำหนดสัดส่วน
+CC-N01 และ CC-N02 มีเรื่องย่อ 6 ภาพต่อเรื่อง ส่วนรายละเอียด 8 เฟรมเดิมอยู่ระดับ 2 ทั้งคู่ยังรออนุมัติ CC-N02 แบบธนาคารเป็นข้อเสนอ matched control ที่ต่อยอดจากแนวคิดสายปกติทั่วไป ไม่ใช่บทที่ต้นฉบับผู้ใช้ระบุไว้โดยตรง. การเลือก matched stories ในบริบทเดียวกันยังเป็นแผนอนาคต; แยกจาก runtime ที่สุ่ม NORMAL_CALL ห้องสมุด / SCAM_CALL ธนาคารปลอม 50/50 แล้ว
 
 <a id="cc-01"></a>
 

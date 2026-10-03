@@ -85,7 +85,8 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Next.js 16.3.8 (security patch 2 October), React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
-- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT และอีกแปดประเภท v1 (Call Center ใช้ SCAM_CALL); เก็บ SMS v1–3 สำหรับประวัติ
+- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT และอีกแปดประเภท v1; Call Center เลือก NORMAL_CALL/SCAM_CALL 50/50 ที่ Backend และ persist variant เดิมเมื่อ retry start; เก็บ SMS v1–3 สำหรับประวัติ
+- NORMAL_CALL ปัจจุบันเป็นเจ้าหน้าที่ห้องสมุดสมมตินัดรับหนังสือ ไม่ใช่ CC-N01/CC-N02; 21 storyboard stories เป็น target ไม่ใช่ 21 runtime flows ดู [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment)
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
 - Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)

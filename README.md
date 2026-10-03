@@ -39,6 +39,8 @@ Training API รับ UUID จาก verified session เท่านั้น;
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
 ผลรอบล่าสุดอยู่ใน [Live AI + Voice + WebSocket verification](docs/realtime-verification.md)
 
+Runtime มี **9 category-level playable scenarios** พร้อม Call Center NORMAL/SCAM variation ไม่ใช่ target storyboard ทั้ง 21 เรื่อง SCAM_CALL ใกล้เคียง CC-02; NORMAL_CALL ปัจจุบันเป็นเจ้าหน้าที่ห้องสมุดสมมตินัดรับหนังสือ ส่วน CC-N01/CC-N02 เป็น matched-control designs ที่ยังไม่ implement ดูตารางกลาง [Current runtime alignment](docs/scenario-story-bank.md#18-current-runtime-alignment)
+
 ## Architecture summary
 
 ```text
@@ -198,8 +200,8 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 - [Scoring และคำแนะนำ](docs/scoring.md)
 - [Decision Evaluation รุ่นใหม่และความเข้ากันได้กับผลเก่า](docs/decision-evaluation.md)
 - [Quiz Pre-test/Post-test](docs/quiz.md)
-- [Recovery verification และ blockers ปัจจุบัน](docs/recovery-verification.md)
-- [AI Integration — Mock/OpenAI adapter ทำแล้ว; live verification ยังไม่ผ่าน](docs/ai-integration.md)
+- [Recovery verification — historical baseline วันที่ 26 กันยายน](docs/recovery-verification.md)
+- [AI Integration — Mock/OpenAI/Groq adapters ทำแล้ว; live status แยกตาม provider](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
 - [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)

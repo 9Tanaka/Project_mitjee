@@ -2,7 +2,13 @@
 
 Content curation only | 2026-09-27 | Status: PROPOSED_FOR_REVIEW
 
-Branch: `feat/rule-based-evaluation`. Start SHA: `491a48bcaa15260eb3837a50ca46b15d24ac4488`. ไม่แก้ runtime, fixtures, rules, Prisma, migrations, Qwen หรือ voice. เอกสารคู่กัน: [Scenario Story Bank](scenario-story-bank.md).
+Branch: `feat/rule-based-evaluation`. Historical baseline ของการคัดเนื้อหา: `491a48bcaa15260eb3837a50ca46b15d24ac4488`. ไม่ใช่ current runtime HEAD. ตรวจ alignment ล่าสุด 2026-10-02 หลัง fetch ที่ `7ce29f87d247c457789489a3e0e7091e005c24b2`; ไม่แก้ runtime, fixtures, rules, Prisma หรือ migrations.
+
+## Current runtime vs content taxonomy
+
+รายงานนี้นับ **19 scam families + 2 matched-control targets** ไม่ใช่ 21 runtime stories. Runtime ปัจจุบันมี 9 playable category-level demos พร้อม Call Center NORMAL/SCAM variation; mapping รายเรื่องและตารางนับกลางอยู่ใน [Story Bank](scenario-story-bank.md#18-current-runtime-alignment). SCAM_CALL ใกล้ CC-02; NORMAL_CALL ยังเป็นห้องสมุดสมมตินัดรับหนังสือ ไม่ใช่ CC-N01/CC-N02. การแทน OLD CC-N02 ในแบบเนื้อหาด้านล่างไม่ได้เปลี่ยน fixture ห้องสมุดในโค้ด.
+
+Backend selection 50/50 (`randomInt(2)`), Voice UI/Azure adapter, authenticated WebSocket, HTTP fallback และ Mock/OpenAI/Groq implement แล้ว. Live Azure/Groq และ current dedicated MySQL/browser E2E ยัง NOT RUN; Luna ยังรอเครดิต ตาม [รายงาน 2026-10-02](realtime-verification.md). ข่าวและ provenance ด้านล่างเป็นหลักฐานเนื้อหา ไม่ใช่หลักฐานว่า implement หรือ live-verified แล้ว. ชุด design นี้ไม่สร้าง DB tables/dataset; Game 8 และ Knowledge Base 16 ยังเป็น planned domains แยก.
 
 ## Call Center matched-control revision (2026-09-30)
 
@@ -21,7 +27,7 @@ CONTENT REFINEMENT ONLY | baseline `4062a8b837728a3aed56df48ea35eaeaf0c3fa87`
 
 คง 19 scam families + 2 normal controls ไม่เพิ่ม CC-N03 และไม่นับ OLD CC-N02 เป็นเรื่องที่ยังใช้อยู่ เป้าหมายการเรียนคือดูคำขอ การตรวจอิสระ การรักษาข้อมูล แรงกดดัน/ความลับ และสิทธิ์วางสาย ไม่เหมารวมตำรวจ ธนาคาร หรือสายไม่รู้จักเป็น scam
 
-การเลือกบริบทพัสดุแล้วใช้ CC-01/CC-N01 หรือบริบทธนาคารแล้วใช้ CC-02/CC-N02 เป็นแนวคิดอนาคตเท่านั้น ไม่กำหนดความน่าจะเป็นและไม่พัฒนาระบบสุ่ม Controls ไม่มี harmful action หรือ warning ปลอม หากอนาคตทำ classifier/evaluation ให้เก็บ matched-pair links และทบทวนการรั่วของ template ร่วม แต่ไม่รวม controls ใน scam-family count และไม่สร้างข้อมูลฝึกรอบนี้
+การเลือก matched-context พัสดุ CC-01/CC-N01 หรือธนาคาร CC-02/CC-N02 ยังเป็นแนวคิดอนาคต ไม่กำหนดอัตรารายคู่. แยกจาก runtime selector NORMAL_CALL ห้องสมุด / SCAM_CALL ธนาคารปลอมที่ implement 50/50 แล้ว. Target controls ไม่มี harmful action หรือ warning ปลอม; หากทำ classifier/evaluation ให้เก็บ matched-pair links และทบทวนการรั่วของ template ร่วม ไม่รวม controls ใน scam-family count และไม่สร้างข้อมูลฝึกรอบนี้
 
 ## 1. Scope and Counting Rules
 
@@ -273,7 +279,7 @@ CONTENT REFINEMENT ONLY | baseline `4062a8b837728a3aed56df48ea35eaeaf0c3fa87`
 
 **Q12. ต้องเพิ่มจากข่าวตรงไหน?** รอบนี้เสนอ INV-02 recruitment-based returns, ECO-03 seller/fake receipt และ REC-02 fake complaint app/remote control. ข่าวไม่ได้เพิ่มหมวดที่ 10. รอบถัดไปควรค้น independent decision mechanisms ในหมวดที่บาง ไม่เพิ่มชื่อประเทศ/สินทรัพย์; QR direct-payment และ JOB-02 ยังต้องรายละเอียดก่อนรับเข้า core
 
-## 9. Verification and Handoff
+## 9. Verification and Handoff — historical curation baseline
 
 ตรวจได้จาก source ledger, candidate ledger, variant/tag registries และ current mapping โดยไม่ต้องรัน runtime. ไฟล์เนื้อหาไม่ถูก import อัตโนมัติ; ไม่สร้าง 3,600 examples. ขอบเขตการเปลี่ยนแปลงของ commit นี้มีเพียงเอกสารใหม่สองไฟล์ ไม่มี source/code file เดิมเปลี่ยน
 

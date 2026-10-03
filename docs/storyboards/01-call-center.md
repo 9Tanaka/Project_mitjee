@@ -2,7 +2,19 @@
 
 [สารบัญ](README.md) | [กฎร่วมและ master review](../scenario-storyboard-spec.md)
 
-Content specification only | source HEAD 105fe8395f86cc936d808ecba0cf7643aeaf19af | 2026-09-28
+Content specification only | historical source baseline 105fe8395f86cc936d808ecba0cf7643aeaf19af | 2026-09-28
+
+## Implementation status — ตรวจโค้ด 2026-10-02
+
+ฐาน runtime: `7ce29f87d247c457789489a3e0e7091e005c24b2`. Public Call Center ยังเป็น card เดียว; Backend เลือก NORMAL_CALL/SCAM_CALL 50/50 ด้วย `randomInt(2)` และ retry ใช้ variant ที่ persisted แล้ว.
+
+- SCAM_CALL ปัจจุบัน (`call-center-scam` v1) ใกล้ **CC-02**: แอบอ้างธนาคาร/รายการผิดปกติและขอ OTP; ไม่ครบทุกเฟรมของ target. **CC-01** ยังไม่มี runtime คดีปลอม/โอนตรวจสอบแยก.
+- NORMAL_CALL จาก [normal-call.ts](../../src/fixtures/normal-call.ts) คือ “เจ้าหน้าที่ห้องสมุดสมมติติดต่อยืนยันช่วงเวลานัดรับหนังสือ ผู้ใช้ไม่ต้องให้ข้อมูลส่วนบุคคล”. มี D1/W1/D2/S1, NO_WARNINGS_EXPECTED และ zero critical rules แล้ว.
+- **CC-N01** สายจัดส่งปกติ และ **CC-N02** สายธนาคารปกติ เป็น target matched controls ยังไม่ใช่ runtime normal variants. คงแบบทั้งสองไว้ ไม่เปลี่ยนกลับเป็นห้องสมุด; rubric เฉพาะ target ยังต้องทบทวนแยกจาก rubric ห้องสมุด.
+- Voice UI, Azure STT/TTS adapter, authenticated WebSocket และ HTTP/text fallback implement แล้ว. Live Azure/Groq และ dedicated MySQL/browser E2E ยัง NOT RUN ตาม [รายงาน](../realtime-verification.md); OpenAI Luna ยังรอเครดิต. ไม่ใช่ production-ready.
+- ป้าย FUTURE VOICE UX ในเฟรมหมายถึง UX ที่เสนอ เช่น transcript preview/readback/voice-action confirmation และหน้าหลักฐาน ไม่ใช่คำอ้างว่าไม่มี voice infrastructure. Runtime เสียงใช้สนทนา; action ยังยืนยันผ่าน explicit controls เดิม.
+
+ดู [Current runtime alignment](../scenario-story-bank.md#18-current-runtime-alignment) สำหรับสถานะครบ 21 targets. “Current situation” ในรายละเอียดเฟรมหมายถึงสถานการณ์ในบทออกแบบ ไม่ใช่ current implementation.
 
 [SOURCE-DERIVED] Family IDs/tier อ้าง Story Bank. [RECOMMENDATION] ทุก storyboard/action mapping เป็น draft สำหรับ review ไม่ใช่ current runtime. รอบ 2026-09-30 ปรับ matched controls โดยคง IDs และจำนวนเดิม; เนื้อหาธนาคาร CC-N02 เป็น DESIGN RECOMMENDATION ไม่ใช่บทที่อยู่ในต้นฉบับผู้ใช้ ป้ายข้อมูลผู้เขียนทั้งหมดไม่ใช่ UI ผู้เล่น
 
@@ -592,7 +604,7 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 - Story Family ID: CC-02; Category: Call Center
 - Thai title: สายธนาคารปลอมขอรหัสยืนยัน; English title: Bank security caller requesting verification codes
 - Status / selection tier [SOURCE-DERIVED]: DEMO; Approval: PROPOSED_FOR_REVIEW
-- Mode [SOURCE-DERIVED]: TEXT_OR_VOICE (target VOICE; FUTURE VOICE UX); Current implementation [CURRENT_CODE]: call-center-scam v1: TEXT เท่านั้น; คล้ายธนาคารขอ OTP
+- Mode [SOURCE-DERIVED]: TEXT_OR_VOICE (target interaction UX); Current implementation [CURRENT_CODE]: call-center-scam v1 / SCAM_CALL ใกล้ธนาคารขอ OTP; text + voice infrastructure มีแล้ว แต่ไม่ครบ storyboard และ Azure live ยัง NOT RUN
 - Estimated play time: TEXT 4–6 นาที / VOICE target 6–9 นาที [RECOMMENDATION; PLANNING ESTIMATE / NOT MEASURED]; แจกแจงช่วงใน T
 - Ready for Drawing?: NEEDS_CONTENT_REVIEW — วาดร่างได้จากเฟรมนี้; ยังไม่ใช่ approved final scenario
 - Primary learning goal [RECOMMENDATION]: รักษารหัสยืนยันและตรวจคำแจ้งเตือนจากช่องทางเดิม
@@ -1139,7 +1151,7 @@ Timeout/invalid schema/unsafe output → หยุดการแสดงผล
 - Story Family ID: CC-N01; Category: Call Center; Type: CONTROL_NORMAL (ไม่รวมยอด scam families)
 - Thai title [SOURCE-DERIVED]: สายยืนยันการจัดส่งปกติ; English title: Normal delivery confirmation
 - Status: CONDITIONAL; selection tier เดิม CONTROL; Approval: CONDITIONAL_CONTENT
-- Mode: TEXT_OR_VOICE; target VOICE [FUTURE VOICE UX]; current: ไม่ implement ทั้ง normal และ voice
+- Mode: TEXT_OR_VOICE; target interaction UX; current: CC-N01 ยังไม่เป็น runtime story แยก แม้ NORMAL_CALL ห้องสมุดและ voice infrastructure implement แล้ว
 - Estimated play time: TEXT 3–4 นาที / VOICE target 4–5 นาที [RECOMMENDATION; PLANNING ESTIMATE / NOT MEASURED]; แจกแจงช่วงใน T
 - Ready for Drawing?: CONDITIONAL; วาด draft ได้ ยังไม่มี final outcome policy
 - Primary learning goal [RECOMMENDATION]: ตอบคำขอที่จำเป็นหลังเทียบคำสั่งซื้อ โดยไม่ตีความความสุภาพหรือสายเรียกเข้าเป็นความเสี่ยง
@@ -1444,7 +1456,7 @@ flowchart TD
 
 Matched pair A: ใช้บริบทพัสดุร่วมกับ CC-01 แต่ CC-N01 มีคำสั่งซื้อเดิมและถามเฉพาะเรื่องจัดส่ง ไม่มีคำขอ OTP รหัสผ่าน โอนเงิน ค่าธรรมเนียม ติดตั้งแอป หรือควบคุมเครื่อง ไม่มีความลับ การแยกจากผู้อื่น คำขู่ เส้นตายปลอม หรือการบังคับโอนสาย ไม่ใช้การรับสายเป็นข้อผิดพลาด
 
-[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, existing order / parcel card, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
+[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, existing order / parcel card, independent service panel, bounded response confirmation และ observation result เป็น target UX ของ CC-N01 ซึ่งยังไม่เป็น runtime แยก. Current code มี NORMAL_CALL ห้องสมุดและ voice infrastructure แล้ว แต่ยังไม่มีหน้าจอและ confirmation flow ครบชุดนี้. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
 
 ### R–S. Visual / pressure
 
@@ -1515,7 +1527,7 @@ QWEN_GENERATED: F02,F03,F06; SCRIPTED: F01 และรายการอิส�
 - Story Family ID: CC-N02; Category: Call Center; Type: CONTROL_NORMAL (ไม่รวมยอด scam families)
 - Thai title [RECOMMENDATION / MATCHED CONTROL]: สายธนาคารปกติแจ้งให้ตรวจสอบรายการ; English title: Normal bank transaction notification
 - Status: CONDITIONAL; selection tier เดิม CONTROL; Approval: CONDITIONAL_CONTENT
-- Mode: TEXT_OR_VOICE; target VOICE [FUTURE VOICE UX]; current: ไม่ implement ทั้ง normal และ voice
+- Mode: TEXT_OR_VOICE; target interaction UX; current: CC-N02 ยังไม่เป็น runtime story แยก แม้ NORMAL_CALL ห้องสมุดและ voice infrastructure implement แล้ว
 - Estimated play time: TEXT 3–4 นาที / VOICE target 4–5 นาที [RECOMMENDATION; PLANNING ESTIMATE / NOT MEASURED]; แจกแจงช่วงใน T
 - Ready for Drawing?: CONDITIONAL; วาด draft ได้ ยังไม่มี final outcome policy
 - Primary learning goal [RECOMMENDATION]: ตรวจรายการธนาคารผ่านแอปที่เปิดเองและรักษาข้อมูลลับ โดยไม่ตัดสินประเภทสายจากชื่อธนาคาร
@@ -1822,7 +1834,7 @@ flowchart TD
 
 Matched pair B ใช้บริบทและหน้าสายธนาคารใกล้กับ CC-02 ไม่เฉลยด้วยชื่อหน้าจอหรือรูปแบบพิเศษ ความต่างอยู่ที่ผู้โทรไม่ขอ OTP รหัสผ่าน โอนเงิน ค่าธรรมเนียม ติดตั้งแอป หรือ remote access และไม่มีคำขู่ secrecy/isolation หรือเส้นตายให้ข้ามการตรวจ การเปิดแอปคือแอปจำลองที่ผู้เล่นเข้าจากเมนูของตนเอง ไม่ใช่ลิงก์ติดตั้งจากผู้โทร บทนี้เป็นตัวอย่าง matched control ไม่ใช่กฎว่าธนาคารจริงจะโทรแบบนี้เสมอ
 
-[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, bank transaction reference / simulated banking app, independent service panel, bounded response confirmation และ observation result. Voice ทั้งชุดเป็น FUTURE VOICE UX; current code ไม่มี normal control. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
+[RECOMMENDATION] Call screen, caller claim, mic, transcript preview, bank transaction reference / simulated banking app, independent service panel, bounded response confirmation และ observation result เป็น target UX ของ CC-N02 ซึ่งยังไม่เป็น runtime แยก. Current code มี NORMAL_CALL ห้องสมุดและ voice infrastructure แล้ว แต่ยังไม่มีหน้าจอและ confirmation flow ครบชุดนี้. ไม่ทำรีวิวปลอม countdown หรือ warning cards. การสนทนากับคนจริงไม่เกิดขึ้น
 
 ### R–S. Visual / pressure
 

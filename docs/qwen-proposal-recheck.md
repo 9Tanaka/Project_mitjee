@@ -2,6 +2,12 @@
 
 Review date: 2026-09-27 (Asia/Bangkok). Review only; no implementation, model download, training, migration, or provider change.
 
+> **Historical baseline — ไม่ใช่สถานะ runtime ล่าสุด:** ป้าย `[CURRENT CODE]` และผลทดสอบในรายงานนี้อ้างถึงการตรวจวันที่ 27 กันยายน 2026 เท่านั้น เก็บไว้เพื่อรักษาที่มาของการวิเคราะห์ ไม่ควรนำข้อความว่า Voice/WebSocket หรือ NORMAL_CALL ยังไม่ทำไปใช้เป็นสถานะปัจจุบัน
+>
+> ตรวจ alignment วันที่ 2 ตุลาคม 2026 ที่ `7ce29f87d247c457789489a3e0e7091e005c24b2`: มี Mock/OpenAI/Groq adapters, backend NORMAL/SCAM 50/50, Azure speech adapters, Voice UI และ WebSocket แล้ว แต่ไม่มี Qwen-specific serving adapter หรือ voice-only confirmed-action workflow; Game/Knowledge Base ยังเป็น planned domains ดู [สถานะการทดสอบจริง](realtime-verification.md)
+>
+> Runtime NORMAL_CALL เป็นเจ้าหน้าที่ห้องสมุดสมมตินัดรับหนังสือ ไม่ใช่ CC-N01/CC-N02 เป้าหมายใหม่ ดู [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment) ข้อเสนอขยาย 9/21/30 เรื่องในรายงานเก่านี้เป็นชุดการวางแผนเดิม ไม่ใช่หลักฐานว่า target ปัจจุบัน 19 scam families + 2 normal controls เล่นได้ครบแล้ว
+
 ## 1. Executive Summary
 
 **[RECOMMENDATION] Verdict: เดินหน้าตามแนวทาง Qwen ได้ แต่ต้องแก้รายละเอียด proposal และผ่าน pilot ก่อนกล่าวอ้างว่าใช้งานได้ตามเป้าหมาย** ไม่จำเป็นต้องเปลี่ยน Rule Engine ทั้งชุด และไม่จำเป็นต้องใช้โมเดลฟังเสียงของ Qwen ร่วมกับ Qwen ที่สร้างบทสนทนา

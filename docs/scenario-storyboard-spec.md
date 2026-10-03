@@ -4,12 +4,20 @@ CONTENT + INTERACTION DESIGN ONLY | 2026-09-28 | PROPOSED_FOR_REVIEW
 
 [เปิดสารบัญ 21 เรื่อง](storyboards/README.md)
 
+## Current implementation alignment — 2026-10-02
+
+ตรวจหลัง fetch ที่ `7ce29f87d247c457789489a3e0e7091e005c24b2`. Level 1 และ Level 2 เป็น design specifications ของ 21 target stories ไม่ใช่หลักฐานว่า implement แล้วทั้งหมด. Runtime เปิด 9 category-level scenarios ผ่าน Frontend พร้อม Call Center internal NORMAL_CALL/SCAM_CALL. ดู [ตารางกลางและ mapping รายเรื่อง](scenario-story-bank.md#18-current-runtime-alignment).
+
+**TARGET STORY FLOW != CURRENT GENERIC RUNTIME FLOW:** แปด non-SMS scam fixtures ใช้ `contact → build_trust → request_action → user_verification → end_scenario` พร้อม d1/w1/d2/s1. SMS เป็น dedicated fixture; NORMAL_CALL เป็น fixture แยก. Storyboard มี narrative/evidence screens มากกว่าโครงนี้ จึงไม่แปลง frame count เป็นจำนวน runtime states หรือ stories. Free text/AI ไม่มี authority ด้านผลประเมินหรือ transition.
+
+Call Center มี Voice UI/Azure STT-TTS adapter, authenticated WebSocket และ HTTP/text fallback แล้ว แต่ Live Azure/Groq และ current MySQL/browser E2E ยัง NOT RUN ตาม [รายงาน](realtime-verification.md); OpenAI Luna ยังรอเครดิต. NORMAL_CALL runtime ยังเป็นห้องสมุดนัดรับหนังสือ ไม่ใช่ CC-N01/CC-N02; selector 50/50 มีแล้ว แต่ matched-context selector ยังเป็น target. ป้าย FUTURE VOICE UX ด้านล่างหมายถึง UX รายเฟรม เช่น transcript preview/readback/voice-action confirmation ที่ยังไม่ implement ไม่ได้หมายความว่า voice infrastructure ยังไม่มี. Qwen-specific adapter ยังไม่พบใน runtime; ปัจจุบันเลือก Mock/OpenAI/Groq.
+
 ## Storyboard documentation has two levels
 
 - **LEVEL 1: Drawing Flow Summary / PRIMARY DRAWING DOCUMENT**: [scenario-storyboard-flow-summary.md](scenario-storyboard-flow-summary.md) เป็นเอกสารเริ่มต้นสำหรับวาด ทุกเรื่องมี 5–8 ขั้น พร้อมจุดตัดสินใจ เส้นทางหลัก และภาพสำคัญ อ่านได้โดยไม่ต้องรู้ backend
 - **LEVEL 2: Detailed Interaction Specification**: เอกสารฉบับนี้และ [docs/storyboards/*.md](storyboards/README.md) คงรายละเอียดการโต้ตอบ เฟรม และข้อกำหนดระบบเดิมไว้ครบ ใช้ตรวจรายละเอียดเมื่อจำเป็น ไม่ใช่สิ่งที่ต้องอ่านทั้งหมดก่อนวาด
 - ไฟล์รายหมวดเริ่มแต่ละเรื่องด้วย Storyboard Drawing Flow ซึ่งใช้ข้อความลำดับเดียวกับเอกสารหลักทุกคำ แล้วจึงตามด้วย A. Scenario identity และรายละเอียดเดิม
-- รอบ simplification ตรวจ fetch และยืนยัน local/remote HEAD ที่ `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` เมื่อ 2026-09-29; ตรงฐานที่ร้องขอ ไม่มี upstream diff ก่อนแก้ อ่าน [Drawing flow review](#drawing-flow-review) สำหรับ QA รอบนี้
+- Historical baseline ของรอบ simplification: `e07c6f26af5e071cb5c99628cd1b880bdc0846f9` เมื่อ 2026-09-29; อ่าน [Drawing flow review](#drawing-flow-review) สำหรับ QA ของรอบนั้น ไม่ใช่ current runtime HEAD
 - ส่วน Source baseline และสถิติด้านล่างเป็นประวัติของการจัดทำ Level 2 เดิม ไม่ได้ถูกเขียนทับให้เป็นผลตรวจรอบใหม่
 
 ## Source baseline (historical Level 2)
@@ -35,7 +43,7 @@ Historical source SHA-256 (2026-09-28; ไม่ใช่ hash หลัง matc
 [SOURCE-DERIVED] คง 19 scam families เดิมใน 9 หมวด และ 2 normal controls. ไม่มี family ใหม่; รอบ 2026-09-30 แทนเนื้อหา CC-N02 โดยใช้ ID เดิมและบันทึก provenance ไม่ได้เพิ่ม control อีกเรื่อง. รักษา INV-01 hybrid romance เป็น related context ไม่สร้าง ROM-03; QR ไป form เป็น PHI-01 variant ไม่เพิ่มเรื่อง
 
 - [SOURCE-DERIVED]: identity/mechanism/tier ที่ระบุใน bank; ไม่แปลว่า final approval
-- [CURRENT_CODE]: สิ่งที่ตรวจที่ start SHA จริง
+- [CURRENT_CODE]: ผลเทียบโค้ดล่าสุดใน Current implementation alignment; ส่วน Source baseline/QA ที่ระบุวันที่เก่าเป็นประวัติ ไม่ใช่ผลตรวจ runtime รอบใหม่
 - [RECOMMENDATION]: รายละเอียด UX, ตัวอย่างข้อความ, หลักฐานประกอบ, branch และ rule mapping ที่เสนอ ทุกเฟรมในชุดนี้ใช้ป้ายนี้
 - [DETAIL_PENDING]: ต้องได้คำตอบหรือการอนุมัติก่อน final/implementation
 - CONDITIONAL_CONTENT: INV-02, ECO-03, LOAN-02, REC-02, JOB-02 และ normal controls CC-N01/CC-N02; เก็บ selection tier เดิมแยกกัน
@@ -76,7 +84,7 @@ EARLY_SAFE_EXIT ที่อนุญาตอาจผ่านได้ตั�
 
 [RECOMMENDATION] Text/Button: candidate/เปิดหน้ารายการ → อ่าน action, target, fictional data → explicit confirm → backend validation → commit ครั้งเดียว. Cancel ไม่ให้ SAFE ฟรีและไม่ล้าง REVIEW เดิม; ถ้า D ยังไม่ตอบให้กลับเลือกใหม่ ถ้าเริ่ม candidate จาก REVIEW ที่ commit แล้วให้กลับ REVIEW_RECOVERY ไม่เปิด D ซ้ำหรือเขียนทับผลเดิม. เงิน/เอกสาร/สิทธิ์ใน backstory เป็นสถานะตั้งต้น ไม่คิดเป็นการเลือกของผู้เรียน
 
-[FUTURE VOICE UX] Call screen → mic → STT preview → Qwen → TTS. การกระทำที่มีผลต้อง candidate → readback ของระบบ → confirmation → backend validation → commit. ไม่ใช้ transcript หรือ “ครับ” ที่ไม่มีบริบทยืนยันเป็นการยินยอม. Pause mic/TTS ตัวละครขณะ confirmation ให้แก้ transcript/ยกเลิกได้. ไม่มีการโทรจริง ไม่มี voice clone. Current provider มี mock/OpenAI เท่านั้น ไม่พบ Qwen adapter หรือ voice pipeline ในงานนี้
+[TARGET VOICE INTERACTION UX] Call screen → mic → STT preview → Qwen → TTS เป็นแบบรายละเอียดที่จะพัฒนาต่อ. การกระทำที่มีผลตามแบบต้อง candidate → system readback → confirmation → backend validation → commit; ไม่ใช้ transcript หรือ “ครับ” ที่กำกวมเป็นการยินยอม. การหยุด mic/TTS ระหว่างรอ readback confirmation และการแก้ transcript/ยืนยัน action ด้วยเสียงยังเป็น target workflow ไม่ใช่การอ้างว่าปัจจุบันไม่มีปุ่มหยุดบันทึกหรือยกเลิก request. **CURRENT_CODE:** mic → Azure STT → sanitized text → existing Dialogue commit → Azure TTS มีแล้ว ผ่าน WebSocket หรือ HTTP; action ยังใช้ explicit controls เดิม ไม่ใช้เสียงเป็น authority. Provider มี Mock/OpenAI/Groq ไม่มี Qwen-specific adapter; Azure live ยัง NOT RUN. ไม่มีการโทรจริงหรือ voice clone
 
 ### Evidence and feedback
 
@@ -84,7 +92,7 @@ EARLY_SAFE_EXIT ที่อนุญาตอาจผ่านได้ตั�
 
 Feedback หลัง commit ต้องไม่เฉลย checkpoint ถัดไปที่ยังไม่ตัดสิน; แบบร่างหลักแสดงรายละเอียดใน result. Result มี outcome, encountered checkpoint explanations, warning ที่พบ, safe recommendations และ proposed tags. ไม่แสดง numeric training score หรือ weighted D/W/S. Current recommendation เลือก first REVIEW skill/critical mapping; tag หลายเรื่องในนี้เป็นข้อเสนอที่ต้อง map ก่อน implementation ไม่อ้างว่าบทเรียนใหม่ถูกสร้างแล้ว
 
-Normal controls ควรจับคู่กับบริบท scam ที่ใกล้กันเมื่อทำได้ เพื่อให้แยกพฤติกรรมแทนหัวข้อ: CC-01 ↔ CC-N01 (parcel/delivery) และ CC-02 ↔ CC-N02 (bank/transaction) ไม่มี warning หรือ Critical ปลอม ไม่มี REVIEW บังคับ. การรับสายปกติหรือปฏิเสธคุยอย่างสุภาพไม่ใช่ความผิด. Outcome policy ยัง pending จึงวาด observation result ไม่สร้าง PASSED จาก C=0 อย่างเดียว และไม่กำหนดอัตราสุ่ม normal/scam
+Target controls ควรจับคู่บริบท: CC-01 ↔ CC-N01 (parcel/delivery) และ CC-02 ↔ CC-N02 (bank/transaction) โดยไม่มี warning/Critical ปลอมหรือ REVIEW บังคับ. การรับสายหรือขอตรวจไม่ใช่ความผิด. Rubric เฉพาะสอง target controls ยัง pending จึงวาด observation result ไม่สร้าง PASSED จาก C=0 อย่างเดียว และไม่กำหนดอัตราราย matched pair. แยกจาก runtime NORMAL_CALL ห้องสมุดซึ่งมี rubric d1/w1/d2/s1 และ selector NORMAL/SCAM 50/50 implement แล้ว
 
 ### Fallback and synthetic assets
 
@@ -105,14 +113,14 @@ Normal controls ควรจับคู่กับบริบท scam ที�
 | Critical-candidate branches | 19; เรื่องละ K1; เป็น proposed gate ไม่ใช่ 19 กฎที่ implement แล้ว |
 | Conditional content | 7 = 5 scam + 2 controls |
 | Text-capable | 19 scam (17 text-only + 2 call center) และ 2 control drafts |
-| Voice target | 4 Call Center รวม controls; FUTURE VOICE UX ทั้งหมด |
+| Voice target | 4 Call Center story designs; UX รายเฟรมยัง target แม้ voice infrastructure ของ demo implement แล้ว |
 | Qwen frames | 109 = 103 scam + 6 control; dialogue concept เท่านั้น |
 | Backend/system frames | 122 = 114 scam + 8 control; รวม result display |
 | VALIDATED_ACTION frames | 101 = 95 scam + 6 control; control บันทึก observation ไม่ได้มี final scoring policy |
 | SCRIPTED frames | 21 intro; หลักฐาน authored แยก ไม่เพิ่ม frame count |
 | Ready YES | 0 เพราะ source ทั้ง bank ยัง proposed |
 | NEEDS_CONTENT_REVIEW / CONDITIONAL | 14 / 7 |
-| Current runtime | 9 text fixtures partial semantic mappings; ไม่ใช่ 21 storyboards ที่เล่นได้แล้ว |
+| Current runtime | 9 category-level demos + Call Center NORMAL/SCAM variation; ดู canonical mapping ไม่ใช่ 21 stories ที่เล่นได้แล้ว |
 
 ## Detail pending register
 
@@ -191,7 +199,7 @@ Normal controls ควรจับคู่กับบริบท scam ที�
 
 **Q8. Frames เหมาะกับเวลาหรือไม่?** 12–14 ต่อ scam และ 8 ต่อ control; ไม่ต้องเล่นทุก branch. วาง budget text 4–6, romance 6–8, voice 6–9 นาที. การวาดครบไม่ยืนยันเวลาใช้งานจริง ต้อง trial dialogue/evidence readability โดยเฉพาะ INV-01/TASK-01/ROM-02
 
-**Q9. วาด Call Center Voice ได้โดยไม่ claim implementation หรือไม่?** ได้ ใช้ภาพ call/mic/transcript/readback/system-confirmation และระบุ FUTURE VOICE UX ทุก record. Current text CC-02 เป็น partial mapping เท่านั้น; CC-01 และ controls ยังไม่ใช่ playable dedicated flows
+**Q9. วาด Call Center Voice ได้โดยไม่ claim implementation หรือไม่?** ได้ แยก voice infrastructure ที่ implement แล้วออกจาก target transcript preview/readback/voice-action confirmation. Current SCAM_CALL ใกล้ CC-02 แต่ไม่ครบทุกเฟรม; CC-01 และ CC-N01/CC-N02 ยังไม่มี dedicated runtime. Current NORMAL_CALL เป็นห้องสมุด ไม่ใช่ matched controls
 
 **Q10. ต้องอนุมัติอะไรก่อน implementation?** Family/content gates, evidence/rubric, frame-state/checkpoint mapping, exact critical thresholds, early-exit/omission/review semantics, normal policy, voice confirmation, fallback และ recommendation routing. จบงานนี้ที่ documentation commit/push ไม่เริ่ม State/Checkpoint implementation
 
@@ -298,7 +306,7 @@ Baseline หลัง fetch: local และ remote `4062a8b837728a3aed56df48ea3
 
 **Drawing vs detail:** controls ใช้ลำดับวาด 6 ภาพตรงกันระหว่าง summary กับ Call Center file ส่วนรายละเอียด 8 เฟรมต่อ control ยังคงโครงสร้างเดิมเพื่ออธิบาย intro/ยืนยันคำตอบ/จบสาย ไม่เพิ่ม State หรือ Checkpoint การยืนยันคำตอบในสายปกติไม่ใช่การยืนยันธุรกรรมและไม่สร้าง critical action
 
-**Future selection:** เลือกบริบทพัสดุแล้วจึงใช้ CC-01 หรือ CC-N01; เลือกบริบทธนาคารแล้วจึงใช้ CC-02 หรือ CC-N02 ใช้ชื่อเริ่มต้นกลางและรูปแบบใกล้เคียงกัน ยังไม่พัฒนาการสุ่ม ไม่กำหนดสัดส่วน และไม่ลงโทษการรับสายหรือการขอตรวจ
+**Future matched-story selection:** เลือกบริบทพัสดุแล้วจึงใช้ CC-01/CC-N01 หรือบริบทธนาคารแล้วใช้ CC-02/CC-N02 ยังไม่ implement selector ของคู่เนื้อหาเหล่านี้และไม่กำหนดอัตรารายคู่. Runtime มี NORMAL_CALL ห้องสมุด / SCAM_CALL ธนาคารปลอม 50/50 แล้ว; ไม่ใช่ระบบเดียวกับ target matched-context selection และไม่ใช้หัวข้อสายเป็นเฉลย
 
 **Future dataset:** controls ไม่รวมใน 19 scam families ต้องรักษา matched-pair links หากภายหลังทำ classifier/evaluation และตรวจ leakage จาก template ร่วมก่อนแบ่งชุด รอบนี้ไม่สร้าง dataset
 
