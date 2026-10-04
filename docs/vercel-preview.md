@@ -4,6 +4,8 @@
 
 An unexpected registration failure still returns the fixed public `500 INTERNAL_ERROR` contract. Server logs now include only `registration_failed`, the processing stage, a fixed failure category and elapsed milliseconds. Raw exceptions, stacks, SQL, submitted credentials, email addresses, database URLs and CA content are not logged. Use these categories to distinguish configuration, TLS, database authentication/schema/network/timeouts and missing runtime dependencies; a category is diagnostic evidence, not proof of its underlying infrastructure cause. Expected validation/duplicate-account errors are not logged as internal failures.
 
+The deployed registration investigation identified `DATABASE_TIMEOUT` at the account-write stage after about 20.7 seconds. The MariaDB connector previously inherited its 1,000ms connection timeout; the adapter now explicitly allows a 10,000ms connection handshake and 15,000ms pool acquisition. Both remain bounded and certificate verification is unchanged. These are connection budgets, not promised request latency, and do not fix an unreachable database or a provider firewall rule. Confirm the actual deployed registration flow after rollout rather than treating a successful build as proof of recovery.
+
 ## UI/runtime integration — 2026-10-04
 
 The proposal UI refresh is integrated with the rule-based runtime. The catalog now leads to details and a required safety acknowledgment before calling the unchanged start API. Both communication-mode badges retain the runtime wording. The categorical result, session revisions, idempotent actions, authentication, TLS requirements, Groq request compatibility and immutable historical templates are preserved.
