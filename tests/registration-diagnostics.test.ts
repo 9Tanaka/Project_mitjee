@@ -20,6 +20,14 @@ it("inspects bounded nested driver causes and tolerates cycles", () => {
   expect(registrationFailureCategory({ meta: { driverAdapterError: { cause } } })).toBe("DATABASE_TIMEOUT");
   expect(registrationFailureCategory(null)).toBe("UNCLASSIFIED");
 });
+it("recognizes Prisma's numeric pool timeout while preferring the underlying network or TLS cause", () => {
+  const wrapped = (cause?: string) => ({ code: "P2039", meta: { driverAdapterError: { cause: {
+    originalCode: "45028", originalMessage: "pool failed to retrieve a connection from pool", cause,
+  } } } });
+  expect(registrationFailureCategory(wrapped())).toBe("DATABASE_TIMEOUT");
+  expect(registrationFailureCategory(wrapped("connect ECONNREFUSED private-host"))).toBe("DATABASE_NETWORK");
+  expect(registrationFailureCategory(wrapped("self-signed certificate in certificate chain"))).toBe("DATABASE_TLS");
+});
 it("logs only fixed categories and stage, never private exception fields", () => {
   const log = vi.spyOn(console, "error").mockImplementation(() => {});
   logRegistrationFailure(Object.assign(new Error("P2021 mysql://user:private-password@private-host/db private@example.test"), {
