@@ -1,5 +1,9 @@
 # Minimal Vercel Preview
 
+## Registration runtime diagnostics
+
+An unexpected registration failure still returns the fixed public `500 INTERNAL_ERROR` contract. Server logs now include only `registration_failed`, the processing stage, a fixed failure category and elapsed milliseconds. Raw exceptions, stacks, SQL, submitted credentials, email addresses, database URLs and CA content are not logged. Use these categories to distinguish configuration, TLS, database authentication/schema/network/timeouts and missing runtime dependencies; a category is diagnostic evidence, not proof of its underlying infrastructure cause. Expected validation/duplicate-account errors are not logged as internal failures.
+
 ## UI/runtime integration — 2026-10-04
 
 The proposal UI refresh is integrated with the rule-based runtime. The catalog now leads to details and a required safety acknowledgment before calling the unchanged start API. Both communication-mode badges retain the runtime wording. The categorical result, session revisions, idempotent actions, authentication, TLS requirements, Groq request compatibility and immutable historical templates are preserved.
