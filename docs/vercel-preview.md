@@ -1,5 +1,17 @@
 # Minimal Vercel Preview
 
+## UI/runtime integration — 2026-10-04
+
+The proposal UI refresh is integrated with the rule-based runtime. The catalog now leads to details and a required safety acknowledgment before calling the unchanged start API. Both communication-mode badges retain the runtime wording. The categorical result, session revisions, idempotent actions, authentication, TLS requirements, Groq request compatibility and immutable historical templates are preserved.
+
+`vercel.json` explicitly selects Next.js with `npm ci` and `npm run build`; do not serve the custom WebSocket process or a static output directory in this Preview. Private PEM formatting was corrected without replacing the certificate or disabling verification. A read-only connection through the runtime adapter passed and confirmed all four existing migrations are complete; no migrations or destructive DB operations were run.
+
+Fresh install, Prisma generate/validate, typecheck, production build and client audit passed. Full suite: 681 passed / 49 skipped; frontend: 94; auth: 81; AI: 68. Live Groq synthetic verification passed with strict output and no fallback. Dedicated MySQL/E2E suites were not run because a dedicated test database is not configured.
+
+Local production UI verification passed with 72 screenshots and seven flow groups at 375/768/1440px, using `node --import tsx scripts/verify-ui.mjs`. This script mocks transport/auth and does not establish deployed end-to-end readiness. The initial deployment/Preview smoke check is performed after the verified merge is pushed; READY alone is not an acceptance result.
+
+The following preparation notes include historical results from before this integration.
+
 Scope: register → login → scenario list → Call Center text conversation with Groq → explicit training actions → result. SMS / Phishing also supports the same Groq text provider. This does not implement the 21-story storyboard or Evidence Popup, and does not deploy Voice, Azure or WebSocket infrastructure.
 
 ## Build and database prerequisites

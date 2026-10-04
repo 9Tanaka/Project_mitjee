@@ -17,10 +17,17 @@ async function account(page: Page) {
   await page.getByLabel("รหัสผ่าน", { exact: true }).fill(secret);
   await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
   await expect(page).toHaveURL(/\/scenarios$/);
-  await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toHaveCount(9);
+  await expect(page.getByRole("link", { name: "ดูรายละเอียด" })).toHaveCount(9);
 }
 async function start(page: Page) {
-  await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "SMS แจ้งพัสดุจากผู้ส่งสมมติ" }) }).getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
+  await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "SMS แจ้งพัสดุจากผู้ส่งสมมติ" }) }).getByRole("link", { name: "ดูรายละเอียด" }).click();
+  await acknowledgeAndStart(page);
+}
+async function acknowledgeAndStart(page: Page) {
+  await page.getByRole("link", { name: "เริ่มจำลองสถานการณ์" }).click();
+  await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toBeDisabled();
+  await page.getByRole("checkbox", { name: "ฉันอ่านคำเตือนและเข้าใจว่าจะใช้ข้อมูลสมมติเท่านั้น" }).check();
+  await page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
   await expect(page).toHaveURL(/\/training\/[^/]+$/);
   await expect(page.getByLabel("ข้อความของคุณ")).toBeVisible();
 }
@@ -54,7 +61,7 @@ test("real register/login, resumed multi-turn safe path, result, logout, respons
   await capture(page, "landing-desktop", 1440); await capture(page, "landing-mobile", 375);
   await page.goto("/login"); await capture(page, "login-mobile", 375);
   await account(page);
-  await page.reload(); await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์" })).toHaveCount(9);
+  await page.reload(); await expect(page.getByRole("link", { name: "ดูรายละเอียด" })).toHaveCount(9);
   await capture(page, "scenarios-tablet", 768); await start(page);
   const sessionPath = new URL(page.url()).pathname;
   await page.reload(); await expect(page.getByLabel("ข้อความของคุณ")).toBeVisible();
@@ -116,7 +123,8 @@ test("two real tabs reject stale revision, refetch and never automatically resub
 test("investment safe path preserves finalized assessments across browser refreshes and real MySQL", async ({ page }) => {
   await account(page);
   await page.locator(".scenario-card").filter({ has: page.getByRole("heading", { name: "ข้อเสนอการลงทุนผลตอบแทนสูง", exact: true }) })
-    .getByRole("button", { name: "เริ่มฝึกสถานการณ์" }).click();
+    .getByRole("link", { name: "ดูรายละเอียด" }).click();
+  await acknowledgeAndStart(page);
   await expect(page).toHaveURL(/\/training\/[^/]+$/);
   const apiPath = "/api" + new URL(page.url()).pathname;
   await expect(page.getByRole("radio", { name: "ตรวจสอบจากช่องทางอื่น", exact: true })).toBeVisible();
@@ -153,7 +161,7 @@ test("investment safe path preserves finalized assessments across browser refres
 });
 
 test("real Quiz Pre/Post saves, resumes, submits and compares the frozen baseline", async ({ page }) => {
-  await account(page); await page.getByRole("link", { name: "Quiz", exact: true }).click();
+  await account(page); await page.getByRole("link", { name: "แบบทดสอบ", exact: true }).click();
   await expect(page.getByRole("heading", { name: "ลองวัดความรู้ก่อนและหลังฝึก" })).toBeVisible();
   async function round(mode: "Pre-test" | "Post-test") {
     await page.getByRole("button", { name: "เริ่ม " + mode, exact: true }).click();
