@@ -144,3 +144,21 @@ Sanitized receipt/status evidence and screenshots are local ignored artifacts un
 `frontend-artifacts/part2-preview/`. Synthetic accounts/history are retained. No environment,
 protection, database schema/migration or Production deployment was changed. A documentation/
 verification-harness follow-up commit does not change the verified runtime implementation.
+
+### Latest-deployment repeat: unresolved runtime failure
+
+The documentation/harness follow-up `d52da9dc5d30e9ead83588c82e4e5aeac7185baa` built READY
+as `dpl_AuG8h4FBAVk2HZZQFoFUKANhBngB`. A repeat was not consistently green: one run timed
+out rendering the catalog after authenticated refresh; the next passed registration,
+login, refresh and detail/prepare but POST `/api/scenarios/call-center/start` returned 500.
+The synthetic account remained authenticated. Do not describe the latest repeat as a
+passed end-to-end acceptance merely because the earlier implementation deployment passed.
+
+Read-only local runtime-adapter checks passed SELECT 1 and confirmed all four published
+v4 configurations exactly match the validated source templates. No database changes were
+made. The Vercel runtime-log connector returned 403 Forbidden (permission denied), not an
+empty log result. Consequently the start-500 root cause is UNCONFIRMED: MySQL availability,
+template drift, quota or a transaction timeout must not be asserted as its cause without
+the deployed error evidence. Runtime-log access or a sanitized trace for that start request
+is required to continue diagnosis. The harness now captures fixed failure-boundary labels,
+authentication/UI booleans and a masked screenshot, and stops on a non-201 start response.

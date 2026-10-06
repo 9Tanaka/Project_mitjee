@@ -14,12 +14,12 @@ assert.equal(new URL(origin).origin, origin, "PREVIEW_ORIGIN_ONLY");
 assert.equal(new URL(origin).hostname, "mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app", "APPROVED_PREVIEW_ONLY");
 const report = { status: "FAILED", scope: "Real Preview browser/Auth.js/MySQL/Groq; no intercepted API", origin,
   stages: [], requests: [], sessionId: null, receipts: [], result: null, browserErrorCount: 0, failureStage: null, failureCategory: null };
-let stage = "PUBLIC_ACCESS", check = "public-page", browser, database;
+let stage = "PUBLIC_ACCESS", check = "public-page", browser, database, page, context;
 try {
   browser = await chromium.launch();
-  const context = await browser.newContext({ baseURL: origin, viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
+  context = await browser.newContext({ baseURL: origin, viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
   context.setDefaultTimeout(60000);
-  const page = await context.newPage();
+  page = await context.newPage();
   page.on("pageerror", () => report.browserErrorCount++);
   page.on("response", response => {
     const path = new URL(response.url()).pathname;
@@ -54,7 +54,10 @@ try {
   await page.getByRole("link", { name: "เริ่มจำลองสถานการณ์", exact: true }).click();
   check = "prepare-disabled-until-acknowledged";
   await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true })).toBeDisabled();
+  const startResponse = page.waitForResponse(r => new URL(r.url()).pathname === "/api/scenarios/call-center/start" && r.request().method() === "POST");
   await page.getByRole("checkbox").check(); await page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true }).click();
+  check = "start-training-http";
+  assert.equal((await startResponse).status(), 201, "START_HTTP_FAILURE");
   check = "start-training-navigation";
   await expect(page).toHaveURL(/\/training\/[a-f0-9]+$/);
   const sessionId = new URL(page.url()).pathname.split("/").at(-1); report.sessionId = sessionId;
@@ -106,7 +109,21 @@ try {
   await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click(); await expect(page).toHaveURL(origin + "/login");
   assert.equal((await context.request.get(`/api/training/${sessionId}`)).status(), 401); report.stages.push(stage);
   assert.equal(report.browserErrorCount, 0); report.status = "PASSED";
-} catch (error) { report.failureStage = stage; report.failureCheck = check; report.failureCategory = error instanceof assert.AssertionError ? "VERIFICATION_ASSERTION" : stage === "OWNED_RECEIPT_EVIDENCE" ? "DATABASE_EVIDENCE_ERROR" : "BROWSER_OR_RUNTIME_FAILURE"; process.exitCode = 1; }
+} catch (error) {
+  report.failureStage = stage; report.failureCheck = check;
+  report.failureCategory = error instanceof assert.AssertionError ? "VERIFICATION_ASSERTION" : stage === "OWNED_RECEIPT_EVIDENCE" ? "DATABASE_EVIDENCE_ERROR" : "BROWSER_OR_RUNTIME_FAILURE";
+  if (page && context) {
+    const path = new URL(page.url()).pathname;
+    report.failurePage = ["/login", "/register", "/scenarios"].includes(path) ? path : "OTHER_APP_ROUTE";
+    report.failureUI = { catalogVisible: await page.getByRole("heading", { name: "ฝึกรับสาย Call Center", exact: true }).isVisible().catch(() => false),
+      loginVisible: await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).isVisible().catch(() => false),
+      authLoading: await page.getByText("กำลังตรวจสอบการเข้าสู่ระบบ…", { exact: true }).isVisible().catch(() => false) };
+    try { const auth = await context.request.get("/api/auth/session"); report.authenticatedAtFailure = !!(await auth.json()).user?.id; } catch { report.authenticatedAtFailure = null; }
+    await mkdir("frontend-artifacts/part2-preview", { recursive: true });
+    await page.screenshot({ path: "frontend-artifacts/part2-preview/failure.png", fullPage: true, mask: [page.locator("input")] }).catch(() => {});
+  }
+  process.exitCode = 1;
+}
 finally { await database?.$disconnect().catch(() => {}); await browser?.close(); }
 await mkdir("frontend-artifacts/part2-preview", { recursive: true });
 await writeFile("frontend-artifacts/part2-preview/verification.json", JSON.stringify(report, null, 2));
