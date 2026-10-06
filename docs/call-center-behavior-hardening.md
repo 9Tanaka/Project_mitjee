@@ -81,7 +81,52 @@ declared closed. Post-deployment verification is tracked below.
   fallback (`ERROR` receipt, sanitized provider category INVALID_OUTPUT). CC-N02 was
   not reached because verification correctly stopped at the failed boundary. No
   all-story live-success claim; no provider/model substitution or schema relaxation.
-- Post-deployment start/browser acceptance: pending. No production or environment changes.
+- Post-deployment start/browser acceptance: PASSED for runtime commit `26c1122b5a9191fc0aacdafb899659b35c15dfde`;
+  deployment `dpl_8r7JF3RsdnyiLAT6HVbxe2EfPXbM` was READY and the stable Preview alias
+  pointed to it. No production or environment changes.
+
+### Deployed acceptance evidence
+
+Stable Preview: https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app
+
+The start-only real browser/Auth.js diagnostic passed two fresh starts (`201`) and
+their exact idempotent replays (`200`), without AI requests. Fresh starts took 22,941 /
+13,780 ms; replays 7,939 / 7,937 ms. The separate full browser flow then passed a third
+fresh start: register, login, session persistence across refresh, catalog, detail,
+safety acknowledgment, answer, caller opening, Thai text chat, identity/context beats,
+explicit contextual hangup, result and logout. Protected resume returned `401` after logout.
+There were no intercepted API calls, mock authentication or unexpected browser errors.
+
+Owned MySQL read confirmed template v5, COMPLETED / END_SCENARIO, zero critical events,
+one opening action, one official categorical PASSED result and `trainingScore=null`.
+This path ended at the first meaningful contextual decision; it is not a deployed
+acceptance claim for every later branch or mastery of the whole category. Refusal,
+caution, verification, normal completion and critical branches are covered by regression
+and local UI verification, not by this one deployed session.
+
+All four persisted receipts had `usedFallback=false` and `failureReason=null`:
+
+| Receipt | State | Attempts |
+| --- | --- | --- |
+| caller-opening | CALL_CONNECTED | 1 |
+| user text turn | CALL_CONNECTED | 2 |
+| caller-state-IDENTITY_CLAIM | IDENTITY_CLAIM | 1 |
+| caller-state-CONTEXT_CLAIM | CONTEXT_CLAIM | 1 |
+
+The recovered second attempt independently verifies the new terminal-failure metadata
+semantics on real Groq/MySQL. Its earlier provider error category is not persisted;
+it must not be inferred from `attempts=2`.
+
+Artifacts (ignored, local): `frontend-artifacts/part2-preview/start-only-v5.json` and
+`frontend-artifacts/part2-preview/verification.json`. Synthetic accounts and histories
+remain intact; no destructive cleanup was performed.
+
+**500 status:** NOT REPRODUCED in this bounded post-deployment sample (three starts,
+two exact replays and the complete tested browser path). Startup initialization was
+hardened, and current start acceptance is green. The historical 500 root cause remains
+UNCONFIRMED; this is not proof that intermittent errors cannot recur. Preview latency
+is still high and has not been declared fixed. New closed-category diagnostics allow
+future occurrences to be attributed without exposing raw error data.
 
 No Voice/WebSocket runtime work, database schema changes, numeric scoring changes,
 21-story expansion or Evidence Popup work is included. A pre-existing WebSocket test
