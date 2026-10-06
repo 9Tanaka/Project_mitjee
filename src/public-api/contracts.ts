@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { phoneDto } from "./phone.js";
+export { openingRequest } from "./phone.js";
 
 export const publicId = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
 export const revision = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -36,6 +38,7 @@ export const sessionDto = z.strictObject({
   currentStatePublicLabel: z.string(), revision,
   messages: z.array(z.strictObject({ turnId: publicId, role: z.enum(["user", "character"]), text: z.string().max(8000) })),
   availableActions: z.array(publicActionDto),
+  phone: phoneDto.optional(),
 });
 export const mutationDto = z.strictObject({ session: sessionDto, duplicate: z.boolean() });
 export const messageDto = z.strictObject({

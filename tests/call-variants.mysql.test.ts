@@ -44,8 +44,9 @@ describe.skipIf(!url)("Call variant concurrency on real MySQL", () => {
     const winner = a.duplicate ? "SCAM_CALL" : "NORMAL_CALL";
     expect(row.variant).toBe(winner);
     expect(row.revision).toBe(0);
+    expect(row.state).toBe("INCOMING_CALL");
     expect(await clients[1]!.trainingSession.count({ where: { id: row.id } })).toBe(1);
-    expect(await clients[1]!.sessionOpportunity.count({ where: { sessionId: row.id } })).toBe(1);
+    expect(await clients[1]!.sessionOpportunity.count({ where: { sessionId: row.id } })).toBe(0);
     expect(await clients[1]!.trainingAction.count({ where: { sessionId: row.id } })).toBe(0);
     expect(await clients[1]!.trainingEvent.count({ where: { sessionId: row.id } })).toBe(0);
     const reloaded = await createApplication(new PrismaTrainingRepository(clients[1]!), new MockScenarioModelProvider(), Date.now,

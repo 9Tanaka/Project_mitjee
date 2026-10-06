@@ -6,11 +6,14 @@ import type { AuthenticatedPrincipal, SubmitActionInput, SendMessageInput, QuitT
 import { ApplicationError } from "./errors.js";
 import { actionBindings, playableTemplates, registeredTemplates, publicScenario } from "./catalog.js";
 import { projectResult, projectSession } from "./projections.js";
+import { CALL_STORIES } from "../domain/constants.js";
+import { callStoryRegistry, type CallStoryId } from "../fixtures/call-center-foundation.js";
 
 export type CallVariantSelector = () => "NORMAL_CALL" | "SCAM_CALL";
 export class TrainingApplicationService {
   constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator,
-    private readonly selectCallVariant: CallVariantSelector = () => randomInt(2) === 0 ? "NORMAL_CALL" : "SCAM_CALL") {}
+    private readonly selectCallVariant: CallVariantSelector = () => randomInt(2) === 0 ? "NORMAL_CALL" : "SCAM_CALL",
+    private readonly selectCallStory?: () => CallStoryId) {}
   listScenarios() { return playableTemplates.map(publicScenario); }
   scenario(id: string) {
     const template = playableTemplates.find(t => t.id === id);
@@ -29,8 +32,17 @@ export class TrainingApplicationService {
     try { return { session: await this.resume(id, user), duplicate: true }; }
     catch (error) { if (!(error instanceof DomainError) || error.code !== "SESSION_NOT_FOUND") throw error; }
     const base = playableTemplates.find(t => t.id === scenarioId)!;
-    const variant = base.category === "CALL_CENTER" ? this.selectCallVariant() : base.variant;
-    const template = registeredTemplates.find(t => t.id === scenarioId && t.version === base.version && t.variant === variant);
+    let template;
+    if (base.category === "CALL_CENTER") {
+      let storyId = this.selectCallStory?.();
+      if (!storyId) {
+        const variant = this.selectCallVariant();
+        const eligible = CALL_STORIES.filter(story => callStoryRegistry[story].variant === variant);
+        storyId = eligible[randomInt(eligible.length)]!;
+      }
+      if (!(CALL_STORIES as readonly string[]).includes(storyId)) throw new ApplicationError("INVALID_STATE");
+      template = registeredTemplates.find(t => t.version === base.version && t.callCenter?.storyId === storyId);
+    } else template = registeredTemplates.find(t => t.id === scenarioId && t.version === base.version && t.variant === base.variant);
     if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
     let duplicate = false;
     try { await this.core.start(id, user.id, template.id, template.version, template.variant); }
@@ -45,14 +57,28 @@ export class TrainingApplicationService {
     return projectSession(s, await this.core.getSessionTemplate(id, user.id));
   }
   async action(id: string, user: AuthenticatedPrincipal, input: SubmitActionInput) {
-    await this.snapshot(id, user);
+    const snapshot = await this.snapshot(id, user);
     const t = await this.core.getSessionTemplate(id, user.id);
     // Resolve against the pinned version, not just currently visible actions, so old retries still replay.
     const binding = actionBindings(t).find(b => b.public.id === input.actionDefinitionId);
     if (!binding) throw new ApplicationError("INVALID_ACTION");
+    if (!snapshot.actions.some(a => a.id === input.actionId)) {
+      if (snapshot.revision !== input.expectedRevision) throw new DomainError("REVISION_CONFLICT");
+      if (binding.state !== snapshot.state) throw new ApplicationError("INVALID_STATE");
+    }
     const reply = await this.core.submit({ sessionId: id, ownerId: user.id, actionId: input.actionId,
       expectedRevision: input.expectedRevision, action: binding.toDomain(input.payload) });
+    if (t.callCenter && binding.toDomain(input.payload).kind === "PROGRESS" && binding.state === "INCOMING_CALL") {
+      await this.dialogue.openCall({ sessionId: id, ownerId: user.id, expectedRevision: reply.session.revision });
+      return { session: await this.resume(id, user), duplicate: reply.duplicate };
+    }
     return { session: projectSession(reply.session, t), duplicate: reply.duplicate };
+  }
+  async opening(id: string, user: AuthenticatedPrincipal, input: { expectedRevision: number }) {
+    await this.snapshot(id, user);
+    const reply = await this.dialogue.openCall({ sessionId: id, ownerId: user.id, expectedRevision: input.expectedRevision });
+    return { session: await this.resume(id, user), duplicate: reply.duplicate,
+      turn: { turnId: reply.turn.id, committedRevision: reply.turn.committedRevision, characterMessage: reply.turn.response.character_message } };
   }
   async message(id: string, user: AuthenticatedPrincipal, input: SendMessageInput) {
     await this.snapshot(id, user);

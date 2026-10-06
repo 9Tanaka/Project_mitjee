@@ -6,6 +6,7 @@ import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { validateTemplate } from "../src/domain/template-validator.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { additionalScamScenarios } from "../src/fixtures/scam-scenarios.js";
+import { startHistoricalCall } from "./call-foundation.helpers.js";
 
 type App = Awaited<ReturnType<typeof createApplication>>;
 const learner = { id: "learner" };
@@ -19,8 +20,8 @@ async function act(app: App, session: Awaited<ReturnType<App["resume"]>>, label:
   return (await app.action(session.sessionId, learner, { actionId: randomUUID(), expectedRevision: session.revision,
     actionDefinitionId: definition.id, payload })).session;
 }
-async function fullSafePath(app: App, scenarioId: string) {
-  let session = await start(app, scenarioId);
+async function fullSafePath(app: App, scenarioId: string, initial?: Awaited<ReturnType<App["resume"]>>) {
+  let session = initial ?? await start(app, scenarioId);
   session = await act(app, session, "ตรวจสอบผู้ติดต่อ", { choiceId: "o1" });
   session = await act(app, session, "พิจารณาข้ออ้างต่อ", {});
   session = await act(app, session, "สัญญาณเตือนในข้ออ้าง", { selectedEvidenceIds: ["o1", "o2"] });
@@ -45,8 +46,11 @@ describe("additional playable scam scenarios", () => {
   });
 
   it.each(additionalScamScenarios)("$id: full safe path, early stop, review and critical paths", async template => {
-    const app = await createApplication(new InMemoryTrainingRepository(), new MockScenarioModelProvider(), Date.now, () => "SCAM_CALL");
-    const safe = await fullSafePath(app, template.id);
+    const repository = new InMemoryTrainingRepository();
+    const app = await createApplication(repository, new MockScenarioModelProvider(), Date.now, () => "SCAM_CALL");
+    // New Call Center foundation has its own journey tests. Preserve this full v2 story regression.
+    const begin = () => template.category === "CALL_CENTER" ? startHistoricalCall(repository, app, learner, "SCAM_CALL") : start(app, template.id);
+    const safe = await fullSafePath(app, template.id, await begin());
     expect(safe.status).toBe("COMPLETED");
     const safeResult = await app.result(safe.sessionId, learner);
     expect(safeResult.outcome).toBe("PASSED");
@@ -55,7 +59,7 @@ describe("additional playable scam scenarios", () => {
     expect(safeResult.decisionSummary?.checkpoints).toHaveLength(4);
     expect(JSON.stringify(safeResult)).not.toContain("ruleId");
 
-    let early = await start(app, template.id);
+    let early = await begin();
     const stop = early.availableActions.find(a => a.label.includes("อย่างปลอดภัย") && a.input === "NONE");
     expect(stop).toBeDefined();
     early = (await app.action(early.sessionId, learner, { actionId: randomUUID(), expectedRevision: early.revision,
@@ -64,7 +68,7 @@ describe("additional playable scam scenarios", () => {
     expect(earlyResult.outcome).toBe("PASSED");
     expect(earlyResult.decisionSummary?.encountered).toBe(0);
 
-    let review = await start(app, template.id);
+    let review = await begin();
     review = await act(app, review, "ตรวจสอบผู้ติดต่อ", { choiceId: "o3" });
     review = await act(app, review, "พิจารณาข้ออ้างต่อ", {});
     review = await act(app, review, "สัญญาณเตือนในข้ออ้าง", { selectedEvidenceIds: ["o1", "o2"] });
@@ -75,7 +79,7 @@ describe("additional playable scam scenarios", () => {
     review = await act(app, review, "จบสถานการณ์", {});
     expect((await app.result(review.sessionId, learner)).outcome).toBe("NEEDS_PRACTICE");
 
-    let critical = await start(app, template.id);
+    let critical = await begin();
     critical = await act(app, critical, "ตรวจสอบผู้ติดต่อ", { choiceId: "o1" });
     critical = await act(app, critical, "พิจารณาข้ออ้างต่อ", {});
     critical = await act(app, critical, "สัญญาณเตือนในข้ออ้าง", { selectedEvidenceIds: ["o1", "o2"] });

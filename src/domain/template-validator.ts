@@ -1,4 +1,5 @@
-import { DECISION_POINTS, SKILLS } from "./constants.js";
+import { CALL_STATES, DECISION_POINTS, LEGACY_STATES, SKILLS } from "./constants.js";
+import { terminalState } from "./call-center.js";
 import { isCritical } from "./event-registry.js";
 import { scenarioTemplateSchema } from "./schema.js";
 import type { ScenarioTemplate } from "./schema.js";
@@ -18,6 +19,20 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   requireRule(parsed.success, parsed.success ? "" : parsed.error.message);
   const t = parsed.data;
   const decisionRules = t.evaluationMode === "DECISION_RULES_V1";
+  const terminal = terminalState(t);
+  if (t.callCenter) {
+    const { storyId, topic } = t.callCenter;
+    requireRule(t.category === "CALL_CENTER" && decisionRules && t.publicActionBindings && t.initialState === "INCOMING_CALL", "Invalid phone template");
+    requireRule(!!t.characterRole, "Phone templates require a character role");
+    requireRule(t.variant === (storyId.startsWith("CC-N") ? "NORMAL_CALL" : "SCAM_CALL"), "Story/variant mismatch");
+    requireRule(topic === (["CC-01", "CC-N01"].includes(storyId) ? "PARCEL" : "BANK"), "Story/topic mismatch");
+    requireRule(t.states.every(s => (CALL_STATES as readonly string[]).includes(s.id)), "Phone templates require Call Center states");
+    requireRule(t.states.find(s => s.id === "INCOMING_CALL")?.transitions.some(e => e.id === "ANSWER_CALL" && e.target === "CALL_CONNECTED"), "Missing answer-call edge");
+    requireRule(t.states.find(s => s.id === "INCOMING_CALL")?.transitions.length === 1, "Incoming call cannot bypass answer");
+    requireRule(t.opportunities.every(o => !["INCOMING_CALL", "CALL_CONNECTED"].includes(o.state)), "Incoming/opening cannot create checkpoints");
+  } else {
+    requireRule(t.initialState === "contact" && t.states.every(s => (LEGACY_STATES as readonly string[]).includes(s.id)), "Legacy templates require legacy states");
+  }
   requireRule(!t.publicFeedbackEnabled || decisionRules, "Public feedback requires decision rules");
   requireRule(!t.publicActionBindings || (decisionRules && t.publicFeedbackEnabled && !!t.description), "Public bindings require described decision rules");
   unique(t.states.map(s => s.id), "state");
@@ -33,13 +48,13 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
 
   const states = new Map(t.states.map(s => [s.id, s]));
   const opportunities = new Map(t.opportunities.map(o => [o.id, o]));
-  requireRule(states.has(t.initialState) && states.has("end_scenario"), "Missing initial/terminal state");
-  requireRule(states.get("end_scenario")!.transitions.length === 0, "Terminal state has outgoing transitions");
+  requireRule(states.has(t.initialState) && states.has(terminal), "Missing initial/terminal state");
+  requireRule(states.get(terminal)!.transitions.length === 0, "Terminal state has outgoing transitions");
 
   for (const o of t.opportunities) {
     if (t.publicFeedbackEnabled) requireRule(!!o.publicCheckpointLabel && !!o.unassessedFeedback, `Missing public checkpoint feedback: ${o.id}`);
     const state = states.get(o.state);
-    requireRule(state && o.state !== "end_scenario", `Invalid opportunity state: ${o.id}`);
+    requireRule(state && o.state !== terminal, `Invalid opportunity state: ${o.id}`);
     if (o.skill === "W") {
       if (t.publicFeedbackEnabled) requireRule(!!o.safeFeedback && !!o.reviewFeedback, `Missing warning feedback: ${o.id}`);
       if (decisionRules) requireRule(o.assessmentRule !== undefined, `Missing warning assessment rule: ${o.id}`);
@@ -89,7 +104,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
       if (t.publicActionBindings) requireRule(!!tr.publicLabel, `Missing public transition label: ${tr.id}`);
       requireRule(!tr.earlySafeResolution || (decisionRules && tr.safeResolution && tr.requiresFinalized.length === 0 && tr.requiresEvents.length === 0), `Invalid early safe resolution: ${tr.id}`);
       requireRule(states.has(tr.target), `Unknown target ${tr.target}`);
-      requireRule(tr.safeResolution === (tr.target === "end_scenario"), "Only safe-resolution transitions may target end_scenario");
+      requireRule(tr.safeResolution === (tr.target === terminal), "Only safe-resolution transitions may target terminal state");
       for (const id of tr.requiresFinalized) requireRule(opportunities.has(id), `Unknown guard opportunity: ${id}`);
     }
   }
@@ -104,7 +119,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
     const nextEligible = new Set(eligible);
     t.opportunities.filter(o => o.state === stateId).forEach(o => nextEligible.add(o.id));
     const state = states.get(stateId)!;
-    if (stateId !== "end_scenario") requireRule(state.transitions.length > 0, `Nonterminal dead end: ${stateId}`);
+    if (stateId !== terminal) requireRule(state.transitions.length > 0, `Nonterminal dead end: ${stateId}`);
     for (const tr of state.transitions) {
       for (const id of tr.requiresFinalized) requireRule(nextEligible.has(id), `Guard references ineligible opportunity ${id} on path ${[...path, stateId].join(" -> ")}`);
       // Event guards must be producible on this path by a noncritical explicit action.

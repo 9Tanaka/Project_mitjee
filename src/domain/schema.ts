@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js";
+import { CALL_STORIES, CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js";
 
 const id = z.string().min(1).max(120).regex(/^[a-zA-Z0-9_-]+$/);
 const event = z.enum(EVENT_CODES);
@@ -52,7 +52,9 @@ export const scenarioTemplateSchema = z.strictObject({
   title: z.string().min(1), description: z.string().min(1).optional(), learningObjectives: z.array(z.string().min(1)).min(1),
   // Optional for existing Core-only versions. Dialogue-enabled versions must specify a role.
   characterRole: z.string().min(1).max(1000).optional(),
-  fictionalOnly: z.literal(true), initialState: z.literal("contact"),
+  fictionalOnly: z.literal(true), initialState: z.enum(["contact", "INCOMING_CALL"]),
+  callCenter: z.strictObject({ storyId: z.enum(CALL_STORIES), topic: z.enum(["PARCEL", "BANK"]),
+    openingFallback: z.string().trim().min(1).max(8000) }).optional(),
   states: z.array(z.strictObject({
     id: z.enum(STATES), objective: z.string().min(1),
     allowedBehaviors: z.array(z.string()), forbiddenBehaviors: z.array(z.string()),

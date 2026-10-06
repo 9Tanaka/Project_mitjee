@@ -7,9 +7,10 @@ import { smsPhishingFixture } from "../fixtures/sms-phishing.js";
 import { smsPhishingDialogueFixture } from "../fixtures/sms-phishing-dialogue.js";
 import { smsPhishingDecisionRulesFixture } from "../fixtures/sms-phishing-decision-rules.js";
 import { TrainingApplicationService, type CallVariantSelector } from "./training-service.js";
+import type { CallStoryId } from "../fixtures/call-center-foundation.js";
 
 export async function createApplication(repository: TrainingRepository,
-  provider: ScenarioModelProvider, now: () => number = Date.now, selectCallVariant?: CallVariantSelector) {
+  provider: ScenarioModelProvider, now: () => number = Date.now, selectCallVariant?: CallVariantSelector, selectCallStory?: () => CallStoryId) {
   const core = await TrainingCore.create([smsPhishingFixture, smsPhishingDialogueFixture, smsPhishingDecisionRulesFixture, ...registeredTemplates], repository, now);
-  return new TrainingApplicationService(core, new ScenarioDialogueOrchestrator(core, provider), selectCallVariant);
+  return new TrainingApplicationService(core, new ScenarioDialogueOrchestrator(core, provider), selectCallVariant, selectCallStory);
 }

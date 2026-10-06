@@ -9,11 +9,13 @@ import { VoiceApplicationService } from "../src/application/voice-service.js";
 import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { encodePcmWav } from "../src/frontend/microphone.js";
+import { startHistoricalCall } from "./call-foundation.helpers.js";
 
 beforeEach(() => vi.clearAllMocks());
 async function harness(category = "call-center-scam") {
   const repository = new InMemoryTrainingRepository(), app = await createApplication(repository, new MockScenarioModelProvider(), Date.now, () => "NORMAL_CALL");
-  const user = { id: randomUUID() }, session = (await app.start(category, user, { startId: randomUUID(), expectedRevision: 0 })).session;
+  const user = { id: randomUUID() }, session = category === "call-center-scam" ? await startHistoricalCall(repository, app, user)
+    : (await app.start(category, user, { startId: randomUUID(), expectedRevision: 0 })).session;
   const stt = { transcribe: vi.fn().mockResolvedValue("ขอชี้แจงบริบทสมมติครับ") }, tts = { synthesize: vi.fn().mockRejectedValue(new Error("raw")) };
   injected.runtime.mockReturnValue({ authenticator: { authenticate: async () => user }, application: async () => app });
   injected.voice.mockReturnValue(new VoiceApplicationService(app, stt, tts));

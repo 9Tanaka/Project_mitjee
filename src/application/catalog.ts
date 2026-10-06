@@ -8,17 +8,20 @@ import { transitionAvailable } from "../domain/state-machine.js";
 import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js";
 import { additionalScamScenarios } from "../fixtures/scam-scenarios.js";
 import { normalCallFixture } from "../fixtures/normal-call.js";
+import { CALL_PUBLIC_ID, callCenterFoundationTemplates } from "../fixtures/call-center-foundation.js";
+import { callerOpening } from "../domain/call-center.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
-// Published v1 configuration remains unchanged for old sessions. New starts use neutral v2 copy.
+// Published v1/v2 configurations remain unchanged for old sessions. New starts use v3.
 const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenarios.find(t => t.category === "CALL_CENTER")!),
   version: 2, description: "ฝึกตรวจสอบและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง",
   characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
 const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
-export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER" ? callScamV2 : t)];
-export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates,
-  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2];
+export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER"
+  ? { ...callCenterFoundationTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
+export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates.filter(t => !t.callCenter),
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -39,7 +42,7 @@ function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
 }
 const none = z.strictObject({});
 export function publicScenario(t: ScenarioTemplate): PublicScenario {
-  if (t.category === "CALL_CENTER") return { id: t.id, category: t.category, title: "ฝึกรับสาย Call Center",
+  if (t.category === "CALL_CENTER") return { id: CALL_PUBLIC_ID, category: t.category, title: "ฝึกรับสาย Call Center",
     description: "ฝึกตรวจสอบบริบทและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง", learningObjectives: ["ตรวจสอบผู้โทร", "พิจารณาหลักฐาน", "เลือกวิธีตอบสนอง"], communicationMode: "TEXT_VOICE" };
   return { id: t.id, category: t.category, title: t.title,
     description: t.description ?? "ฝึกตรวจข้อความเกี่ยวกับพัสดุสมมติ และเลือกการตอบสนองในสถานการณ์ SMS / Phishing",
@@ -138,10 +141,13 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
       toDomain(input) { return { kind: "SIMULATED_ACTION", ruleId: rule.id,
         confirmed: payload(z.strictObject({ confirmed: z.boolean() }), input).confirmed }; } });
   }
+  if (t.callCenter) result.push({ state: "INCOMING_CALL", public: { id: "decline-call", label: "ปฏิเสธสาย", input: "NONE", options: [] },
+    toDomain(input) { payload(none, input); return { kind: "DECLINE_CALL" }; } });
   return result;
 }
 export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
+  if (t.callCenter && s.state === "CALL_CONNECTED" && !callerOpening(s)) return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
     o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null)) &&
     (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId))).map(b => b.public);

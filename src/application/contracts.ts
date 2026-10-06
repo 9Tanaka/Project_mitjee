@@ -26,6 +26,12 @@ export interface PublicTrainingSession {
   currentStatePublicLabel: string; revision: number;
   messages: { turnId: string; role: "user" | "character"; text: string }[];
   availableActions: PublicActionDefinition[];
+  phone?: {
+    state: "INCOMING_CALL" | "CALL_CONNECTED" | "IDENTITY_CLAIM" | "CONTEXT_CLAIM" | "PRESSURE" | "MAIN_REQUEST" | "PLAYER_DECISION" | "INDEPENDENT_VERIFICATION" | "CALL_ENDING" | "END_SCENARIO";
+    callStatus: "RINGING" | "CONNECTED" | "ENDING" | "ENDED" | "DECLINED";
+    callerLabel: "ผู้ติดต่อไม่รู้จัก"; openingStatus: "NOT_STARTED" | "PENDING" | "READY";
+    availableInternalApps: { id: "MESSAGES" | "BANK" | "PARCEL" | "CALLER_INFO"; label: string; availability: "FOUNDATION" }[];
+  };
 }
 export interface PublicTrainingResult {
   sessionId: string; revision: number;

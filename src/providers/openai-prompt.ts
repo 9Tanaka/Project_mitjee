@@ -26,22 +26,26 @@ export function buildOpenAIRequest(context: ScenarioAIContext, model: string): R
   // Explicit allowlist: never serialize the context object or runtime extras wholesale.
   const scenarioContext = {
     scenario: { templateId: context.scenario.templateId, templateVersion: context.scenario.templateVersion,
-      category: context.scenario.category, variant: context.scenario.variant, title: sanitizeMessage(context.scenario.title) },
+      category: context.scenario.category, variant: context.scenario.variant, title: sanitizeMessage(context.scenario.title),
+      ...(context.scenario.callStoryId ? { callStoryId: context.scenario.callStoryId } : {}) },
     currentState: context.currentState, characterRole: sanitizeMessage(context.characterRole),
     allowedBehaviors: context.allowedBehaviors.map(sanitizeMessage),
     forbiddenBehaviors: context.forbiddenBehaviors.map(sanitizeMessage),
   };
-  const message = (m: ScenarioAIContext["currentUserMessage"], limit: number) => ({
+  const message = (m: NonNullable<ScenarioAIContext["currentUserMessage"]>, limit: number) => ({
     role: m.role, state: m.state, text: sanitizeMessage(m.text).slice(0, limit),
   });
   const dialogue = {
     recentSanitizedMessages: context.recentSanitizedMessages.slice(-12).map(m => message(m, 2000)),
-    currentUserMessage: message(context.currentUserMessage, 8000),
+    currentUserMessage: context.currentUserMessage ? message(context.currentUserMessage, 8000) : null,
   };
   return {
     model, stream: false, store: false, max_output_tokens: 1200,
     instructions: SCENARIO_DIALOGUE_INSTRUCTIONS,
-    input: [
+    input: context.turnKind === "CHARACTER_OPENING" ? [
+      { role: "developer", content: JSON.stringify({ ...scenarioContext, turnKind: "CHARACTER_OPENING",
+        instruction: "The learner has answered the simulated call. Speak first using only the authored opening behavior. No user message exists. Do not evaluate an action." }) },
+    ] : [
       { role: "developer", content: JSON.stringify(scenarioContext) },
       { role: "user", content: JSON.stringify(dialogue) },
     ],

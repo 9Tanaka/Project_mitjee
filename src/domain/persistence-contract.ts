@@ -1,6 +1,7 @@
 import { sanitizeMessage } from "../dialogue/sanitize.js";
 import { DomainError } from "./types.js";
 import type { TrainingSession } from "./types.js";
+import { CALL_OPENING_TURN_ID, OPENING_INPUT_KEY } from "./call-center.js";
 
 // MySQL JSON may reorder object keys; equality must not depend on serialization order.
 export function canonical(value: unknown): string {
@@ -18,11 +19,22 @@ export function assertSanitized(session: TrainingSession): void {
   for (const message of session.messages) check(message.text);
   for (const turn of session.dialogueTurns) {
     check(turn.response.character_message);
+    if (turn.inputKey === OPENING_INPUT_KEY) {
+      const action = session.actions.find(a => a.id === `dialogue:${turn.id}`);
+      const messages = session.messages.filter(m => m.turnId === turn.id);
+      if (turn.id !== CALL_OPENING_TURN_ID || action?.kind !== "CHARACTER_OPENING" || action.fingerprint !== OPENING_INPUT_KEY ||
+        messages.length !== 1 || messages[0]?.role !== "character" || turn.state !== "CALL_CONNECTED") throw new DomainError("INVALID_TURN_RECEIPT");
+      continue;
+    }
     const input: unknown = JSON.parse(turn.inputKey);
     if (!input || typeof input !== "object" || !("sanitizedText" in input) || typeof input.sanitizedText !== "string") throw new DomainError("INVALID_TURN_RECEIPT");
     check(input.sanitizedText);
   }
   for (const action of session.actions) {
+    if (action.kind === "CHARACTER_OPENING") {
+      const turn = session.dialogueTurns.find(t => `dialogue:${t.id}` === action.id);
+      if (!turn || turn.id !== CALL_OPENING_TURN_ID || turn.inputKey !== OPENING_INPUT_KEY || action.fingerprint !== OPENING_INPUT_KEY) throw new DomainError("INVALID_TURN_RECEIPT");
+    }
     if (action.kind === "FREE_TEXT" && action.fingerprint !== "FREE_TEXT") {
       const turn = session.dialogueTurns.find(t => `dialogue:${t.id}` === action.id);
       if (!turn || turn.inputKey !== action.fingerprint) throw new DomainError("INVALID_TURN_RECEIPT");

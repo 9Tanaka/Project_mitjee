@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EVENT_CODES } from "./constants.js";
 import { validateCriticalAction } from "./critical-failure.js";
 import { isCritical } from "./event-registry.js";
+import { callerOpening } from "./call-center.js";
 import type { ScenarioTemplate } from "./schema.js";
 import { requireOpenOpportunity } from "./session-opportunity.js";
 import type { ActionInput } from "./training-action.js";
@@ -27,7 +28,18 @@ export function validateAction(action: ActionInput, session: TrainingSession, t:
     ruleId: action.kind, critical: false, correctWarningSignIds: [], incorrectEvidenceIds: [], assessment: null,
   };
   // Free-text interpretation can NEVER commit a Critical Failure (even explicit-sounding text).
-  if (action.kind === "FREE_TEXT") return { ...plan, status: "CLARIFICATION_REQUIRED" };
+  if (action.kind === "FREE_TEXT") {
+    if (t.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerOpening(session))) throw new DomainError("CALL_NOT_READY");
+    return { ...plan, status: "CLARIFICATION_REQUIRED" };
+  }
+  if (action.kind === "CHARACTER_OPENING") {
+    if (!t.callCenter || session.state !== "CALL_CONNECTED" || callerOpening(session)) throw new DomainError("INVALID_STATE");
+    return plan;
+  }
+  if (action.kind === "DECLINE_CALL") {
+    if (!t.callCenter || session.state !== "INCOMING_CALL") throw new DomainError("INVALID_STATE");
+    return plan;
+  }
   if (action.kind === "PROGRESS" || action.kind === "QUIT_SESSION") return plan;
   if (action.kind === "SIMULATED_ACTION") {
     const rule = validateCriticalAction(action, session, t)!;

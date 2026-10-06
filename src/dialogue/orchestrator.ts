@@ -5,6 +5,7 @@ import { DomainError } from "../domain/types.js";
 import { aiCharacterResponseSchema, ProviderRefusal } from "./contracts.js";
 import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAIContext, ScenarioModelProvider } from "./contracts.js";
 import { freezeData, sanitizeMessage } from "./sanitize.js";
+import { CALL_OPENING_TURN_ID, OPENING_INPUT_KEY, callerOpening } from "../domain/call-center.js";
 
 const messageRequestSchema = z.strictObject({
   sessionId: z.string().min(1), ownerId: z.string().min(1),
@@ -70,12 +71,14 @@ export class ScenarioDialogueOrchestrator {
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== request.expectedRevision) throw new DomainError("REVISION_CONFLICT");
     const template = await this.core.getSessionTemplate(request.sessionId, request.ownerId);
+    if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerOpening(session))) throw new DomainError("CALL_NOT_READY");
     if (!template.characterRole) throw new DomainError("DIALOGUE_ROLE_NOT_CONFIGURED");
     const state = template.states.find(s => s.id === session.state)!;
     const context: ScenarioAIContext = freezeData({
       scenario: {
         templateId: template.id, templateVersion: template.version,
         category: template.category, variant: template.variant, title: sanitizeMessage(template.title),
+        ...(template.callCenter ? { callStoryId: template.callCenter.storyId } : {}),
       },
       currentState: session.state,
       characterRole: sanitizeMessage(template.characterRole),
@@ -87,6 +90,37 @@ export class ScenarioDialogueOrchestrator {
       currentUserMessage: { id: `${request.turnId}:user`, role: "user", text, state: session.state },
     });
 
+    const generated = await this.generate(context, state.fallbackMessage, `${request.sessionId}:${request.turnId}`);
+    // Candidate inspection, EventValidator and domain rules run inside this CAS commit.
+    return this.core.commitDialogueTurn({ ...request, sanitizedUserMessage: text, ...generated });
+  }
+
+  async openCall(input: { sessionId: string; ownerId: string; expectedRevision: number }): Promise<DialogueReply> {
+    if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) throw new DomainError("INVALID_COMMAND");
+    const session = await this.core.resume(input.sessionId, input.ownerId);
+    const template = await this.core.getSessionTemplate(input.sessionId, input.ownerId);
+    if (!template.callCenter) throw new DomainError("INVALID_STATE");
+    const prior = callerOpening(session);
+    if (prior) {
+      if (prior.inputKey !== OPENING_INPUT_KEY) throw new DomainError("IDEMPOTENCY_CONFLICT");
+      return { turn: copy(prior), duplicate: true };
+    }
+    if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
+    if (session.revision !== input.expectedRevision) throw new DomainError("REVISION_CONFLICT");
+    if (session.state !== "CALL_CONNECTED") throw new DomainError("CALL_NOT_READY");
+    const state = template.states.find(s => s.id === session.state)!;
+    const context: ScenarioAIContext = freezeData({
+      scenario: { templateId: template.id, templateVersion: template.version, category: template.category,
+        variant: template.variant, title: sanitizeMessage(template.title), callStoryId: template.callCenter.storyId },
+      currentState: session.state, characterRole: sanitizeMessage(template.characterRole!),
+      allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
+      recentSanitizedMessages: [], currentUserMessage: null, turnKind: "CHARACTER_OPENING",
+    });
+    const generated = await this.generate(context, template.callCenter.openingFallback, `${session.id}:${CALL_OPENING_TURN_ID}`);
+    return this.core.commitCharacterOpening({ ...input, kind: "CHARACTER_OPENING", turnId: CALL_OPENING_TURN_ID, ...generated });
+  }
+
+  private async generate(context: ScenarioAIContext, fallback: string, requestKey: string) {
     let response: AICharacterResponse | null = null;
     let failureReason: ProviderFailure | null = null;
     let attempts = 0;
@@ -94,11 +128,12 @@ export class ScenarioDialogueOrchestrator {
       attempts++;
       try {
         const raw: unknown = await withDeadline(signal => this.provider.generateCharacterResponse(context, {
-          signal, requestId: `${request.sessionId}:${request.turnId}:${attempt + 1}`,
+          signal, requestId: `${requestKey}:${attempt + 1}`,
         }), this.timeoutMs);
         const output = aiCharacterResponseSchema.safeParse(raw);
         if (!output.success) throw new AttemptFailure("INVALID_OUTPUT");
         if (output.data.safety.contains_real_pii || output.data.safety.out_of_scope) throw new AttemptFailure("SAFETY_BLOCKED");
+        if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");
         response = { ...output.data, character_message: sanitizeMessage(output.data.character_message) };
         if (!response.character_message) throw new AttemptFailure("INVALID_OUTPUT");
         break;
@@ -112,17 +147,11 @@ export class ScenarioDialogueOrchestrator {
     const usedFallback = response === null;
     if (!response) {
       response = {
-        character_message: sanitizeMessage(state.fallbackMessage), observed_intent: "unknown",
+        character_message: sanitizeMessage(fallback), observed_intent: "unknown",
         candidate_event: "NONE", event_code: null, confidence: null,
         safety: { contains_real_pii: false, out_of_scope: false },
       };
     }
-    // Candidate inspection, EventValidator and domain rules run inside this CAS commit.
-    // A concurrent action/expiry invalidates the response; it must not be returned as current.
-    return this.core.commitDialogueTurn({
-      sessionId: request.sessionId, ownerId: request.ownerId, turnId: request.turnId,
-      expectedRevision: request.expectedRevision, sanitizedUserMessage: text, response,
-      usedFallback, failureReason, attempts,
-    });
+    return { response, usedFallback, failureReason, attempts };
   }
 }

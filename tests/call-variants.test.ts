@@ -14,6 +14,7 @@ import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { normalCallFixture } from "../src/fixtures/normal-call.js";
 import { additionalScamScenarios } from "../src/fixtures/scam-scenarios.js";
 import { startRequest } from "../src/public-api/contracts.js";
+import { startHistoricalCall } from "./call-foundation.helpers.js";
 
 const owner = { id: "call-learner" };
 const callId = normalCallFixture.id;
@@ -26,6 +27,12 @@ async function appHarness(selector: CallVariantSelector = () => "NORMAL_CALL") {
   const app = await createApplication(repository, new MockScenarioModelProvider(), now, selector);
   const started = await app.start(callId, owner, { startId: randomUUID(), expectedRevision: 0 });
   return { app, repository, session: started.session };
+}
+async function historicalHarness() {
+  const repository = new InMemoryTrainingRepository();
+  const app = await createApplication(repository, new MockScenarioModelProvider(), now);
+  const session = await startHistoricalCall(repository, app, owner, "NORMAL_CALL", now);
+  return { app, repository, session };
 }
 async function choose(app: App, session: PublicTrainingSession, label: string, payload: PublicActionPayload = {}) {
   const action = session.availableActions.find(a => a.label === label);
@@ -123,7 +130,8 @@ describe("backend-selected Call Center variants", () => {
     expect(persisted.revision).toBe(0);
     expect(persisted.actions).toEqual([]);
     expect(persisted.events).toEqual([]);
-    expect(persisted.opportunities).toHaveLength(1);
+    expect(persisted.opportunities).toHaveLength(0);
+    expect(persisted.state).toBe("INCOMING_CALL");
     const retry = await app.start(callId, owner, input);
     expect(retry).toEqual({ session: first.session, duplicate: true });
     expect(select).toHaveBeenCalledTimes(2);
@@ -149,7 +157,7 @@ describe("legitimate NORMAL_CALL assessment", () => {
   });
 
   it.each(["o1", "o2"])("empty warning selection and appropriate ending %s yield PASSED", async ending => {
-    const { app, repository, session } = await appHarness();
+    const { app, repository, session } = await historicalHarness();
     const completed = await finishNormal(app, session, { ending });
     expect(completed.status).toBe("COMPLETED");
     const result = await app.result(completed.sessionId, owner);
@@ -166,7 +174,7 @@ describe("legitimate NORMAL_CALL assessment", () => {
     { label: "all neutral details flagged", options: { evidence: ["o1", "o2"] }, skill: "w1" },
     { label: "unclear fictional-information scope", options: { d2: "o2" }, skill: "d2" },
   ])("$label produces NEEDS_PRACTICE without Critical Failure", async ({ options, skill }) => {
-    const { app, repository, session } = await appHarness();
+    const { app, repository, session } = await historicalHarness();
     const completed = await finishNormal(app, session, options);
     const result = await app.result(completed.sessionId, owner);
     expect(result.outcome).toBe("NEEDS_PRACTICE");
@@ -245,7 +253,7 @@ describe("SCAM_CALL authority regression", () => {
       event_code: "DISCLOSE_OTP", confidence: 100, safety: { contains_real_pii: false, out_of_scope: false },
     } }]);
     const app = await createApplication(repository, provider, now, () => "SCAM_CALL");
-    let session = (await app.start(callId, owner, { startId: randomUUID(), expectedRevision: 0 })).session;
+    let session = await startHistoricalCall(repository, app, owner, "SCAM_CALL", now);
     session = await choose(app, session, "ตรวจสอบผู้ติดต่อ", { choiceId: "o1" });
     session = await choose(app, session, "พิจารณาข้ออ้างต่อ");
     session = await choose(app, session, "สัญญาณเตือนในข้ออ้าง", { selectedEvidenceIds: ["o1", "o2"] });

@@ -36,7 +36,7 @@ export function publicError(error: unknown) {
   else if (error instanceof DomainError) {
     if (["SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
     else if (actionErrors.has(error.code)) code = "INVALID_ACTION";
-    else if (["INVALID_TRANSITION", "CHECKPOINT_OR_EVENT_REQUIRED"].includes(error.code)) code = "INVALID_STATE";
+    else if (["INVALID_STATE", "CALL_NOT_READY", "INVALID_TRANSITION", "CHECKPOINT_OR_EVENT_REQUIRED"].includes(error.code)) code = "INVALID_STATE";
     else if (["INVALID_COMMAND", "INVALID_MESSAGE_REQUEST", "INVALID_TURN_ID", "EMPTY_SANITIZED_MESSAGE", "RESERVED_ACTION_ID"].includes(error.code)) code = "INVALID_REQUEST";
   }
   const [status, message] = errors[code];

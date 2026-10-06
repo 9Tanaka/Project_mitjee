@@ -6,7 +6,7 @@ import * as dto from "./dto.js";
 import * as mapping from "./mapping.js";
 
 export const MAX_BODY_BYTES = 64 * 1024; // Includes JSON escapes for an 8,000-code-unit message.
-export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "action" | "quit" | "result";
+export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "opening" | "action" | "quit" | "result";
 function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input);
   if (!result.success) throw new ApiError("INVALID_REQUEST");
@@ -27,13 +27,14 @@ export function route(endpoint: Endpoint) {
       if (request.method === "POST" && request.headers.has("origin") && request.headers.get("origin") !== url.origin) throw new ApiError("INVALID_ORIGIN");
       const params = await context.params;
       const scenarioId = ["scenario", "start"].includes(endpoint) ? parse(dto.scenarioParams, params).scenarioId : "";
-      const sessionId = ["resume", "message", "action", "quit", "result"].includes(endpoint) ? parse(dto.sessionParams, params).sessionId : "";
+      const sessionId = ["resume", "message", "opening", "action", "quit", "result"].includes(endpoint) ? parse(dto.sessionParams, params).sessionId : "";
       // Validate before constructing database dependencies. No raw body/error logging.
-      const input = ["start", "message", "action", "quit"].includes(endpoint) ? await readJson(request, MAX_BODY_BYTES) : undefined;
+      const input = ["start", "message", "opening", "action", "quit"].includes(endpoint) ? await readJson(request, MAX_BODY_BYTES) : undefined;
       const start = endpoint === "start" ? parse(dto.startRequest, input) : undefined;
       const message = endpoint === "message" ? parse(dto.messageRequest, input) : undefined;
       const action = endpoint === "action" ? parse(dto.actionRequest, input) : undefined;
       const quit = endpoint === "quit" ? parse(dto.quitRequest, input) : undefined;
+      const opening = endpoint === "opening" ? parse(dto.openingRequest, input) : undefined;
       const app = await runtime.application();
       switch (endpoint) {
         case "scenarios": return success(z.array(dto.scenarioDto), app.listScenarios().map(mapping.toScenarioDto));
@@ -44,6 +45,7 @@ export function route(endpoint: Endpoint) {
         }
         case "resume": return success(dto.sessionDto, mapping.toSessionDto(await app.resume(sessionId, user)));
         case "message": return success(dto.messageDto, mapping.toMessageDto(await app.message(sessionId, user, mapping.toMessageInput(message!))));
+        case "opening": return success(dto.messageDto, mapping.toMessageDto(await app.opening(sessionId, user, { expectedRevision: opening!.expectedRevision })));
         case "action": return success(dto.mutationDto, mapping.toMutationDto(await app.action(sessionId, user, mapping.toActionInput(action!))));
         case "quit": return success(dto.mutationDto, mapping.toMutationDto(await app.quit(sessionId, user, mapping.toQuitInput(quit!))));
         case "result": return success(dto.resultDto, mapping.toResultDto(await app.result(sessionId, user)));

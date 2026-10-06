@@ -13,6 +13,7 @@ export class VoiceApplicationService {
     const session = await this.app.resume(id, user);
     if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
+    if (session.phone && (session.phone.callStatus !== "CONNECTED" || session.phone.openingStatus !== "READY")) throw new DomainError("CALL_NOT_READY");
     return session;
   }
   async send(id: string, user: AuthenticatedPrincipal, input: VoiceInput, signal?: AbortSignal,

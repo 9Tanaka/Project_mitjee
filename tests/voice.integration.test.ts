@@ -139,9 +139,7 @@ describe("voice application with in-memory domain and fake speech", () => {
     const h = await voiceHarness();
     h.stt.transcribe.mockImplementation(() => new Promise(() => {}));
     const controllers = Array.from({ length: 20 }, () => new AbortController());
-    const sessions = await Promise.all(Array.from({ length: 21 }, (_, index) => h.app.start("call-center-scam", h.owner, {
-      startId: `bounded-${index}`, expectedRevision: 0,
-    })));
+    const sessions = await Promise.all(Array.from({ length: 21 }, async () => ({ session: await h.startCall() })));
     const work = controllers.map((controller, index) => h.voice.send(sessions[index]!.session.sessionId, h.owner,
       { ...h.input, turnId: `parallel-${index}` }, controller.signal).catch(error => error));
     await vi.waitFor(() => expect(h.stt.transcribe).toHaveBeenCalledTimes(20));

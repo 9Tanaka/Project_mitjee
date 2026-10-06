@@ -1,9 +1,16 @@
 // Demo State Model derived from the scenario progression in Proposal v4.
 // These enum names are Demo Assumptions, not directly attributed requirements.
-export const STATES = [
+export const LEGACY_STATES = [
   "contact", "build_trust", "create_pressure", "request_action",
   "user_verification", "end_scenario",
 ] as const;
+// Call Center phone/story engine superset; authored templates choose reachable subsets.
+export const CALL_STATES = [
+  "INCOMING_CALL", "CALL_CONNECTED", "IDENTITY_CLAIM", "CONTEXT_CLAIM", "PRESSURE",
+  "MAIN_REQUEST", "PLAYER_DECISION", "INDEPENDENT_VERIFICATION", "CALL_ENDING", "END_SCENARIO",
+] as const;
+export const STATES = [...LEGACY_STATES, ...CALL_STATES] as const;
+export const CALL_STORIES = ["CC-01", "CC-02", "CC-N01", "CC-N02"] as const;
 
 export const CATEGORIES = [
   "CALL_CENTER", "INVESTMENT", "ROMANCE", "ECOMMERCE", "SMS_PHISHING",

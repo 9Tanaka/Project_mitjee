@@ -11,7 +11,8 @@ import { fingerprint, parseAction } from "./domain/training-action.js";
 import { DomainError } from "./domain/types.js";
 import type { TrainingSession, ValidationStatus } from "./domain/types.js";
 import { aiCharacterResponseSchema } from "./dialogue/contracts.js";
-import type { CommitDialogueTurn, DialogueReply } from "./dialogue/contracts.js";
+import type { CommitCharacterOpening, CommitDialogueTurn, DialogueReply } from "./dialogue/contracts.js";
+import { CALL_OPENING_TURN_ID, OPENING_INPUT_KEY, terminalState } from "./domain/call-center.js";
 
 export interface SubmitCommand {
   sessionId: string;
@@ -90,12 +91,14 @@ export class TrainingCore {
 
   async submit(command: SubmitCommand): Promise<{ session: TrainingSession; duplicate: boolean; validationStatus: ValidationStatus }> {
     if (command.actionId.startsWith("dialogue:")) throw new DomainError("RESERVED_ACTION_ID");
+    if (parseAction(command.action).kind === "CHARACTER_OPENING") throw new DomainError("RESERVED_ACTION_ID");
     return this.apply(command);
   }
 
   /** Backend-owned atomic commit, after the asynchronous provider has completed. */
   async commitDialogueTurn(input: CommitDialogueTurn): Promise<DialogueReply> {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(input.turnId)) throw new DomainError("INVALID_TURN_ID");
+    if (input.turnId === CALL_OPENING_TURN_ID) throw new DomainError("RESERVED_ACTION_ID");
     const response = aiCharacterResponseSchema.parse(input.response);
     const committed = await this.apply({
       sessionId: input.sessionId, ownerId: input.ownerId, actionId: `dialogue:${input.turnId}`,
@@ -105,10 +108,20 @@ export class TrainingCore {
     return { turn: copy(committed.session.dialogueTurns.find(t => t.id === input.turnId)!), duplicate: committed.duplicate };
   }
 
-  private async apply(command: SubmitCommand, dialogue?: CommitDialogueTurn): Promise<{ session: TrainingSession; duplicate: boolean; validationStatus: ValidationStatus }> {
+  /** No fabricated user input: one character message/receipt/action in the same CAS commit. */
+  async commitCharacterOpening(input: CommitCharacterOpening): Promise<DialogueReply> {
+    if (input.turnId !== CALL_OPENING_TURN_ID) throw new DomainError("INVALID_TURN_ID");
+    const response = aiCharacterResponseSchema.parse(input.response);
+    const committed = await this.apply({ sessionId: input.sessionId, ownerId: input.ownerId,
+      actionId: `dialogue:${input.turnId}`, expectedRevision: input.expectedRevision, action: { kind: "CHARACTER_OPENING" } }, { ...input, response });
+    return { turn: copy(committed.session.dialogueTurns.find(t => t.id === input.turnId)!), duplicate: committed.duplicate };
+  }
+
+  private async apply(command: SubmitCommand, dialogue?: CommitDialogueTurn | CommitCharacterOpening): Promise<{ session: TrainingSession; duplicate: boolean; validationStatus: ValidationStatus }> {
     if (!command.actionId || command.actionId.length > 120 || !Number.isInteger(command.expectedRevision)) throw new DomainError("INVALID_COMMAND");
     const action = parseAction(command.action);
-    const key = dialogue ? JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
+    const opening = dialogue && "kind" in dialogue;
+    const key = dialogue ? opening ? OPENING_INPUT_KEY : JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
     const session = await this.resume(command.sessionId, command.ownerId);
     const previous = session.actions.find(a => a.id === command.actionId);
     if (previous) {
@@ -122,7 +135,7 @@ export class TrainingCore {
     const stateBefore = session.state;
     const candidateStatus = dialogue ? inspectCandidate({
       eventCode: dialogue.response.event_code, opportunityId: null,
-      sourceMessageId: `${dialogue.turnId}:user`, confidence: dialogue.response.confidence,
+      sourceMessageId: `${dialogue.turnId}:${opening ? "character" : "user"}`, confidence: dialogue.response.confidence,
     }, session, template) : "NO_EVENT";
     const plan = validateAction(action, session, template);
 
@@ -146,8 +159,8 @@ export class TrainingCore {
 
     if (plan.critical) {
       session.status = "FAILED";
-      session.state = "end_scenario";
-    } else if (action.kind === "QUIT_SESSION") {
+      session.state = terminalState(template);
+    } else if (action.kind === "QUIT_SESSION" || action.kind === "DECLINE_CALL") {
       session.status = "ABANDONED";
     } else if (action.kind === "PROGRESS") {
       const next = advanceState(session, template, action.transitionId);
@@ -162,10 +175,12 @@ export class TrainingCore {
       at: now, validationStatus: plan.status,
     });
     if (dialogue) {
-      session.messages.push(
-        { id: `${dialogue.turnId}:user`, role: "user", text: dialogue.sanitizedUserMessage, state: stateBefore, turnId: dialogue.turnId, at: now },
-        { id: `${dialogue.turnId}:character`, role: "character", text: dialogue.response.character_message, state: stateBefore, turnId: dialogue.turnId, at: now },
-      );
+      if (!opening) {
+        session.messages.push(
+          { id: `${dialogue.turnId}:user`, role: "user", text: dialogue.sanitizedUserMessage, state: stateBefore, turnId: dialogue.turnId, at: now },
+        );
+      }
+      session.messages.push({ id: `${dialogue.turnId}:character`, role: "character", text: dialogue.response.character_message, state: stateBefore, turnId: dialogue.turnId, at: now });
       session.dialogueTurns.push({
         id: dialogue.turnId, inputKey: key, state: stateBefore, templateVersion: session.templateVersion,
         snapshotRevision: command.expectedRevision, committedRevision: session.revision + 1,

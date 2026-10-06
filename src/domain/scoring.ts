@@ -3,6 +3,7 @@ import type { ScenarioTemplate } from "./schema.js";
 import { DomainError } from "./types.js";
 import type { DecisionFeedback, SessionOpportunity, Skill, SkillScore, TrainingResult, TrainingSession } from "./types.js";
 import { parseAction } from "./training-action.js";
+import { terminalState } from "./call-center.js";
 
 export function calculateSkillScores(session: TrainingSession): Record<Skill, SkillScore> {
   const scores = {} as Record<Skill, SkillScore>;
@@ -73,7 +74,7 @@ function calculateDecisionResult(session: TrainingSession, t: ScenarioTemplate, 
     ...(checkpoints ? { critical: criticalEventIds.length, checkpoints } : {}),
   };
   const outcome = criticalEventIds.length > 0 ? "CRITICAL_FAILURE"
-    : session.status !== "COMPLETED" || session.state !== "end_scenario" || summary.unassessed > 0 ? "UNASSESSED"
+    : session.status !== "COMPLETED" || session.state !== terminalState(t) || summary.unassessed > 0 ? "UNASSESSED"
       : summary.review > 0 ? "NEEDS_PRACTICE" : "PASSED";
   const review = encountered.find(o => o.assessment === "REVIEW");
   const mapping = outcome === "CRITICAL_FAILURE" ? t.recommendations.critical

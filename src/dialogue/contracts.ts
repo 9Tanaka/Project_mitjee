@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EVENT_CODES } from "../domain/constants.js";
 import type { ScenarioCategory, ScenarioState, ValidationStatus } from "../domain/types.js";
+import type { CALL_STORIES } from "../domain/constants.js";
 
 export const aiCharacterResponseSchema = z.strictObject({
   character_message: z.string().trim().min(1).max(8000),
@@ -33,13 +34,15 @@ export interface ScenarioAIContext {
     readonly category: ScenarioCategory;
     readonly variant: "DEFAULT" | "NORMAL_CALL" | "SCAM_CALL";
     readonly title: string;
+    readonly callStoryId?: typeof CALL_STORIES[number];
   };
   readonly currentState: ScenarioState;
   readonly characterRole: string;
   readonly allowedBehaviors: readonly string[];
   readonly forbiddenBehaviors: readonly string[];
   readonly recentSanitizedMessages: readonly SanitizedMessage[];
-  readonly currentUserMessage: SanitizedMessage;
+  readonly currentUserMessage: SanitizedMessage | null;
+  readonly turnKind?: "USER_MESSAGE" | "CHARACTER_OPENING";
 }
 
 export interface ScenarioModelProvider {
@@ -86,6 +89,7 @@ export interface CommitDialogueTurn {
   failureReason: ProviderFailure | null;
   attempts: number;
 }
+export type CommitCharacterOpening = Omit<CommitDialogueTurn, "sanitizedUserMessage"> & { kind: "CHARACTER_OPENING" };
 
 export interface DialogueReply {
   turn: DialogueTurn;

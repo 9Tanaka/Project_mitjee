@@ -218,7 +218,7 @@ describe("provider boundary and sanitized context", () => {
     expect(context.characterRole).toBe(smsPhishingDialogueFixture.characterRole);
     expect(context.allowedBehaviors).toEqual(smsPhishingDialogueFixture.states[0]!.allowedBehaviors);
     expect(context.forbiddenBehaviors).toEqual(smsPhishingDialogueFixture.states[0]!.forbiddenBehaviors);
-    expect(context.recentSanitizedMessages).toHaveLength(2); expect(context.currentUserMessage.text).toBe("ขอสนทนาต่อ");
+    expect(context.recentSanitizedMessages).toHaveLength(2); expect(context.currentUserMessage?.text).toBe("ขอสนทนาต่อ");
     for (const secret of ["learner@example.com", "081-234-5678", "847193", "Secret123", "bank.invalid"]) {
       expect(JSON.stringify(spy.mock.calls)).not.toContain(secret);
       expect(JSON.stringify((await h.current()))).not.toContain(secret);
