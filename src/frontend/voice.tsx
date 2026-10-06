@@ -14,12 +14,13 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
   const [phase, setPhase] = useState<"idle" | "opening" | "recording" | "sending">("idle");
   const [notice, setNotice] = useState(""); const [audioUrl, setAudioUrl] = useState<string>();
   const [retry, setRetry] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [speaker, setSpeaker] = useState(false), [audioBusy, setAudioBusy] = useState(false), [playing, setPlaying] = useState(false);
   const audioElement = useRef<HTMLAudioElement>(null), audioRequest = useRef<AbortController | null>(null);
   const spokenTurn = useRef<string | null>(null);
   const latestCharacter = session.messages.filter(m => m.role === "character").at(-1);
   const voicePhase = phase === "opening" ? "REQUESTING_PERMISSION" : phase === "recording" ? "RECORDING" : phase === "sending" ? "PROCESSING_STT"
-    : playing ? "PLAYING_CALLER_AUDIO" : audioBusy ? "WAITING_FOR_CALLER" : notice.includes("ไม่ได้") || notice.includes("ไม่สามารถ") ? "ERROR" : "IDLE";
+    : playing ? "PLAYING_CALLER_AUDIO" : audioBusy ? "WAITING_FOR_CALLER" : failed ? "ERROR" : "IDLE";
   const recorder = useRef<Recording | null>(null), controller = useRef<AbortController | null>(null);
   const pending = useRef<VoiceRequest | null>(null), mounted = useRef(true), url = useRef<string | null>(null);
   const finishRecording = useRef<() => void>(() => {});
@@ -31,6 +32,7 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
   }; }, []);
   const displayAudio = (reply: Pick<VoiceResponse, "audioBase64" | "audioStatus">) => {
     audioElement.current?.pause(); setPlaying(false);
+    setFailed(reply.audioStatus === "UNAVAILABLE");
     if (url.current) URL.revokeObjectURL(url.current); url.current = null; setAudioUrl(undefined);
     if (reply.audioBase64) {
       const bytes = Uint8Array.from(atob(reply.audioBase64), c => c.charCodeAt(0));
@@ -43,12 +45,12 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
     if (url.current) URL.revokeObjectURL(url.current);
     url.current = null; setAudioUrl(undefined);
     const abort = new AbortController(); audioRequest.current = abort;
-    spokenTurn.current = turnId; setAudioBusy(true);
+    spokenTurn.current = turnId; setAudioBusy(true); setFailed(false);
     try {
       const reply = await httpSpeech(session.sessionId, turnId, abort.signal);
       if (mounted.current && !abort.signal.aborted) displayAudio(reply);
     } catch {
-      if (mounted.current && !abort.signal.aborted) setNotice("ไม่สามารถเล่นเสียงได้ในขณะนี้ คุณยังสามารถอ่านบทสนทนาและฝึกต่อได้");
+      if (mounted.current && !abort.signal.aborted) { setFailed(true); setNotice("ไม่สามารถเล่นเสียงได้ในขณะนี้ คุณยังสามารถอ่านบทสนทนาและฝึกต่อได้"); }
     } finally { if (mounted.current && audioRequest.current === abort) setAudioBusy(false); }
   }
   useEffect(() => {
@@ -67,7 +69,7 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
     void audioElement.current?.play()?.catch(() => { if (mounted.current) setNotice("กดเล่นเสียงผู้โทรเมื่อพร้อม คุณยังอ่านบทสนทนาและฝึกต่อได้"); });
   }, [speaker, audioUrl]);
   async function transmit(input: VoiceRequest) {
-    setPhase("sending"); setRetry(false); onBusy(true);
+    setPhase("sending"); setRetry(false); setFailed(false); onBusy(true);
     const abort = new AbortController(); controller.current = abort;
     try {
       let reply: VoiceResponse;
@@ -83,6 +85,7 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
     } catch (error) {
       if (!mounted.current || abort.signal.aborted) return;
       const failure = error instanceof ApiFailure ? error : new ApiFailure("NETWORK_ERROR", 0);
+      setFailed(true);
       setNotice(failure.message); setRetry(failure.uncertain || failure.code === "VOICE_BUSY");
       if (failure.code === "REVISION_CONFLICT" || failure.code === "IDEMPOTENCY_CONFLICT") { pending.current = null; await reload(); }
       else if (!failure.uncertain && failure.code !== "VOICE_BUSY") pending.current = null;
@@ -93,7 +96,7 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
     if (!recording) return;
     let audio: Uint8Array;
     try { audio = await recording.stop(); }
-    catch { setNotice("บันทึกเสียงไม่สำเร็จ ลองอีกครั้งหรือพิมพ์ข้อความแทน"); setPhase("idle"); onBusy(false); return; }
+    catch { setFailed(true); setNotice("บันทึกเสียงไม่สำเร็จ ลองอีกครั้งหรือพิมพ์ข้อความแทน"); setPhase("idle"); onBusy(false); return; }
     if (!mounted.current) return;
     const input: VoiceRequest = { turnId: crypto.randomUUID(), expectedRevision: session.revision, mime: "audio/wav", audioBase64: encodeAudio(audio) };
     pending.current = input; await transmit(input);
@@ -102,7 +105,7 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
   async function begin() {
     if (disabled || phase !== "idle") return;
     audioRequest.current?.abort(); setAudioBusy(false); audioElement.current?.pause(); setPlaying(false);
-    setPhase("opening"); setNotice(""); setRetry(false); pending.current = null; onBusy(true);
+    setPhase("opening"); setNotice(""); setRetry(false); setFailed(false); pending.current = null; onBusy(true);
     const abort = new AbortController(); controller.current = abort;
     try {
       const recording = await startMicrophone(() => { if (controller.current === abort) {
@@ -113,11 +116,12 @@ export function VoiceControls({ session, disabled, onReply, onBusy, reload }: {
       setPhase("recording"); setNotice("พูดหนึ่งประโยคด้วยข้อมูลสมมติ แล้วกดหยุดและส่ง (ไม่เกิน 30 วินาที)");
     } catch (error) { if (mounted.current && controller.current === abort && !abort.signal.aborted) {
       const name = error && typeof error === "object" && "name" in error && typeof error.name === "string" ? error.name : "";
+      setFailed(true);
       setNotice(name === "NotAllowedError" ? "ไม่ได้รับอนุญาตใช้ไมโครโฟน ลองอีกครั้งหรือพิมพ์ข้อความแทน" : name === "NotFoundError" ? "ไม่พบไมโครโฟน พิมพ์ข้อความแทนหรือตรวจอุปกรณ์แล้วลองอีกครั้ง" : "เปิดไมโครโฟนไม่ได้ กรุณาตรวจสิทธิ์หรือใช้ช่องข้อความ");
       setPhase("idle"); onBusy(false);
     } }
   }
-  function cancel() { controller.current?.abort(); recorder.current?.cancel(); recorder.current = null; pending.current = null; setRetry(false); setPhase("idle"); onBusy(false); setNotice("หยุดโหมดเสียงแล้ว สามารถพิมพ์ข้อความต่อได้"); }
+  function cancel() { controller.current?.abort(); recorder.current?.cancel(); recorder.current = null; pending.current = null; setRetry(false); setFailed(false); setPhase("idle"); onBusy(false); setNotice("หยุดโหมดเสียงแล้ว สามารถพิมพ์ข้อความต่อได้"); }
   return <section className="phone-voice-controls space-y-3" aria-label="เสียง Call Center" data-phase={voicePhase}>
     <label className="phone-speaker-toggle"><input type="checkbox" checked={speaker} onChange={e => { setSpeaker(e.target.checked); if (!e.target.checked) { audioRequest.current?.abort(); audioElement.current?.pause(); setPlaying(false); setAudioBusy(false); } }} /> เปิดเสียงผู้โทร</label>
     <p className="voice-status" role="status">{phase === "idle" ? playing ? "กำลังเล่นเสียงผู้โทร" : audioBusy ? "กำลังเตรียมเสียงผู้โทร" : "ไมโครโฟนปิด · พร้อมเมื่อคุณเริ่ม" : phase === "opening" ? "กำลังขออนุญาตไมโครโฟน" : phase === "recording" ? "กำลังรับเสียงจากไมโครโฟน" : "กำลังถอดเสียงและรอคำตอบผู้โทร"}</p>

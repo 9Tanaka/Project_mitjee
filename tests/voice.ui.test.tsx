@@ -32,6 +32,7 @@ it.each(["NotAllowedError", "NotFoundError"])("%s microphone error permits a fre
   fake.start.mockRejectedValueOnce(new DOMException("PRIVATE", name)); setup();
   fireEvent.click(screen.getByText("กดเพื่อพูด"));
   await screen.findByText(name === "NotAllowedError" ? /ไม่ได้รับอนุญาตใช้ไมโครโฟน/ : /ไม่พบไมโครโฟน/);
+  expect(screen.getByLabelText("เสียง Call Center").getAttribute("data-phase")).toBe("ERROR");
   expect(fake.http).not.toHaveBeenCalled(); expect(fake.socket).not.toHaveBeenCalled();
   fireEvent.click(screen.getByText("กดเพื่อพูด")); await screen.findByText("หยุดและส่งเสียง");
 });

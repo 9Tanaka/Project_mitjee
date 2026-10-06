@@ -14,11 +14,11 @@ only bounded category timings; never SQL, credentials, certificate content or me
 
 | Operation | Before (ms) | After (ms) |
 | --- | --- | --- |
-| Cold-ish connection/probe, two clients | 696 / 403 | 515 / 375 |
-| Application initialization, 27 bounded publication checks | 1019 / 906 | 993 / 895 |
-| Fresh start, six samples | 2292, 2300, 2250, 2599, 2244, 2280 | 952, 958, 959, 883, 936, 951 |
-| Exact replay, six samples | 1278, 1266, 1263, 1293, 1253, 1315 | 721, 708, 730, 709, 693, 708 |
-| Resume, six samples | 963, 933, 960, 929, 961, 978 | 397, 365, 365, 387, 365, 361 |
+| Cold-ish connection/probe, two clients | 696 / 403 | 560 / 392 |
+| Application initialization, 27 bounded publication checks | 1019 / 906 | 1012 / 1168 |
+| Fresh start, six samples | 2292, 2300, 2250, 2599, 2244, 2280 | 961, 971, 969, 907, 951, 912 |
+| Exact replay, six samples | 1278, 1266, 1263, 1293, 1253, 1315 | 719, 717, 744, 779, 700, 719 |
+| Resume, six samples | 963, 933, 960, 929, 961, 978 | 382, 367, 372, 353, 353, 383 |
 
 Repository-controlled costs: duplicate owned-session reads, rereading a newly created
 aggregate via resume, and repeatedly loading validated immutable pinned templates.
@@ -83,3 +83,38 @@ GHSA-68fv-2mgg-jv7q; no unrelated dependency upgrade or automatic audit fix perf
 
 Historical intermittent Preview start 500 root cause remains **UNCONFIRMED**. New timings
 and successful bounded samples alone cannot establish that it is permanently fixed.
+
+### Local gates (6 October)
+
+Fresh npm ci/postinstall generation, prisma generate/validate, typecheck, full regression
+**833 passed / 49 skipped**, frontend **108**, auth **82**, AI **211**, speech **82** and
+WebSocket **20** passed. Targeted tests cover startup/cache, all-story runner, speech HTTP,
+voice non-authority, permission denial/no device, old/late audio, replay and bounded speech
+admission. Production build and client audit passed (69 JS artifacts); diff check passed.
+Local production UI/real in-memory services passed 120 screenshots / nine flow groups,
+375/768/1440 widths, no unexpected browser errors. This UI check is not real Auth/MySQL/
+Groq/Azure acceptance. Speech presentation shares the existing one-owner/session, 20-total
+admission set; it cannot fan out unlimited TTS requests.
+
+### Initial Preview attempt and transaction hardening
+
+`dpl_6fM2JQ8PyUwSkrdkoLkGzDJgRT9i` at `d66c30ffaba2f081874a6a12f5da5a07e5ecba25`
+was READY. Controlled CC-01 progressed through real registration/login/refresh/start,
+opening, Thai reply and context decisions, but `/opening` at PRESSURE returned **500**:
+`DATABASE_TRANSACTION` / `APPLICATION` (P2028 taxonomy). Owned DB read confirmed the
+PRESSURE character turn/receipt was already committed. This is a newly observed dialogue
+request failure, **not a reproduced historical start-500 root cause**. Runtime log connector
+returned 403; do not infer an exact expiry/driver root cause from the category alone.
+
+Aggregate reads formerly used Prisma's implicit transaction budget. Hardening makes the
+read budget explicitly finite at 15 seconds, retaining RepeatableRead; writes/publication
+remain finite at 10 seconds, with a 5-second maximum transaction acquisition wait. No
+CAS/ownership/rollback checks removed. P2028 logs contain only operation, category,
+elapsed/budget milliseconds; raw errors/meta/SQL/session IDs are not serialized.
+This defensive change and following acceptance must not be described as proof that the
+original intermittent start failure is permanently fixed.
+
+The separate real Preview start-only check on that deployment passed two fresh starts
+(6671 / 6251 ms), replays (4916 / 5256 ms), and resumes (2515 / 2682 ms), without AI.
+It materially improves the previous 13780–22941 ms starts / ~7937 ms replays, but is not
+a hard SLA. Cold function initialization was not independently isolated on Preview.

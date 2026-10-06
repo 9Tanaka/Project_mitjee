@@ -75,6 +75,20 @@ export class PrismaTrainingRepository implements TrainingRepository {
   }
   constructor(private readonly client: PrismaClient, private readonly options: PrismaRepositoryOptions = {}) {}
 
+  private async transaction<T>(operation: "PUBLISH" | "CREATE" | "GET" | "SAVE", run: (tx: Transaction) => Promise<T>,
+    options: { isolationLevel?: Prisma.TransactionIsolationLevel; timeout: number }): Promise<T> {
+    const startedAt = Date.now();
+    try { return await this.client.$transaction(run, { maxWait: 5_000, ...options }); }
+    catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2028") {
+        // Do not serialize error/meta/SQL/IDs. Logging must not replace the original failure.
+        try { console.error(JSON.stringify({ event: "training_transaction_failed", operation,
+          category: "DATABASE_TRANSACTION", durationMs: Math.max(0, Date.now() - startedAt), budgetMs: options.timeout })); } catch {}
+      }
+      throw error;
+    }
+  }
+
   async publish(input: ScenarioTemplate): Promise<void> {
     const template = validateTemplate(copy(input));
     const key = { templateId: template.id, version: template.version, variant: template.variant };
@@ -86,7 +100,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
       return;
     }
     try {
-      await this.client.$transaction(async tx => {
+      await this.transaction("PUBLISH", async tx => {
         const existing = await tx.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
         if (existing) {
           if (canonical(existing.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
@@ -94,7 +108,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
         }
         await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
         await tx.scenarioTemplateVersion.create({ data: { ...key, configuration: json(template) } });
-      });
+      }, { timeout: 10_000 });
       this.remember(template);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -121,11 +135,11 @@ export class PrismaTrainingRepository implements TrainingRepository {
     const snapshot = copy(session); assertSanitized(snapshot);
     await this.getTemplate(snapshot.templateId, snapshot.templateVersion, snapshot.variant);
     try {
-      await this.client.$transaction(async tx => {
+      await this.transaction("CREATE", async tx => {
         await tx.trainingSession.create({ data: header(snapshot) });
         await this.writeChildren(tx, snapshot);
         await this.options.beforeCommit?.();
-      });
+      }, { timeout: 10_000 });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new DomainError("SESSION_ALREADY_EXISTS");
       throw error;
@@ -134,18 +148,18 @@ export class PrismaTrainingRepository implements TrainingRepository {
 
   async get(id: string, ownerId: string): Promise<TrainingSession> {
     // include may execute multiple SELECTs; repeatable read gives one coherent snapshot.
-    return this.client.$transaction(async tx => {
+    return this.transaction("GET", async tx => {
       const row = await tx.trainingSession.findFirst({ where: { id, ownerId }, include });
       if (!row) throw new DomainError("SESSION_NOT_FOUND");
       return decode(row);
-    }, { isolationLevel: "RepeatableRead" });
+    }, { isolationLevel: "RepeatableRead", timeout: 15_000 });
   }
 
   async save(session: TrainingSession, expectedRevision: number): Promise<void> {
     const snapshot = copy(session); assertSanitized(snapshot);
     if (snapshot.revision !== expectedRevision + 1) throw new DomainError("REVISION_CONFLICT");
     try {
-      await this.client.$transaction(async tx => {
+      await this.transaction("SAVE", async tx => {
         // This conditional UPDATE is the linearization point and locks the session row.
         // Everything following it rolls back together, including the revision increment.
         const changed = await tx.trainingSession.updateMany({

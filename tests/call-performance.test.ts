@@ -1,10 +1,11 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createApplication } from "../src/application/composition.js";
 import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.js";
 import type { PrismaClient } from "../src/generated/prisma/client.js";
 import { smsPhishingFixture } from "../src/fixtures/sms-phishing.js";
+afterEach(() => vi.restoreAllMocks());
 it("fresh call start avoids rereading the newly-created aggregate; resume reads once", async () => {
   const repo = new InMemoryTrainingRepository(), app = await createApplication(repo, new MockScenarioModelProvider());
   const get = vi.spyOn(repo, "get"), user = { id: "profile-user" };
@@ -31,4 +32,22 @@ it("uncached invalid database JSON is rejected, never remembered", async () => {
   await expect(repo.getTemplate("invalid", 5, "SCAM_CALL")).rejects.toThrow();
   await expect(repo.getTemplate("invalid", 5, "SCAM_CALL")).rejects.toThrow();
   expect(findUnique).toHaveBeenCalledTimes(2);
+});
+it("owned aggregate read keeps repeatable-read with a finite remote-network transaction budget", async () => {
+  const findFirst = vi.fn().mockResolvedValue(null);
+  const transaction = vi.fn(async (run: (tx: unknown) => Promise<unknown>, _options: unknown) => run({ trainingSession: { findFirst } }));
+  const repo = new PrismaTrainingRepository({ $transaction: transaction } as unknown as PrismaClient);
+  await expect(repo.get("private-session-id", "private-owner-id")).rejects.toThrow("SESSION_NOT_FOUND");
+  expect(transaction.mock.calls[0]![1]).toEqual({ isolationLevel: "RepeatableRead", timeout: 15_000, maxWait: 5_000 });
+  expect(findFirst.mock.calls[0]![0].where).toEqual({ id: "private-session-id", ownerId: "private-owner-id" });
+});
+it("transaction diagnostics contain only operation/category/timing; original error still propagates", async () => {
+  const error = Object.assign(new Error("PRIVATE_SQL_PASSWORD_URL"), { code: "P2028", meta: { error: "PRIVATE_META" } });
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const repo = new PrismaTrainingRepository({ $transaction: vi.fn().mockRejectedValue(error) } as unknown as PrismaClient);
+  await expect(repo.get("private-id", "private-owner")).rejects.toBe(error);
+  expect(JSON.parse(log.mock.calls[0]![0])).toEqual({ event: "training_transaction_failed", operation: "GET", category: "DATABASE_TRANSACTION", durationMs: expect.any(Number), budgetMs: 15_000 });
+  expect(JSON.stringify(log.mock.calls)).not.toContain("PRIVATE");
+  log.mockImplementation(() => { throw new Error("LOGGER_FAILED"); });
+  await expect(repo.get("private-id", "private-owner")).rejects.toBe(error);
 });
