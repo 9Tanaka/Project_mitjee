@@ -20,7 +20,6 @@ export async function voiceRoute(request: Request, context: { params: Promise<Re
     if (!params.success || url.search) throw new ApiError("INVALID_REQUEST");
     voiceRateLimiter.take(user.id);
     const voice = getVoiceApplication(await runtime.application());
-    await voice.bind(params.data.sessionId, user);
     const input = voiceRequest.safeParse(await readJson(request, MAX_VOICE_JSON_BYTES, 10_000));
     if (!input.success) throw new ApiError("INVALID_REQUEST");
     const reply = await voice.send(params.data.sessionId, user, { ...input.data, audio: Buffer.from(input.data.audioBase64, "base64") }, request.signal);

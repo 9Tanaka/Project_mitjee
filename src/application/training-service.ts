@@ -52,7 +52,10 @@ export class TrainingApplicationService {
     } else template = registeredTemplates.find(t => t.id === scenarioId && t.version === base.version && t.variant === base.variant);
     if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
     let duplicate = false;
-    try { await this.core.start(id, user.id, template.id, template.version, template.variant); }
+    try {
+      const created = await this.core.start(id, user.id, template.id, template.version, template.variant);
+      return { session: projectSession(created, template), duplicate: false };
+    }
     catch (error) {
       if (!(error instanceof DomainError) || error.code !== "SESSION_ALREADY_EXISTS") throw error;
       duplicate = true;
@@ -60,12 +63,13 @@ export class TrainingApplicationService {
     return { session: await this.resume(id, user), duplicate };
   }
   async resume(id: string, user: AuthenticatedPrincipal) {
-    const s = await this.snapshot(id, user);
-    return projectSession(s, await this.core.getSessionTemplate(id, user.id));
+    const { session, template } = await this.core.getSessionContext(id, user.id);
+    if (session.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
+    return projectSession(session, template);
   }
   async action(id: string, user: AuthenticatedPrincipal, input: SubmitActionInput) {
-    const snapshot = await this.snapshot(id, user);
-    const t = await this.core.getSessionTemplate(id, user.id);
+    const { session: snapshot, template: t } = await this.core.getSessionContext(id, user.id);
+    if (snapshot.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
     // Resolve against the pinned version, not just currently visible actions, so old retries still replay.
     const binding = actionBindings(t).find(b => b.public.id === input.actionDefinitionId);
     if (!binding) throw new ApplicationError("INVALID_ACTION");
@@ -100,5 +104,9 @@ export class TrainingApplicationService {
     const reply = await this.core.submit({ ...input, sessionId: id, ownerId: user.id, action: { kind: "QUIT_SESSION" } });
     return { session: projectSession(reply.session, await this.core.getSessionTemplate(id, user.id)), duplicate: reply.duplicate };
   }
-  async result(id: string, user: AuthenticatedPrincipal) { return projectResult(await this.snapshot(id, user), await this.core.getSessionTemplate(id, user.id)); }
+  async result(id: string, user: AuthenticatedPrincipal) {
+    const { session, template } = await this.core.getSessionContext(id, user.id);
+    if (session.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
+    return projectResult(session, template);
+  }
 }

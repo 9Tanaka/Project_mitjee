@@ -51,8 +51,13 @@ export class TrainingCore {
 
   /** Trusted backend read; callers receive a detached copy, never a mutable live template. */
   async getSessionTemplate(sessionId: string, ownerId: string): Promise<ScenarioTemplate> {
+    return (await this.getSessionContext(sessionId, ownerId)).template;
+  }
+
+  /** One owned/lifecycle-checked snapshot and its pinned validated template per read. */
+  async getSessionContext(sessionId: string, ownerId: string) {
     const session = await this.resume(sessionId, ownerId);
-    return this.template(session.templateId, session.templateVersion, session.variant);
+    return { session, template: await this.template(session.templateId, session.templateVersion, session.variant) };
   }
 
   async start(id: string, ownerId: string, templateId: string, version: number, variant: ScenarioVariant = "DEFAULT"): Promise<TrainingSession> {

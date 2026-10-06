@@ -62,7 +62,7 @@ export class ScenarioDialogueOrchestrator {
     const request = parsed.data;
     const text = sanitizeMessage(request.text);
     if (!text) throw new DomainError("EMPTY_SANITIZED_MESSAGE");
-    const session = await this.core.resume(request.sessionId, request.ownerId);
+    const { session, template } = await this.core.getSessionContext(request.sessionId, request.ownerId);
     const prior = session.dialogueTurns.find(t => t.id === request.turnId);
     if (prior) {
       if (prior.inputKey !== JSON.stringify({ sanitizedText: text })) throw new DomainError("IDEMPOTENCY_CONFLICT");
@@ -70,7 +70,6 @@ export class ScenarioDialogueOrchestrator {
     }
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== request.expectedRevision) throw new DomainError("REVISION_CONFLICT");
-    const template = await this.core.getSessionTemplate(request.sessionId, request.ownerId);
     if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerTurnReady(session, template))) throw new DomainError("CALL_NOT_READY");
     if (!template.characterRole) throw new DomainError("DIALOGUE_ROLE_NOT_CONFIGURED");
     const state = template.states.find(s => s.id === session.state)!;
@@ -97,8 +96,7 @@ export class ScenarioDialogueOrchestrator {
 
   async openCall(input: { sessionId: string; ownerId: string; expectedRevision: number }): Promise<DialogueReply> {
     if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) throw new DomainError("INVALID_COMMAND");
-    const session = await this.core.resume(input.sessionId, input.ownerId);
-    const template = await this.core.getSessionTemplate(input.sessionId, input.ownerId);
+    const { session, template } = await this.core.getSessionContext(input.sessionId, input.ownerId);
     if (!template.callCenter) throw new DomainError("INVALID_STATE");
     const prior = callerStateTurn(session);
     if (prior) {

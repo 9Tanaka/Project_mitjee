@@ -66,6 +66,13 @@ export interface PrismaRepositoryOptions {
 }
 
 export class PrismaTrainingRepository implements TrainingRepository {
+  // Cache validated immutable configurations only; callers always receive detached copies.
+  private readonly templates = new Map<string, ScenarioTemplate>();
+  private templateKey(id: string, version: number, variant: ScenarioVariant) { return JSON.stringify([id, version, variant]); }
+  private remember(t: ScenarioTemplate) {
+    if (this.templates.size >= 128) this.templates.delete(this.templates.keys().next().value!);
+    this.templates.set(this.templateKey(t.id, t.version, t.variant), copy(t));
+  }
   constructor(private readonly client: PrismaClient, private readonly options: PrismaRepositoryOptions = {}) {}
 
   async publish(input: ScenarioTemplate): Promise<void> {
@@ -75,6 +82,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
     const published = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
     if (published) {
       if (canonical(published.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
+      this.remember(template);
       return;
     }
     try {
@@ -87,10 +95,11 @@ export class PrismaTrainingRepository implements TrainingRepository {
         await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
         await tx.scenarioTemplateVersion.create({ data: { ...key, configuration: json(template) } });
       });
+      this.remember(template);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         const existing = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
-        if (existing && canonical(existing.configuration) === canonical(template)) return;
+        if (existing && canonical(existing.configuration) === canonical(template)) { this.remember(template); return; }
         if (existing) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
       }
       throw error;
@@ -98,9 +107,14 @@ export class PrismaTrainingRepository implements TrainingRepository {
   }
 
   async getTemplate(id: string, version: number, variant: ScenarioVariant): Promise<ScenarioTemplate> {
+    const cached = this.templates.get(this.templateKey(id, version, variant));
+    if (cached) return copy(cached);
     const row = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: { templateId: id, version, variant } } });
     if (!row) throw new DomainError("TEMPLATE_NOT_FOUND");
-    return validateTemplate(row.configuration);
+    const template = validateTemplate(row.configuration);
+    if (template.id !== id || template.version !== version || template.variant !== variant) throw new DomainError("INVALID_TEMPLATE");
+    this.remember(template);
+    return copy(template);
   }
 
   async create(session: TrainingSession): Promise<void> {
