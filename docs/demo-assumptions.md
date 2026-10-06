@@ -85,8 +85,8 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Next.js 16.3.8 (security patch 2 October), React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
-- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v3 foundation, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1/v2 สำหรับประวัติ
-- Call Center semantic states และ shared identity/verification flow เป็น approved implementation choices ไม่ใช่ชื่อ State จาก Proposal โดยตรง; PARCEL/BANK story identities ยังไม่ใช่เรื่องเต็ม ดู [Part 1 foundation](call-center-foundation.md)
+- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v4 full text/interactivity, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1/v2/v3 สำหรับประวัติ
+- Call Center semantic states, caller-turn metadata, per-session synthetic OTP, state-gated phone apps และ fresh explicit confirmation เป็น approved implementation choices ไม่ใช่ชื่อ State หรือสูตรใหม่จาก Proposal ดู [Part 2](call-center-part2.md)
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
 - Request body สูงสุด 64 KiB; error/owner isolation policy อยู่ใน [API](api.md)

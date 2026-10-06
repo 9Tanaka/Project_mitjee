@@ -29,7 +29,29 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
     requireRule(t.states.every(s => (CALL_STATES as readonly string[]).includes(s.id)), "Phone templates require Call Center states");
     requireRule(t.states.find(s => s.id === "INCOMING_CALL")?.transitions.some(e => e.id === "ANSWER_CALL" && e.target === "CALL_CONNECTED"), "Missing answer-call edge");
     requireRule(t.states.find(s => s.id === "INCOMING_CALL")?.transitions.length === 1, "Incoming call cannot bypass answer");
-    requireRule(t.opportunities.every(o => !["INCOMING_CALL", "CALL_CONNECTED"].includes(o.state)), "Incoming/opening cannot create checkpoints");
+    requireRule(t.opportunities.every(o => o.state !== "INCOMING_CALL" && (t.callCenter?.fullStory || o.state !== "CALL_CONNECTED")), "Incoming/opening cannot create checkpoints");
+    if (t.callCenter.fullStory) {
+      requireRule(t.version >= 4 && !!t.callCenter.content, "Full phone story requires new version and authored content");
+      unique(t.states.flatMap(s => (s.interactions ?? []).map(i => i.id)), "phone interaction");
+      for (const state of t.states) {
+        requireRule(typeof state.callerTurnRequired === "boolean" && !!state.internalApps && !!state.interactions, "Full phone states require explicit beat metadata");
+        requireRule(state.callerTurnRequired === !["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(state.id), "Invalid caller beat");
+        unique(state.internalApps, "phone app");
+        requireRule(t.opportunities.filter(o => o.state === state.id).length <= 1, "One contextual checkpoint per phone beat");
+        for (const interaction of state.interactions) {
+          requireRule(state.internalApps.includes(interaction.app) && (!interaction.navigationTarget || state.internalApps.includes(interaction.navigationTarget)), "Interaction app unavailable");
+          requireRule(!interaction.transitionId || state.transitions.some(e => e.id === interaction.transitionId), "Invalid interaction transition");
+          if (interaction.resolutionChoiceId) {
+            const o = t.opportunities.find(o => o.state === state.id);
+            requireRule(o && o.skill !== "W" && (o.skill === "D" ? o.choices : o.actions).some(c => c.id === interaction.resolutionChoiceId), "Missing interaction resolution");
+          }
+        }
+      }
+      for (const rule of t.criticalFailureRules) {
+        const preparation = t.states.find(s => s.id === rule.state)?.interactions?.find(i => i.id === rule.preparationInteractionId);
+        requireRule(rule.app && rule.behavior && preparation?.app === rule.app && !!preparation.requiresBehaviors?.length, "Critical confirmation requires authored preparation");
+      }
+    }
   } else {
     requireRule(t.initialState === "contact" && t.states.every(s => (LEGACY_STATES as readonly string[]).includes(s.id)), "Legacy templates require legacy states");
   }

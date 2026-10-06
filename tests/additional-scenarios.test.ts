@@ -41,7 +41,7 @@ describe("additional playable scam scenarios", () => {
     expect(new Set(listed.map(s => s.category)).size).toBe(9);
     for (const template of additionalScamScenarios) {
       expect(validateTemplate(template)).toEqual(template);
-      expect(listed.find(s => s.id === template.id)?.communicationMode).toBe(template.category === "CALL_CENTER" ? "TEXT_VOICE" : "TEXT");
+      expect(listed.find(s => s.id === (template.category === "CALL_CENTER" ? "call-center" : template.id))?.communicationMode).toBe(template.category === "CALL_CENTER" ? "TEXT_VOICE" : "TEXT");
     }
   });
 

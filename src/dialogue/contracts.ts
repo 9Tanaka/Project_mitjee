@@ -8,6 +8,7 @@ export const aiCharacterResponseSchema = z.strictObject({
   observed_intent: z.enum([
     "continue", "verify_source", "refuse", "share_sensitive_data",
     "follow_suspicious_link", "transfer_money", "end_contact", "unknown",
+    "asked_caller_identity", "asked_for_reference", "requested_clarification",
   ]),
   candidate_event: z.enum(["NONE", "WARNING_SIGN", "SAFE_ACTION", "DECISION", "POSSIBLE_CRITICAL_FAILURE"]),
   event_code: z.enum(EVENT_CODES).nullable(),
@@ -42,7 +43,7 @@ export interface ScenarioAIContext {
   readonly forbiddenBehaviors: readonly string[];
   readonly recentSanitizedMessages: readonly SanitizedMessage[];
   readonly currentUserMessage: SanitizedMessage | null;
-  readonly turnKind?: "USER_MESSAGE" | "CHARACTER_OPENING";
+  readonly turnKind?: "USER_MESSAGE" | "CHARACTER_OPENING" | "CHARACTER_STATE_TURN";
 }
 
 export interface ScenarioModelProvider {
@@ -89,7 +90,7 @@ export interface CommitDialogueTurn {
   failureReason: ProviderFailure | null;
   attempts: number;
 }
-export type CommitCharacterOpening = Omit<CommitDialogueTurn, "sanitizedUserMessage"> & { kind: "CHARACTER_OPENING" };
+export type CommitCharacterOpening = Omit<CommitDialogueTurn, "sanitizedUserMessage"> & { kind: "CHARACTER_OPENING" | "CHARACTER_STATE_TURN" };
 
 export interface DialogueReply {
   turn: DialogueTurn;

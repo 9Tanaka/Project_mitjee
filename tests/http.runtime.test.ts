@@ -15,7 +15,7 @@ beforeEach(() => {
   mocks.assemble.mockResolvedValue({ marker: "application" });
   vi.stubEnv("AUTH_SECRET", "");
   vi.stubEnv("AI_PROVIDER", "mock");
-  vi.stubEnv("CALL_CENTER_DEMO_VARIANT", ""); vi.stubEnv("DATABASE_TLS_CA", "");
+  vi.stubEnv("CALL_CENTER_DEMO_VARIANT", ""); vi.stubEnv("CALL_CENTER_DEMO_STORY", ""); vi.stubEnv("DATABASE_TLS_CA", "");
   vi.stubEnv("DATABASE_URL", "mysql://localhost/mitjee_test");
   vi.stubEnv("DATABASE_TLS_CA_PATH", ""); vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "");
 });
@@ -60,7 +60,7 @@ it("HTTP and custom-server composition use the same private demo variant selecto
   vi.stubEnv("CALL_CENTER_DEMO_VARIANT", "SCAM_CALL");
   const http = getRuntime(), call = createCallRuntime();
   await http.application(); await call.application();
-  expect(mocks.assemble.mock.calls.every(args => args[3]() === "SCAM_CALL")).toBe(true);
+  expect(mocks.assemble.mock.calls.every(args => ["CC-01", "CC-02"].includes(args[4]()))).toBe(true);
   await call.close(); await http.close();
 });
 it("custom-server runtime owns an isolated lazy pool while reusing its own concurrent initialization", async () => {

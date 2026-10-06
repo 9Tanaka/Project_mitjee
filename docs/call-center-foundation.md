@@ -1,5 +1,9 @@
 # Call Center rebuild — Part 1 foundation
 
+Historical Part 1 record. New sessions now use [Part 2 v4](call-center-part2.md).
+The old URL resolves/redirects to neutral `call-center`; Answer no longer awaits the provider.
+The v3 template configurations below remain immutable/loadable, not the current new-session flow.
+
 Implementation scope: a dedicated fictional phone simulator, backend-owned story selection,
 semantic state architecture and an AI-first opening. This is **not four completed stories**,
 not the 21-story storyboard and not a Voice/STT/TTS rebuild. These states and the shared

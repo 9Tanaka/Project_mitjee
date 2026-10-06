@@ -7,8 +7,8 @@ Installation and production builds generate the ignored Prisma client automatica
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
 โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ 9 ประเภท
-Call Center ใหม่เป็น Phone Simulator v3: สายเข้า → รับสาย → ผู้โทรพูดก่อน → บทถอดเสียงและตัวเลือกตาม State → ผลฝึกพื้นฐาน
-Backend เลือกและตรึงหนึ่งในสี่ story identities; ยังไม่ใช่เนื้อเรื่องเต็มทั้งสี่ ดู [Call Center Part 1](docs/call-center-foundation.md)
+Call Center ใหม่เป็น Phone Simulator v4: สายเข้า → รับสายทันที → บทผู้โทรแต่ละ State → แอป/การกระทำตามบริบท → ผลและลำดับพฤติกรรม
+Backend เลือกและตรึงหนึ่งในสี่เรื่องพัสดุ/ธนาคารแบบ matched normal/scam โดยไม่ส่งชื่อเรื่องหรือประเภทสายให้ browser ดู [Call Center Part 2](docs/call-center-part2.md)
 คงโค้ด Azure Speech / WebSocket เดิมเป็น integration seams โดยไม่ rebuild เสียงในรอบนี้
 เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
@@ -39,7 +39,7 @@ UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรก�
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — Proposal-aligned shell, responsive navigation, registration/login, searchable nine-scenario catalog, details/safety acknowledgment, training/result, Quiz and FAQ |
 | Live AI Provider | Implemented — Mock/OpenAI/Groq; synthetic Groq live verification passed on 2026-10-04; deployed Preview acceptance tracked in Vercel Preview notes |
-| Call Center text | Part 1 foundation — dedicated phone UI, four backend story identities, AI-first opening, contextual actions; full story contents pending |
+| Call Center text | Four v4 text/interactivity stories, asynchronous caller-first beats, state-gated simulated apps, explicit fresh OTP/transfer confirmations and categorical reflection; historical v1/v2/v3 preserved |
 | Voice Call Center | Implemented — Azure STT/TTS adapters, microphone controls, text/HTTP fallback; live Azure NOT RUN (credentials absent) |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
 | WebSocket | Implemented — authenticated, owned active Call Center session, bounded transport and reconnect/replay |
@@ -50,7 +50,7 @@ UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรก�
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
 ผลรอบล่าสุดอยู่ใน [Live AI + Voice + WebSocket verification](docs/realtime-verification.md)
 
-Runtime มี **9 category-level playable scenarios** ไม่ใช่ target storyboard ทั้ง 21 เรื่อง Call Center ใหม่ใช้ v3 ที่มี PARCEL/BANK × NORMAL/SCAM identities และเส้นทางพื้นฐานร่วมกัน ยังไม่มีเรื่อง OTP/โอนเงิน/ส่งพัสดุปกติ/ธนาคารปกติเต็มรูปแบบ ส่วน Call Center v1/v2 (รวมสายห้องสมุดเดิม) ยังคงไว้สำหรับ session เก่าโดยไม่แก้ configuration
+Runtime มี **9 category-level playable scenarios** ไม่ใช่ target storyboard ทั้ง 21 เรื่อง Call Center ใหม่ใช้ v4 ครบสี่เรื่อง PARCEL/BANK × NORMAL/SCAM พร้อม OTP/การโอนจำลองและ matched normal controls ส่วน Call Center v1/v2/v3 (รวมสายห้องสมุดเดิม) ยังคงไว้สำหรับ session เก่าโดยไม่แก้ configuration
 
 ## Architecture summary
 

@@ -1,8 +1,10 @@
 import type { ScenarioTemplate } from "./schema.js";
 import { DomainError } from "./types.js";
 import type { SessionOpportunity, TrainingSession } from "./types.js";
+import { callerTurnReady } from "./call-center.js";
 
 export function openStateOpportunities(session: TrainingSession, template: ScenarioTemplate, now: number): void {
+  if (!callerTurnReady(session, template)) return;
   for (const definition of template.opportunities.filter(o => o.state === session.state)) {
     if (session.opportunities.some(o => o.definitionId === definition.id)) continue;
     const maximum = template.evaluationMode === "DECISION_RULES_V1" ? 0 : definition.skill === "W"

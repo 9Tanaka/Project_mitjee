@@ -9,7 +9,9 @@ import { smsPhishingFeedbackFixture } from "../fixtures/sms-phishing-feedback.js
 import { additionalScamScenarios } from "../fixtures/scam-scenarios.js";
 import { normalCallFixture } from "../fixtures/normal-call.js";
 import { CALL_PUBLIC_ID, callCenterFoundationTemplates } from "../fixtures/call-center-foundation.js";
-import { callerOpening } from "../domain/call-center.js";
+import { callerTurnReady } from "../domain/call-center.js";
+import { callCenterStoryTemplates } from "../fixtures/call-center-stories.js";
+import { activePhoneApp, freshConfirmation, hasBehavior, interactionAvailable } from "../domain/call-behavior.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
@@ -19,9 +21,9 @@ const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenario
   characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
 const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
 export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER"
-  ? { ...callCenterFoundationTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
+  ? { ...callCenterStoryTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
 export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates.filter(t => !t.callCenter),
-  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates];
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates, ...callCenterStoryTemplates];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -33,6 +35,7 @@ type Binding = {
   state: TrainingSession["state"];
   opportunityId?: string;
   transitionId?: string;
+  visible?(s: TrainingSession): boolean;
   toDomain(payload: PublicActionPayload): ActionInput;
 };
 function payload<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
@@ -58,6 +61,7 @@ export function actionBindings(t: ScenarioTemplate): Binding[] {
       ? o.evidence.map((e, i) => ({ id: `o${i + 1}`, label: e.text }))
       : (o.skill === "D" ? o.choices : o.actions).map((_c, i) => ({ id: `o${i + 1}`, label: labels[o.id]![i]! }));
     result.push({ state: o.state, opportunityId: o.id,
+      visible: s => !o.app || activePhoneApp(s, t) === o.app,
       public: { id: publicId!, label: o.skill === "W" ? "เลือกหลักฐานที่เห็นว่าน่าสงสัย" : "เลือกการตอบสนอง", input: o.skill === "W" ? "EVIDENCE" : "CHOICE", options },
       toDomain(input) {
         if (o.skill === "W") {
@@ -110,8 +114,8 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
   for (const [position, o] of t.opportunities.entries()) {
     const options = o.skill === "W" ? o.evidence.map((item, index) => ({ id: `o${index + 1}`, label: item.text }))
       : (o.skill === "D" ? o.choices : o.actions).map((choice, index) => ({ id: `o${index + 1}`, label: choice.publicLabel! }));
-    result.push({ state: o.state, opportunityId: o.id,
-      public: { id: `a${String(position + 1).padStart(2, "0")}`, label: o.publicCheckpointLabel!,
+    result.push({ state: o.state, opportunityId: o.id, visible: s => !o.app || activePhoneApp(s, t) === o.app,
+      public: { id: `a${String(position + 1).padStart(2, "0")}`, label: o.publicCheckpointLabel!, ...(o.app ? { app: o.app } : {}),
         input: o.skill === "W" ? "EVIDENCE" : "CHOICE", options },
       toDomain(input) {
         if (o.skill === "W") {
@@ -132,14 +136,21 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
   }
   let next = t.opportunities.length + 1;
   for (const state of t.states) for (const edge of state.transitions) {
-    result.push({ state: state.id, transitionId: edge.id, public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
+    if (t.callCenter?.fullStory && state.interactions?.some(i => i.transitionId === edge.id)) continue;
+    result.push({ state: state.id, transitionId: edge.id, visible: s => !t.callCenter?.fullStory || activePhoneApp(s, t) === "CALL", public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
       toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: edge.id }; } });
   }
   for (const rule of t.criticalFailureRules) {
-    result.push({ state: rule.state, opportunityId: rule.opportunityId,
-      public: { id: `a${String(next++).padStart(2, "0")}`, label: rule.publicLabel!, input: "CONFIRM", options: [] },
+    result.push({ state: rule.state, opportunityId: rule.opportunityId, visible: s => (!rule.app || activePhoneApp(s, t) === rule.app) && freshConfirmation(s, t, rule),
+      public: { id: `a${String(next++).padStart(2, "0")}`, label: rule.publicLabel!, input: "CONFIRM", options: [], ...(rule.app ? { app: rule.app } : {}) },
       toDomain(input) { return { kind: "SIMULATED_ACTION", ruleId: rule.id,
         confirmed: payload(z.strictObject({ confirmed: z.boolean() }), input).confirmed }; } });
+  }
+  for (const state of t.states) for (const interaction of state.interactions ?? []) {
+    result.push({ state: state.id, visible: s => interactionAvailable(s, t, interaction),
+      public: { id: `p${String(next++).padStart(3, "0")}`, label: interaction.label, input: "NONE", options: [], app: interaction.app,
+        ...(interaction.navigationTarget ? { navigationTarget: interaction.navigationTarget } : {}) },
+      toDomain(input) { payload(none, input); return { kind: "CALL_INTERACTION", interactionId: interaction.id }; } });
   }
   if (t.callCenter) result.push({ state: "INCOMING_CALL", public: { id: "decline-call", label: "ปฏิเสธสาย", input: "NONE", options: [] },
     toDomain(input) { payload(none, input); return { kind: "DECLINE_CALL" }; } });
@@ -147,8 +158,16 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
 }
 export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
-  if (t.callCenter && s.state === "CALL_CONNECTED" && !callerOpening(s)) return [];
+  if (!callerTurnReady(s, t)) return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
     o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null)) &&
-    (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId))).map(b => b.public);
+    (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId)) && (!b.visible || b.visible(s))).map(b => {
+      const definition = structuredClone(b.public);
+      const opportunity = t.opportunities.find(o => o.id === b.opportunityId);
+      if (t.callCenter?.fullStory && opportunity && opportunity.skill !== "W") {
+        const choices = opportunity.skill === "D" ? opportunity.choices : opportunity.actions;
+        definition.options = definition.options.filter((_option, index) => !["end", "callback"].includes(choices[index]!.id) && (choices[index]?.requiresBehaviors ?? []).every(code => hasBehavior(s, t, code)));
+      }
+      return definition;
+    });
 }

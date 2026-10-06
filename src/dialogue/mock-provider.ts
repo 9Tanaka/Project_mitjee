@@ -25,7 +25,7 @@ export function normalMockResponse(context: ScenarioAIContext): AICharacterRespo
   const line = context.scenario.category === "SMS_PHISHING" && context.currentState in lines ? lines[context.currentState as keyof typeof lines][turnsHere % 2]!
     : context.allowedBehaviors[turnsHere % Math.max(context.allowedBehaviors.length, 1)] ?? `ข้อความจำลองของ ${context.scenario.title}`;
   return {
-    character_message: context.turnKind === "CHARACTER_OPENING" ? line : `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage?.text.slice(0, 160) ?? ""}`,
+    character_message: context.currentUserMessage === null ? line : `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage?.text.slice(0, 160) ?? ""}`,
     observed_intent: "continue", candidate_event: "NONE", event_code: null, confidence: null,
     safety: { contains_real_pii: false, out_of_scope: false },
   };

@@ -12,7 +12,7 @@
     "start:http": "next start --hostname 127.0.0.1",
     "test:http": "vitest run tests/http.integration.test.ts tests/http.runtime.test.ts tests/auth.integration.test.ts tests/auth.policy.test.ts tests/accounts.http.test.ts tests/quiz.http.test.ts",
     "test": "vitest run",
-    "test:ai": "vitest run tests/openai.provider.test.ts tests/openai.dialogue.test.ts tests/openai.http.test.ts tests/groq.provider.test.ts tests/groq.dialogue.test.ts tests/groq.http.test.ts tests/call-foundation.test.ts",
+    "test:ai": "vitest run tests/openai.provider.test.ts tests/openai.dialogue.test.ts tests/openai.http.test.ts tests/groq.provider.test.ts tests/groq.dialogue.test.ts tests/groq.http.test.ts tests/call-foundation.test.ts tests/call-stories.test.ts",
     "test:ai:live": "node scripts/test-ai-live.mjs",
     "test:ai:groq:live": "node scripts/test-groq-live.mjs",
     "test:speech:live": "node scripts/test-speech-live.mjs",

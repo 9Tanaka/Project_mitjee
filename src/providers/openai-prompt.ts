@@ -42,9 +42,9 @@ export function buildOpenAIRequest(context: ScenarioAIContext, model: string): R
   return {
     model, stream: false, store: false, max_output_tokens: 1200,
     instructions: SCENARIO_DIALOGUE_INSTRUCTIONS,
-    input: context.turnKind === "CHARACTER_OPENING" ? [
-      { role: "developer", content: JSON.stringify({ ...scenarioContext, turnKind: "CHARACTER_OPENING",
-        instruction: "The learner has answered the simulated call. Speak first using only the authored opening behavior. No user message exists. Do not evaluate an action." }) },
+    input: context.currentUserMessage === null ? [
+      { role: "developer", content: JSON.stringify({ ...scenarioContext, turnKind: context.turnKind,
+        instruction: "Speak first for the current state using only its authored behavior. No user message exists. Do not evaluate an action." }) },
     ] : [
       { role: "developer", content: JSON.stringify(scenarioContext) },
       { role: "user", content: JSON.stringify(dialogue) },

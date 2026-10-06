@@ -13,6 +13,7 @@ import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { TrainingCore } from "../src/core.js";
 import { registeredTemplates } from "../src/application/catalog.js";
 import { publicError } from "../src/http/errors.js";
+import { answer, deferred } from "./openai.fixtures.js";
 
 const user = { id: "phone-ui-user" };
 beforeEach(() => { vi.clearAllMocks(); });
@@ -66,13 +67,28 @@ it("Call Center uses a neutral incoming phone instead of a generic chat/checkpoi
 });
 it("answer creates the first caller transcript before any typed learner response", async () => {
   const h = await harness(); await answerCall();
-  expect(screen.getByRole("log").textContent).toContain("บริการพัสดุสมมติ");
+  expect(screen.getByRole("log").textContent).toContain("MITJEE Parcel");
   const raw = await h.repository.get(h.id, user.id);
   expect(raw.messages.map(m => m.role)).toEqual(["character"]);
   expect(document.querySelector(".message, .message-user, .message-character")).toBeNull();
   const body = JSON.parse(h.fetcher.mock.calls[1]![1]!.body!);
   expect(Object.keys(body).sort()).toEqual(["actionDefinitionId", "actionId", "expectedRevision", "payload"]);
   expect(body.payload).toEqual({});
+});
+it("slow provider shows connected PENDING automatically; no recovery button or decision is shown before commit", async () => {
+  const h = await harness(), late = deferred<ReturnType<typeof answer>>();
+  const generate = vi.spyOn(h.provider, "generateCharacterResponse").mockImplementation(() => late.promise);
+  fireEvent.click(screen.getByRole("button", { name: "รับสาย" }));
+  await screen.findByText("เชื่อมต่อสายแล้ว กำลังรอบทพูดจากผู้โทร");
+  expect(screen.queryByRole("button", { name: "รับสาย" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "ตัวเลือกขณะนี้" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /ลองรับบทพูด/ })).toBeNull();
+  const pending = await h.repository.get(h.id, user.id);
+  expect(pending).toMatchObject({ state: "CALL_CONNECTED", revision: 1, messages: [], dialogueTurns: [], opportunities: [] });
+  await waitFor(() => expect(generate).toHaveBeenCalledOnce());
+  late.resolve(answer()); await screen.findByLabelText("ตอบผู้โทรด้วยข้อความ");
+  expect(h.fetcher.mock.calls.filter(c => c[0].endsWith("/opening"))).toHaveLength(1);
+  generate.mockRestore();
 });
 it("declining shows no official result and does not call the model", async () => {
   const h = await harness(); fireEvent.click(screen.getByRole("button", { name: "ปฏิเสธสาย" }));
@@ -86,7 +102,7 @@ it("actions appear only in an explicitly opened contextual sheet and future step
   expect(screen.queryByText("เลือกวิธีจัดการสาย")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "ตัวเลือกขณะนี้" }));
   const sheet = await screen.findByRole("dialog", { name: "ตัวเลือกในขั้นตอนปัจจุบัน" });
-  expect(sheet.textContent).toContain("พิจารณาข้อมูลผู้โทร"); expect(sheet.textContent).not.toContain("เลือกวิธีจัดการสาย");
+  expect(sheet.textContent).toContain("คุณจะทำอะไรต่อ?"); expect(sheet.textContent).not.toContain("เปิดข้อความ");
   fireEvent.keyDown(sheet, { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "ตัวเลือกขณะนี้" }));
@@ -100,30 +116,30 @@ it("text fallback remains a transcript and has no state/evaluation authority", a
   const after = await h.repository.get(h.id, user.id);
   expect(after.state).toBe(before.state); expect(after.events).toEqual(before.events); expect(after.opportunities).toEqual(before.opportunities); expect(after.result).toBeNull();
 });
-it("internal app scaffolds are explicitly labelled and do not simulate completed verification", async () => {
+it("state-gated caller information navigation preserves transcript and records observation, not verification", async () => {
   await harness(); await answerCall();
   expect(screen.getByRole("navigation", { name: "แอปภายในโทรศัพท์" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "ธนาคาร" }));
-  expect(screen.getByRole("heading", { name: "ธนาคาร" })).toBeTruthy(); expect(screen.getByText(/ยังไม่มีข้อมูลหรือการกระทำเฉพาะเรื่อง/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "ธนาคารจำลอง" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "ข้อมูลผู้โทร" }));
+  await screen.findByRole("heading", { name: "ข้อมูลที่ผู้โทรกล่าวอ้าง" });
+  expect(screen.getByText("ข้อมูลนี้ไม่ใช่การยืนยันตัวตนผู้โทร")).toBeTruthy();
   expect(screen.queryByRole("textbox")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "← กลับสายสนทนา" }));
-  expect(screen.getByRole("log")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "กลับสายสนทนา" }));
+  await screen.findByRole("log");
+  expect(document.body.textContent).not.toMatch(/Part 1|Part 2|scaffold/);
 });
 it("refresh recovery for a pending opening does not require a fabricated user message", async () => {
   const h = await harness(true);
-  expect(screen.queryByRole("textbox")).toBeNull(); expect(h.provider.callCount).toBe(0);
-  fireEvent.click(screen.getByRole("button", { name: "รับบทพูดผู้โทรต่อ" }));
   await screen.findByLabelText("ตอบผู้โทรด้วยข้อความ");
+  expect(h.provider.callCount).toBe(1);
+  expect(screen.queryByRole("button", { name: /รับบทพูดผู้โทรต่อ/ })).toBeNull();
+  expect(h.fetcher.mock.calls.filter(c => c[0].endsWith("/opening"))).toHaveLength(1);
   const raw = await h.repository.get(h.id, user.id);
   expect(raw.messages.map(m => m.role)).toEqual(["character"]);
   expect(JSON.parse(h.fetcher.mock.calls[1]![1]!.body!)).toEqual({ expectedRevision: 1 });
 });
 it("full contextual phone journey reaches call ending then the actual result link", async () => {
   const h = await harness(); await answerCall();
-  await contextual("พิจารณาข้อมูลผู้โทร");
-  await contextual("เลือกวิธีตรวจสอบผู้โทร", true);
-  await contextual("ไปขั้นตอนตรวจสอบ");
-  await contextual("เลือกวิธีจัดการสาย", true);
   await contextual("วางสาย");
   await screen.findByText("สิ้นสุดสายจำลอง");
   expect(screen.queryByRole("textbox")).toBeNull();

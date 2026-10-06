@@ -4,6 +4,8 @@ import { DomainError } from "./types.js";
 const id = z.string().min(1).max(120);
 export const actionSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("CHARACTER_OPENING") }),
+  z.strictObject({ kind: z.literal("CHARACTER_STATE_TURN") }),
+  z.strictObject({ kind: z.literal("CALL_INTERACTION"), interactionId: id }),
   z.strictObject({ kind: z.literal("DECLINE_CALL") }),
   z.strictObject({ kind: z.literal("FREE_TEXT"), text: z.string().max(8000) }),
   z.strictObject({ kind: z.literal("DECISION"), opportunityId: id, choiceId: id }),

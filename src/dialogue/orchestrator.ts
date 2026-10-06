@@ -5,7 +5,7 @@ import { DomainError } from "../domain/types.js";
 import { aiCharacterResponseSchema, ProviderRefusal } from "./contracts.js";
 import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAIContext, ScenarioModelProvider } from "./contracts.js";
 import { freezeData, sanitizeMessage } from "./sanitize.js";
-import { CALL_OPENING_TURN_ID, OPENING_INPUT_KEY, callerOpening } from "../domain/call-center.js";
+import { callerTurnId, callerTurnKey, callerStateTurn, callerTurnRequired, callerTurnReady } from "../domain/call-center.js";
 
 const messageRequestSchema = z.strictObject({
   sessionId: z.string().min(1), ownerId: z.string().min(1),
@@ -71,7 +71,7 @@ export class ScenarioDialogueOrchestrator {
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== request.expectedRevision) throw new DomainError("REVISION_CONFLICT");
     const template = await this.core.getSessionTemplate(request.sessionId, request.ownerId);
-    if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerOpening(session))) throw new DomainError("CALL_NOT_READY");
+    if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerTurnReady(session, template))) throw new DomainError("CALL_NOT_READY");
     if (!template.characterRole) throw new DomainError("DIALOGUE_ROLE_NOT_CONFIGURED");
     const state = template.states.find(s => s.id === session.state)!;
     const context: ScenarioAIContext = freezeData({
@@ -100,24 +100,26 @@ export class ScenarioDialogueOrchestrator {
     const session = await this.core.resume(input.sessionId, input.ownerId);
     const template = await this.core.getSessionTemplate(input.sessionId, input.ownerId);
     if (!template.callCenter) throw new DomainError("INVALID_STATE");
-    const prior = callerOpening(session);
+    const prior = callerStateTurn(session);
     if (prior) {
-      if (prior.inputKey !== OPENING_INPUT_KEY) throw new DomainError("IDEMPOTENCY_CONFLICT");
+      if (prior.inputKey !== callerTurnKey(session.state)) throw new DomainError("IDEMPOTENCY_CONFLICT");
       return { turn: copy(prior), duplicate: true };
     }
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== input.expectedRevision) throw new DomainError("REVISION_CONFLICT");
-    if (session.state !== "CALL_CONNECTED") throw new DomainError("CALL_NOT_READY");
+    if (!callerTurnRequired(template, session.state)) throw new DomainError("CALL_NOT_READY");
     const state = template.states.find(s => s.id === session.state)!;
+    const kind = session.state === "CALL_CONNECTED" ? "CHARACTER_OPENING" : "CHARACTER_STATE_TURN";
+    const turnId = callerTurnId(session.state);
     const context: ScenarioAIContext = freezeData({
       scenario: { templateId: template.id, templateVersion: template.version, category: template.category,
         variant: template.variant, title: sanitizeMessage(template.title), callStoryId: template.callCenter.storyId },
       currentState: session.state, characterRole: sanitizeMessage(template.characterRole!),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
-      recentSanitizedMessages: [], currentUserMessage: null, turnKind: "CHARACTER_OPENING",
+      recentSanitizedMessages: session.messages.slice(-12).map(m => ({ id: m.id, role: m.role, text: sanitizeMessage(m.text), state: m.state })), currentUserMessage: null, turnKind: kind,
     });
-    const generated = await this.generate(context, template.callCenter.openingFallback, `${session.id}:${CALL_OPENING_TURN_ID}`);
-    return this.core.commitCharacterOpening({ ...input, kind: "CHARACTER_OPENING", turnId: CALL_OPENING_TURN_ID, ...generated });
+    const generated = await this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`);
+    return this.core.commitCharacterOpening({ ...input, kind, turnId, ...generated });
   }
 
   private async generate(context: ScenarioAIContext, fallback: string, requestKey: string) {

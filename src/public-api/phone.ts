@@ -6,6 +6,8 @@ export const phoneDto = z.strictObject({
   callStatus: z.enum(["RINGING", "CONNECTED", "ENDING", "ENDED", "DECLINED"]),
   callerLabel: z.literal("ผู้ติดต่อไม่รู้จัก"),
   openingStatus: z.enum(["NOT_STARTED", "PENDING", "READY"]),
-  availableInternalApps: z.array(z.strictObject({ id: z.enum(["MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]), label: z.string(), availability: z.literal("FOUNDATION") })),
+  availableInternalApps: z.array(z.strictObject({ id: z.enum(["MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]), label: z.string(), availability: z.enum(["FOUNDATION", "AVAILABLE"]) })),
+  activeApp: z.enum(["CALL", "MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]).optional(),
+  appData: z.partialRecord(z.enum(["MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]), z.strictObject({ title: z.string(), lines: z.array(z.string()) })).optional(),
 });
 export const openingRequest = z.strictObject({ expectedRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) });

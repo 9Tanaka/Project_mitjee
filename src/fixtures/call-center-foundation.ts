@@ -1,7 +1,7 @@
 import type { ScenarioTemplate } from "../domain/schema.js";
 import { CALL_STORIES } from "../domain/constants.js";
 
-export const CALL_PUBLIC_ID = "call-center-scam";
+export const CALL_PUBLIC_ID = "call-center";
 export const CALL_TEMPLATE_VERSION = 3;
 export type CallStoryId = typeof CALL_STORIES[number];
 export const callStoryRegistry = {

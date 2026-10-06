@@ -16,6 +16,7 @@ export class TrainingApplicationService {
     private readonly selectCallStory?: () => CallStoryId) {}
   listScenarios() { return playableTemplates.map(publicScenario); }
   scenario(id: string) {
+    if (id === "call-center-scam") id = "call-center"; // Public compatibility alias, not a persisted template rename.
     const template = playableTemplates.find(t => t.id === id);
     if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
     return publicScenario(template);
@@ -26,7 +27,13 @@ export class TrainingApplicationService {
     return session;
   }
   async start(scenarioId: string, user: AuthenticatedPrincipal, input: StartTrainingInput) {
-    this.scenario(scenarioId);
+    const publicScenario = this.scenario(scenarioId);
+    scenarioId = publicScenario.id;
+    if (publicScenario.category === "CALL_CENTER") {
+      const legacyId = createHash("sha256").update(JSON.stringify([user.id, "call-center-scam", input.startId])).digest("hex");
+      try { return { session: await this.resume(legacyId, user), duplicate: true }; }
+      catch (error) { if (!(error instanceof DomainError) || error.code !== "SESSION_NOT_FOUND") throw error; }
+    }
     // Backend identity, version and variant. Repeated startId is stable for this owner/scenario.
     const id = createHash("sha256").update(JSON.stringify([user.id, scenarioId, input.startId])).digest("hex");
     try { return { session: await this.resume(id, user), duplicate: true }; }
@@ -68,10 +75,6 @@ export class TrainingApplicationService {
     }
     const reply = await this.core.submit({ sessionId: id, ownerId: user.id, actionId: input.actionId,
       expectedRevision: input.expectedRevision, action: binding.toDomain(input.payload) });
-    if (t.callCenter && binding.toDomain(input.payload).kind === "PROGRESS" && binding.state === "INCOMING_CALL") {
-      await this.dialogue.openCall({ sessionId: id, ownerId: user.id, expectedRevision: reply.session.revision });
-      return { session: await this.resume(id, user), duplicate: reply.duplicate };
-    }
     return { session: projectSession(reply.session, t), duplicate: reply.duplicate };
   }
   async opening(id: string, user: AuthenticatedPrincipal, input: { expectedRevision: number }) {
@@ -97,5 +100,5 @@ export class TrainingApplicationService {
     const reply = await this.core.submit({ ...input, sessionId: id, ownerId: user.id, action: { kind: "QUIT_SESSION" } });
     return { session: projectSession(reply.session, await this.core.getSessionTemplate(id, user.id)), duplicate: reply.duplicate };
   }
-  async result(id: string, user: AuthenticatedPrincipal) { return projectResult(await this.snapshot(id, user)); }
+  async result(id: string, user: AuthenticatedPrincipal) { return projectResult(await this.snapshot(id, user), await this.core.getSessionTemplate(id, user.id)); }
 }

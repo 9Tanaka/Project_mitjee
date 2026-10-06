@@ -1,4 +1,5 @@
 import type { DecisionFeedback, EvaluationMode, Outcome, Recommendation, SessionStatus, Skill } from "../domain/types.js";
+import type { PhoneAppId } from "../domain/phone-model.js";
 
 /** Identity already verified by an outer adapter. Never a client-supplied owner ID. */
 export interface AuthenticatedPrincipal { id: string }
@@ -20,6 +21,7 @@ export interface PublicScenario {
 export interface PublicActionDefinition {
   id: string; label: string; input: "CHOICE" | "EVIDENCE" | "CONFIRM" | "NONE";
   options: { id: string; label: string }[];
+  app?: PhoneAppId; navigationTarget?: PhoneAppId;
 }
 export interface PublicTrainingSession {
   sessionId: string; scenario: PublicScenario; status: SessionStatus;
@@ -30,7 +32,9 @@ export interface PublicTrainingSession {
     state: "INCOMING_CALL" | "CALL_CONNECTED" | "IDENTITY_CLAIM" | "CONTEXT_CLAIM" | "PRESSURE" | "MAIN_REQUEST" | "PLAYER_DECISION" | "INDEPENDENT_VERIFICATION" | "CALL_ENDING" | "END_SCENARIO";
     callStatus: "RINGING" | "CONNECTED" | "ENDING" | "ENDED" | "DECLINED";
     callerLabel: "ผู้ติดต่อไม่รู้จัก"; openingStatus: "NOT_STARTED" | "PENDING" | "READY";
-    availableInternalApps: { id: "MESSAGES" | "BANK" | "PARCEL" | "CALLER_INFO"; label: string; availability: "FOUNDATION" }[];
+    availableInternalApps: { id: "MESSAGES" | "BANK" | "PARCEL" | "CALLER_INFO"; label: string; availability: "FOUNDATION" | "AVAILABLE" }[];
+    activeApp?: PhoneAppId;
+    appData?: Partial<Record<Exclude<PhoneAppId, "CALL">, { title: string; lines: string[] }>>;
   };
 }
 export interface PublicTrainingResult {
@@ -38,6 +42,9 @@ export interface PublicTrainingResult {
   D: number | null; W: number | null; S: number | null; trainingScore: number | null;
   outcome: Outcome; weakestSkills: Skill[]; recommendation: Recommendation;
   evaluationMode?: EvaluationMode;
+  callReflection?: { note: string; good: string[]; review: string[];
+    behaviorTimeline: { elapsedSeconds: number; label: string }[];
+    qualitativeInsights: { label: string; authority: "NON_AUTHORITATIVE" }[] };
   decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number; critical?: number;
     checkpoints?: (Omit<DecisionFeedback, "ruleId" | "checkpointId"> & { ruleRef: string })[] } | null;
 }

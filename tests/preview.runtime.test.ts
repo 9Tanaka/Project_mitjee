@@ -20,8 +20,8 @@ it("invalid variant fails without including supplied private data in error", () 
 });
 it("new Call Center copy is neutral while historical template versions remain registered", () => {
   const current = playableTemplates.find(t => t.category === "CALL_CENTER")!;
-  expect(current.version).toBe(3); expect(current.characterRole).not.toContain("ใช้ข้อความแทนเสียง");
-  expect(registeredTemplates.filter(t => t.id === current.id).map(t => [t.version,t.variant])).toEqual(
+  expect(current.version).toBe(4); expect(current.characterRole).not.toContain("ใช้ข้อความแทนเสียง");
+  expect(registeredTemplates.filter(t => t.id === "call-center-scam").map(t => [t.version,t.variant])).toEqual(
     expect.arrayContaining([[1,"SCAM_CALL"],[1,"NORMAL_CALL"],[2,"SCAM_CALL"],[2,"NORMAL_CALL"]]));
 });
 it.each(["call-center-scam", "sms-phishing-demo"])("%s supports Groq text then an explicit safe result without Azure/OpenAI configuration", async scenarioId => {
@@ -33,6 +33,8 @@ it.each(["call-center-scam", "sms-phishing-demo"])("%s supports Groq text then a
   if (scenarioId === "call-center-scam") {
     const answerCall = initial.availableActions.find(a => a.label === "รับสาย")!;
     initial = (await app.action(initial.sessionId, user, { actionId: randomUUID(), expectedRevision: initial.revision, actionDefinitionId: answerCall.id, payload: {} })).session;
+    expect(initial.phone?.openingStatus).toBe("PENDING"); expect(fetcher).not.toHaveBeenCalled();
+    initial = (await app.opening(initial.sessionId, user, { expectedRevision: initial.revision })).session;
   }
   const chat = await app.message(initial.sessionId, user, { turnId: randomUUID(), expectedRevision: initial.revision, text: "ขอรายละเอียดเพื่อพิจารณา" });
   expect(chat.turn.characterMessage).toBe(answer().character_message);
@@ -43,8 +45,7 @@ it.each(["call-center-scam", "sms-phishing-demo"])("%s supports Groq text then a
   if (scenarioId === "call-center-scam") expect(JSON.parse(body.input[0].content).scenario.variant).toBe("SCAM_CALL");
   const choice: PublicActionPayload = { choiceId: "o1" }, evidence: PublicActionPayload = { selectedEvidenceIds: ["o1","o2"] };
   const steps: [string, PublicActionPayload][] = scenarioId === "call-center-scam" ? [
-    ["พิจารณาข้อมูลผู้โทร", {}], ["เลือกวิธีตรวจสอบผู้โทร", choice], ["ไปขั้นตอนตรวจสอบ", {}],
-    ["เลือกวิธีจัดการสาย", choice], ["วางสาย", {}], ["ดูสรุปการฝึก", {}],
+    ["วางสาย", {}], ["ดูสรุปการฝึก", {}],
   ] : [
     ["เลือกการตอบสนอง", choice], ["ดูข้อความ", {}], ["เลือกหลักฐานที่เห็นว่าน่าสงสัย", evidence],
     ["พิจารณาคำขอในข้อความ", {}], ["เลือกการตอบสนอง", choice], ["ไปขั้นตอนตอบสนอง", {}],

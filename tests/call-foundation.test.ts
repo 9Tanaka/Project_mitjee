@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApplication } from "../src/application/composition.js";
 import { actionBindings, registeredTemplates } from "../src/application/catalog.js";
@@ -27,13 +27,19 @@ async function harness(story: CallStoryId = "CC-01", provider: ScenarioModelProv
   const selector = vi.fn(() => story);
   const app = await createApplication(repository, provider, now, undefined, selector);
   const input = { startId: randomUUID(), expectedRevision: 0 as const };
-  const session = (await app.start("call-center-scam", user, input)).session;
+  // Pin historical v3 explicitly: new application starts intentionally use v4.
+  const core = await TrainingCore.create(registeredTemplates, repository, now);
+  const selected = selector(), t = callCenterFoundationTemplates.find(t => t.callCenter!.storyId === selected)!;
+  const id = createHash("sha256").update(JSON.stringify([user.id, "call-center", input.startId])).digest("hex");
+  await core.start(id, user.id, t.id, t.version, t.variant);
+  const session = await app.resume(id, user);
   return { app, repository, session, input, selector, provider };
 }
 async function act(app: App, session: PublicTrainingSession, label: string, payload: PublicActionPayload = {}) {
   const action = session.availableActions.find(a => a.label === label);
   expect(action, label).toBeDefined();
-  return (await app.action(session.sessionId, user, { actionId: randomUUID(), expectedRevision: session.revision, actionDefinitionId: action!.id, payload })).session;
+  const reply = (await app.action(session.sessionId, user, { actionId: randomUUID(), expectedRevision: session.revision, actionDefinitionId: action!.id, payload })).session;
+  return reply.phone?.openingStatus === "PENDING" && reply.phone.callStatus === "CONNECTED" ? (await app.opening(reply.sessionId, user, { expectedRevision: reply.revision })).session : reply;
 }
 async function finish(app: App, session: PublicTrainingSession, choiceId = "o1") {
   session = await act(app, session, "รับสาย");
@@ -51,7 +57,9 @@ describe("Call Center story selection and version boundary", () => {
     const catalog = h.app.listScenarios();
     expect(catalog).toHaveLength(9);
     expect(catalog.filter(s => s.category === "CALL_CENTER")).toHaveLength(1);
-    expect(catalog.find(s => s.category === "CALL_CENTER")?.id).toBe("call-center-scam");
+    expect(catalog.find(s => s.category === "CALL_CENTER")?.id).toBe("call-center");
+    expect(catalog.some(s => s.id === "call-center-scam")).toBe(false);
+    expect(h.app.scenario("call-center-scam")).toEqual(h.app.scenario("call-center"));
     expect(JSON.stringify(catalog)).not.toMatch(/CC-0|CC-N0|SCAM_CALL|NORMAL_CALL|storyId|call-center-parcel|call-center-bank/);
     expect(catalog.filter(s => s.category !== "CALL_CENTER").every(s => s.communicationMode === "TEXT")).toBe(true);
   });
@@ -128,7 +136,10 @@ describe("AI-first phone flow and backend authority", () => {
   it("Answer Call persists the opening alone before learner dialogue; replay/resume never repeats it", async () => {
     const provider = new MockScenarioModelProvider(), h = await harness("CC-02", provider);
     const command = { actionId: "answer-once", expectedRevision: 0, actionDefinitionId: h.session.availableActions[0]!.id, payload: {} };
-    const first = await h.app.action(h.session.sessionId, user, command);
+    const pending = await h.app.action(h.session.sessionId, user, command);
+    expect(pending.session.phone).toMatchObject({ state: "CALL_CONNECTED", openingStatus: "PENDING", callStatus: "CONNECTED" });
+    expect(provider.callCount).toBe(0); expect(pending.session.revision).toBe(1);
+    const first = await h.app.opening(h.session.sessionId, user, { expectedRevision: 1 });
     expect(first.session.phone).toMatchObject({ state: "CALL_CONNECTED", openingStatus: "READY", callStatus: "CONNECTED" });
     expect(first.session.messages).toHaveLength(1); expect(first.session.messages[0]?.role).toBe("character");
     expect(first.session.messages[0]?.text).toContain("ธนาคารสมมติ");

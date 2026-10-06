@@ -4,6 +4,7 @@ import { DomainError } from "./types.js";
 import type { DecisionFeedback, SessionOpportunity, Skill, SkillScore, TrainingResult, TrainingSession } from "./types.js";
 import { parseAction } from "./training-action.js";
 import { terminalState } from "./call-center.js";
+import { interactionFor } from "./call-behavior.js";
 
 export function calculateSkillScores(session: TrainingSession): Record<Skill, SkillScore> {
   const scores = {} as Record<Skill, SkillScore>;
@@ -74,7 +75,7 @@ function calculateDecisionResult(session: TrainingSession, t: ScenarioTemplate, 
     ...(checkpoints ? { critical: criticalEventIds.length, checkpoints } : {}),
   };
   const outcome = criticalEventIds.length > 0 ? "CRITICAL_FAILURE"
-    : session.status !== "COMPLETED" || session.state !== terminalState(t) || summary.unassessed > 0 ? "UNASSESSED"
+    : session.status !== "COMPLETED" || session.state !== terminalState(t) || summary.unassessed > 0 || (t.callCenter?.fullStory && summary.encountered === 0) ? "UNASSESSED"
       : summary.review > 0 ? "NEEDS_PRACTICE" : "PASSED";
   const review = encountered.find(o => o.assessment === "REVIEW");
   const mapping = outcome === "CRITICAL_FAILURE" ? t.recommendations.critical
@@ -95,7 +96,7 @@ function calculateDecisionResult(session: TrainingSession, t: ScenarioTemplate, 
 function checkpointLabel(o: SessionOpportunity, t: ScenarioTemplate): string {
   const definition = t.opportunities.find(d => d.id === o.definitionId);
   if (!definition?.publicCheckpointLabel) throw new DomainError("INVALID_RESULT_DATA");
-  return definition.publicCheckpointLabel;
+  return definition.publicResultLabel ?? definition.publicCheckpointLabel;
 }
 
 function checkpointFeedback(o: SessionOpportunity, session: TrainingSession, t: ScenarioTemplate): DecisionFeedback {
@@ -119,6 +120,10 @@ function checkpointFeedback(o: SessionOpportunity, session: TrainingSession, t: 
   } else if (definition.skill === "S" && parsed.kind === "SAFE_ACTION") {
     ruleId = `${definition.id}:${parsed.actionId}`;
     explanation = definition.actions.find(c => c.id === parsed.actionId)?.publicFeedback;
+  } else if (parsed.kind === "CALL_INTERACTION" && definition.skill !== "W") {
+    const choiceId = interactionFor(t, action.state, parsed.interactionId)?.resolutionChoiceId;
+    ruleId = `${definition.id}:${choiceId}`;
+    explanation = (definition.skill === "D" ? definition.choices : definition.actions).find(c => c.id === choiceId)?.publicFeedback;
   } else throw new DomainError("INVALID_RESULT_DATA");
   if (!explanation) throw new DomainError("INVALID_RESULT_DATA");
   return { checkpointId: o.definitionId, ruleId, label, assessment: o.assessment, explanation };

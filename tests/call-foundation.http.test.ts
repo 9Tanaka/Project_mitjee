@@ -20,13 +20,18 @@ async function harness() {
   }), { params: Promise.resolve({ sessionId: id }) });
   return { repository, provider, app, user, s, request };
 }
-it("protected answer action returns ready AI-first public phone DTO without hidden identity", async () => {
+it("protected Answer returns connected/PENDING without invoking the provider; protected opening commits caller first", async () => {
   const h = await harness();
   const response = await h.request("action", { actionId: "answer", expectedRevision: 0, actionDefinitionId: h.s.availableActions[0]!.id, payload: {} });
   expect(response.status).toBe(200);
   const { data } = await response.json();
-  expect(data.session.phone).toMatchObject({ state: "CALL_CONNECTED", openingStatus: "READY" });
-  expect(data.session.messages.map((m: { role: string }) => m.role)).toEqual(["character"]);
+  expect(data.session.phone).toMatchObject({ state: "CALL_CONNECTED", openingStatus: "PENDING" });
+  expect(data.session.messages).toEqual([]); expect(h.provider.callCount).toBe(0);
+  const opening = await h.request("opening", { expectedRevision: data.session.revision });
+  expect(opening.status).toBe(200);
+  const ready = (await opening.json()).data;
+  expect(ready.session.phone.openingStatus).toBe("READY");
+  expect(ready.session.messages.map((m: { role: string }) => m.role)).toEqual(["character"]);
   expect(JSON.stringify(data)).not.toMatch(/CC-02|SCAM_CALL|NORMAL_CALL|storyId|templateVersion|call-center-bank/);
 });
 it("opening is protected by auth and origin checks before provider work", async () => {

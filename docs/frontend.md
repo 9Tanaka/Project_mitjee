@@ -2,11 +2,12 @@
 
 STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 
-Current Call Center Part 1 uses a dedicated [Phone Simulator](call-center-foundation.md):
-incoming/answer/decline, caller-first opening, call transcript, internal-app scaffolds,
-contextual action sheet and ending/result. There is no permanent generic checkpoint panel.
-Only backend-projected current actions appear; scaffold views perform no verification.
-New v3 sessions use this UI; historical v1/v2 keep their original UI and pinned rules.
+Current Call Center uses a dedicated [Phone Simulator v4](call-center-part2.md):
+incoming/answer/decline, automatic caller-first state turns, transcript, backend-gated
+internal apps, contextual action sheet, neutral fresh critical confirmation and reflection.
+There is no permanent generic checkpoint panel. Only backend-projected current actions
+appear; app viewing cannot itself cause Critical Failure. Historical v3 remains playable
+with its pinned foundation flow; v1/v2 retain the original generic UI and pinned rules.
 Voice controls are retained in an opt-in disclosure after opening is ready; Part 3 owns
 the final voice experience. The remaining eight scenarios retain their existing UI.
 

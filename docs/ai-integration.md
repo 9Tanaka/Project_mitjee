@@ -76,6 +76,13 @@ Prompt ไม่มี score/transition logic และไม่ใช่ produc
 
 ## Immutable context
 
+Part 2 extends the same contract with `CHARACTER_STATE_TURN` for backend-authored
+caller beats. Both caller kinds have null user input and developer-only Responses input.
+Answer itself performs no generation. Only the orchestrator's protected state-turn request
+calls the provider; Core atomically commits the receipt and opens that state's opportunity.
+Per-session OTP and simulator app contents remain backend-owned, never model-generated.
+See [Call Center v4](call-center-part2.md) for authority, confirmation and verification scope.
+
 Call Center v3 adds a first-class `CHARACTER_OPENING` context with `currentUserMessage=null`
 and backend-pinned private `callStoryId`. Its Responses input is developer context only;
 there is no fabricated user message. Normal turns retain the sanitized user-input path.

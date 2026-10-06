@@ -1,24 +1,27 @@
 // UI-only browser verification against a running production Next server.
 // Browser requests are bridged to the real application services IN MEMORY.
 // This is not Auth.js/MySQL/live-provider E2E; no application authentication bypass is added.
-// Run: node --import tsx scripts/verify-ui.mjs [http://127.0.0.1:3216]
+// Run: node scripts/verify-ui.mjs [http://127.0.0.1:3216]
 import { chromium, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
-import { createApplication } from "../src/application/composition.ts";
-import { InMemoryTrainingRepository } from "../src/domain/repository.ts";
-import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.ts";
-import { QuizService } from "../src/quiz/service.ts";
-import { InMemoryQuizRepository } from "../src/quiz/memory-repository.ts";
-import { publicError } from "../src/http/errors.ts";
+import { register } from "tsx/esm/api";
+register();
+const { createApplication } = await import("../src/application/composition.ts");
+const { InMemoryTrainingRepository } = await import("../src/domain/repository.ts");
+const { MockScenarioModelProvider } = await import("../src/dialogue/mock-provider.ts");
+const { QuizService } = await import("../src/quiz/service.ts");
+const { InMemoryQuizRepository } = await import("../src/quiz/memory-repository.ts");
+const { publicError } = await import("../src/http/errors.ts");
 
 const baseURL = process.argv[2] ?? "http://127.0.0.1:3216";
 assert(["127.0.0.1", "localhost"].includes(new URL(baseURL).hostname), "Local test server required");
 const output = "frontend-artifacts/ui-refresh";
 await mkdir(output, { recursive: true });
 const phoneRepository = new InMemoryTrainingRepository();
-const app = await createApplication(phoneRepository, new MockScenarioModelProvider(), Date.now, undefined, () => "CC-01");
+let selectedStory = "CC-01";
+const app = await createApplication(phoneRepository, new MockScenarioModelProvider(), Date.now, undefined, () => selectedStory);
 const quiz = new QuizService(new InMemoryQuizRepository(), Date.now, max => max - 1);
 const user = { id: "ui-test-only" };
 const browser = await chromium.launch();
@@ -168,7 +171,7 @@ try {
   await expect(page.locator(".training-grid, .action-panel, .chat-panel")).toHaveCount(0);
   await expect(page.getByRole("textbox")).toHaveCount(0);
   await page.getByRole("button", { name: "รับสาย", exact: true }).click();
-  await expect(page.getByRole("log")).toContainText("บริการพัสดุสมมติ");
+  await expect(page.getByRole("log")).toContainText("MITJEE Parcel");
   assert.deepEqual((await phoneRepository.get(callId, user.id)).messages.map(m => m.role), ["character"]);
   await allWidths("call-active");
   const phoneBefore = await phoneRepository.get(callId, user.id);
@@ -180,10 +183,10 @@ try {
   assert.deepEqual(phoneAfter.events, phoneBefore.events); assert.deepEqual(phoneAfter.opportunities, phoneBefore.opportunities);
   assert.equal(phoneAfter.result, null);
   await page.reload(); await expect(page.getByRole("log")).toContainText("เขาขอให้ผมโอนเงิน");
-  await page.getByRole("button", { name: "ธนาคาร", exact: true }).click();
-  await expect(page.getByText("หน้านี้ไม่ได้ยืนยันตัวตนหรือทำธุรกรรมจริง")).toBeVisible();
+  await page.getByRole("button", { name: "ข้อมูลผู้โทร", exact: true }).click();
+  await expect(page.getByText("ข้อมูลนี้ไม่ใช่การยืนยันตัวตนผู้โทร")).toBeVisible();
   await allWidths("call-internal-app");
-  await page.getByRole("button", { name: "← กลับสายสนทนา", exact: true }).click();
+  await page.getByRole("button", { name: "กลับสายสนทนา", exact: true }).click();
   async function phoneAction(label, choice) {
     const toggle = page.getByRole("button", { name: "ตัวเลือกขณะนี้", exact: true });
     await toggle.click();
@@ -198,10 +201,6 @@ try {
   await expect(page.getByRole("button", { name: "เลือกวิธีจัดการสาย", exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "ตัวเลือกขณะนี้", exact: true })).toBeFocused();
-  await phoneAction("พิจารณาข้อมูลผู้โทร");
-  await phoneAction(null, "ตรวจสอบผ่านช่องทางที่ทราบเอง");
-  await phoneAction("ไปขั้นตอนตรวจสอบ");
-  await phoneAction(null, "จบสายเพื่อตรวจสอบผ่านช่องทางทางการ");
   await phoneAction("วางสาย");
   await expect(page.getByRole("heading", { name: "สิ้นสุดสายจำลอง", exact: true })).toBeVisible();
   await allWidths("call-ending");
@@ -210,7 +209,55 @@ try {
   await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
   assert.equal((await app.result(callId, user)).outcome, "PASSED");
   await allWidths("call-result");
-  evidence.checks.push("Call Center v3 incoming → caller-first opening → transcript-only text/refresh → scaffold app → state-gated contextual actions → ending → real categorical result; 375/768/1440; no voice/live-provider verification");
+  evidence.checks.push("Call Center v4 incoming → automatic caller-first opening → transcript-only text/refresh → backend-owned contextual app → explicit hangup → categorical result/reflection; 375/768/1440; no voice/live-provider verification");
+  for (const story of ["CC-01", "CC-02", "CC-N01", "CC-N02"]) {
+    selectedStory = story; const scam = !story.includes("N"), parcel = story.endsWith("01");
+    await page.goto("/scenarios/call-center");
+    await page.getByRole("link", { name: "เริ่มจำลองสถานการณ์", exact: true }).click();
+    await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true })).toBeDisabled();
+    await page.getByRole("checkbox").check(); await page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true }).click();
+    await expect(page).toHaveURL(/\/training\/[a-f0-9]+$/);
+    const storySessionId = new URL(page.url()).pathname.split("/").at(-1);
+    await page.getByRole("button", { name: "รับสาย", exact: true }).click();
+    await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
+    while ((await phoneRepository.get(storySessionId, user.id)).state !== "MAIN_REQUEST") {
+      await phoneAction(null, "ฟังข้อมูลต่อโดยยังไม่ให้ข้อมูลเพิ่มเติม");
+      await phoneAction("ดำเนินบทสนทนาต่อ");
+      await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
+    }
+    if (scam) {
+      await page.getByRole("button", { name: parcel ? "ธนาคารจำลอง" : "ข้อความ", exact: true }).click();
+      await expect(page.getByRole("heading", { name: parcel ? "รายการโอนจำลองตามคำขอ" : "MITJEE Bank · ข้อความจำลอง" })).toBeVisible();
+      const otpLine = !parcel ? await page.getByText(/รหัสยืนยันจำลองของคุณคือ/).innerText() : null;
+      await allWidths(`call-${story}-request-app`);
+      await page.getByRole("button", { name: parcel ? "ดูรายละเอียดการโอนจำลอง" : "อ่านรหัสในข้อความจำลอง", exact: true }).click();
+      await page.reload();
+      if (otpLine) await expect(page.getByText(otpLine, { exact: true })).toBeVisible();
+      assert.equal((await phoneRepository.get(storySessionId, user.id)).status, "ACTIVE");
+      await page.getByRole("button", { name: parcel ? "เตรียมยืนยันการโอนจำลอง" : "เตรียมยืนยันการบอกรหัสจำลอง", exact: true }).click();
+      const confirmation = page.getByRole("button", { name: parcel ? "ยืนยันการโอนเงินจำลอง" : "ยืนยันการบอกรหัสจำลองแก่ผู้โทร", exact: true });
+      await expect(confirmation).not.toHaveClass(/button-warning/); await confirmation.click();
+      await expect(page.getByRole("button", { name: "ยืนยันการกระทำจำลอง", exact: true })).not.toHaveClass(/button-warning/);
+      await allWidths(`call-${story}-confirmation`);
+      await page.getByRole("button", { name: "ยืนยันการกระทำจำลอง", exact: true }).click();
+      await page.getByRole("link", { name: "ดูผลการฝึก →", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "พบการกระทำที่มีความเสี่ยงสำคัญ", exact: true })).toBeVisible();
+      assert.equal((await app.result(storySessionId, user)).outcome, "CRITICAL_FAILURE");
+    } else {
+      await page.getByRole("button", { name: parcel ? "พัสดุ" : "ธนาคารจำลอง", exact: true }).click();
+      await page.getByRole("button", { name: parcel ? "ตรวจคำสั่งซื้อของฉัน" : "เปรียบเทียบจำนวนเงิน เวลา และรายการ", exact: true }).click();
+      await allWidths(`call-${story}-matched-app`);
+      await page.getByRole("button", { name: "กลับสายสนทนา", exact: true }).click();
+      await phoneAction(null, parcel ? "ให้เฉพาะข้อมูลจำเป็นต่อการจัดส่ง" : "รับทราบข้อมูลรายการ");
+      await phoneAction("วางสาย"); await page.getByRole("button", { name: "ดูสรุปการฝึก", exact: true }).click();
+      await page.getByRole("link", { name: "ดูผลการฝึก →", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
+      assert.equal((await app.result(storySessionId, user)).outcome, "PASSED");
+    }
+    await expect(page.getByRole("heading", { name: "ลำดับพฤติกรรมที่ยืนยัน", exact: true })).toBeVisible();
+    await allWidths(`call-${story}-reflection`);
+  }
+  evidence.checks.push("All four v4 stories: detail/prepare/acknowledgment, every automatic caller beat, state-gated apps/refresh, stable OTP, neutral explicit critical controls for both scams, normal matched checks/acknowledgment/end/reflection at 375/768/1440");
   await page.goto("/quiz/details/pre");
   await page.getByRole("button", { name: "เริ่มทำแบบทดสอบ", exact: true }).click();
   await expect(page).toHaveURL(/\/quiz\/q-/);

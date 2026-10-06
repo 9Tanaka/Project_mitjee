@@ -12,7 +12,7 @@ import { DomainError } from "./domain/types.js";
 import type { TrainingSession, ValidationStatus } from "./domain/types.js";
 import { aiCharacterResponseSchema } from "./dialogue/contracts.js";
 import type { CommitCharacterOpening, CommitDialogueTurn, DialogueReply } from "./dialogue/contracts.js";
-import { CALL_OPENING_TURN_ID, OPENING_INPUT_KEY, terminalState } from "./domain/call-center.js";
+import { callerTurnId, callerTurnKey, isCallerTurnId, terminalState } from "./domain/call-center.js";
 
 export interface SubmitCommand {
   sessionId: string;
@@ -91,14 +91,14 @@ export class TrainingCore {
 
   async submit(command: SubmitCommand): Promise<{ session: TrainingSession; duplicate: boolean; validationStatus: ValidationStatus }> {
     if (command.actionId.startsWith("dialogue:")) throw new DomainError("RESERVED_ACTION_ID");
-    if (parseAction(command.action).kind === "CHARACTER_OPENING") throw new DomainError("RESERVED_ACTION_ID");
+    if (["CHARACTER_OPENING", "CHARACTER_STATE_TURN"].includes(parseAction(command.action).kind)) throw new DomainError("RESERVED_ACTION_ID");
     return this.apply(command);
   }
 
   /** Backend-owned atomic commit, after the asynchronous provider has completed. */
   async commitDialogueTurn(input: CommitDialogueTurn): Promise<DialogueReply> {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(input.turnId)) throw new DomainError("INVALID_TURN_ID");
-    if (input.turnId === CALL_OPENING_TURN_ID) throw new DomainError("RESERVED_ACTION_ID");
+    if (isCallerTurnId(input.turnId)) throw new DomainError("RESERVED_ACTION_ID");
     const response = aiCharacterResponseSchema.parse(input.response);
     const committed = await this.apply({
       sessionId: input.sessionId, ownerId: input.ownerId, actionId: `dialogue:${input.turnId}`,
@@ -110,10 +110,12 @@ export class TrainingCore {
 
   /** No fabricated user input: one character message/receipt/action in the same CAS commit. */
   async commitCharacterOpening(input: CommitCharacterOpening): Promise<DialogueReply> {
-    if (input.turnId !== CALL_OPENING_TURN_ID) throw new DomainError("INVALID_TURN_ID");
+    if (!isCallerTurnId(input.turnId)) throw new DomainError("INVALID_TURN_ID");
+    const snapshot = await this.resume(input.sessionId, input.ownerId);
+    if (input.turnId !== callerTurnId(snapshot.state)) throw new DomainError("INVALID_TURN_ID");
     const response = aiCharacterResponseSchema.parse(input.response);
     const committed = await this.apply({ sessionId: input.sessionId, ownerId: input.ownerId,
-      actionId: `dialogue:${input.turnId}`, expectedRevision: input.expectedRevision, action: { kind: "CHARACTER_OPENING" } }, { ...input, response });
+      actionId: `dialogue:${input.turnId}`, expectedRevision: input.expectedRevision, action: { kind: input.kind } }, { ...input, response });
     return { turn: copy(committed.session.dialogueTurns.find(t => t.id === input.turnId)!), duplicate: committed.duplicate };
   }
 
@@ -121,8 +123,8 @@ export class TrainingCore {
     if (!command.actionId || command.actionId.length > 120 || !Number.isInteger(command.expectedRevision)) throw new DomainError("INVALID_COMMAND");
     const action = parseAction(command.action);
     const opening = dialogue && "kind" in dialogue;
-    const key = dialogue ? opening ? OPENING_INPUT_KEY : JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
     const session = await this.resume(command.sessionId, command.ownerId);
+    const key = dialogue ? opening ? callerTurnKey(session.state) : JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
     const previous = session.actions.find(a => a.id === command.actionId);
     if (previous) {
       if (previous.fingerprint !== key) throw new DomainError("IDEMPOTENCY_CONFLICT");
@@ -162,8 +164,8 @@ export class TrainingCore {
       session.state = terminalState(template);
     } else if (action.kind === "QUIT_SESSION" || action.kind === "DECLINE_CALL") {
       session.status = "ABANDONED";
-    } else if (action.kind === "PROGRESS") {
-      const next = advanceState(session, template, action.transitionId);
+    } else if (action.kind === "PROGRESS" || plan.transitionId) {
+      const next = advanceState(session, template, action.kind === "PROGRESS" ? action.transitionId : plan.transitionId!);
       session.state = next.state;
       if (next.safeResolution) session.status = "COMPLETED";
       else openStateOpportunities(session, template, now);
@@ -187,6 +189,7 @@ export class TrainingCore {
         response: copy(dialogue.response), candidateStatus, usedFallback: dialogue.usedFallback,
         failureReason: dialogue.failureReason, attempts: dialogue.attempts,
       });
+      if (opening) openStateOpportunities(session, template, now);
     }
     session.lastActivityAt = now;
     if (session.status !== "ACTIVE") session.endedAt = now;
