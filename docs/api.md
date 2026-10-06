@@ -65,12 +65,19 @@ GET/POST /api/auth/[...nextauth]: official Auth.js Credentials/CSRF/session/sign
 | POST /api/scenarios/:scenarioId/start | startId (UUID), expectedRevision: 0 → 201; retry → 200 |
 | GET /api/training/:sessionId | Public Session พร้อม revision |
 | POST /api/training/:sessionId/message | turnId, expectedRevision, text → Session + public Turn + duplicate |
+| POST /api/training/:sessionId/opening | expectedRevision → Session + public caller Turn + duplicate; new Call Center only |
 | POST /api/training/:sessionId/action | actionId, expectedRevision, actionDefinitionId, payload → Session + duplicate |
 | POST /api/training/:sessionId/quit | actionId, expectedRevision → Session + duplicate |
 | GET /api/training/:sessionId/result | Official Public Result หรือ 404 RESULT_NOT_FOUND |
 
 Success envelope คือ { "data": ... }; error คือ { "error": { "code": "...", "message": "..." } }
 Session response มี sessionId, scenario, status, currentStatePublicLabel, revision, messages และ availableActions
+Call Center v3 adds optional `phone`: semantic state, call status, neutral callerLabel,
+openingStatus and availableInternalApps. No story ID, variant or private override is exposed.
+Answer commits the explicit transition first and then a separate atomic opening commit.
+A pending opening can be resumed through the protected opening endpoint; GET never calls AI.
+The opening has no user message. Required actions remain gated; text is rejected before
+answer/opening and after hangup. See [Call Center foundation](call-center-foundation.md).
 Mutation response ใช้ { session, duplicate }; message เพิ่ม { turn: { turnId, committedRevision, characterMessage } }
 revision ปัจจุบันอยู่ที่ session.revision; committedRevision เป็น revision ของ receipt เดิมเมื่อ replay
 ทุก response ของ handlers ใช้ Cache-Control: no-store และ X-Content-Type-Options: nosniff

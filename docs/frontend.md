@@ -2,6 +2,14 @@
 
 STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 
+Current Call Center Part 1 uses a dedicated [Phone Simulator](call-center-foundation.md):
+incoming/answer/decline, caller-first opening, call transcript, internal-app scaffolds,
+contextual action sheet and ending/result. There is no permanent generic checkpoint panel.
+Only backend-projected current actions appear; scaffold views perform no verification.
+New v3 sessions use this UI; historical v1/v2 keep their original UI and pinned rules.
+Voice controls are retained in an opt-in disclosure after opening is ready; Part 3 owns
+the final voice experience. The remaining eight scenarios retain their existing UI.
+
 UI refresh on 3 October 2026 follows Proposal figures 7–26 without changing backend contracts.
 See [UI refresh](ui-refresh.md) for the full route/reference mapping, current checks and explicit UI-only limitations.
 This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does not complete Proposal scope.

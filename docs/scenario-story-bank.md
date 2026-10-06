@@ -487,6 +487,14 @@ Whole bank = 19 scam families (18 core + 1 extended). ไม่สร้าง 3
 
 ## 18. Current runtime alignment
 
+**Superseding implementation note — Call Center Part 1, 2026-10-06:** new sessions now pin
+v3 parcel/bank × scam/normal story identities and use a dedicated phone simulator with a
+caller-first opening. All four share foundation-only identity/verification content; this
+does not complete the target stories in this document. Published v1/v2 are unchanged for
+historical sessions. The dated 2026-10-02 mapping below is historical, not the current new-start
+selection. See [Call Center foundation](call-center-foundation.md); the other eight categories
+remain unchanged in this phase.
+
 **CURRENT_CODE ตรวจ 2026-10-02 ที่ `7ce29f87d247c457789489a3e0e7091e005c24b2`:** เรียก `app.listScenarios()` ด้วย in-memory repository ได้ 9 cards / 9 categories. ทั้งเก้าหมวดมีเส้นทางฝึกผ่าน [Frontend](../src/frontend/training.tsx); [catalog](../src/application/catalog.ts) ใช้ SMS v4 และ scam fixtures v1 อีกแปดหมวด. `registeredTemplates` มี 10 tuples เพราะเพิ่ม NORMAL_CALL ในหมวด Call Center เดิม ไม่ใช่ card ที่สิบ และไม่ใช่ 21 runtime stories.
 
 ### Demo vs target — canonical summary

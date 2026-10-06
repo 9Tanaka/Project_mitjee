@@ -68,13 +68,20 @@ decision mappings, critical rules, transition graph, guards, hidden opportunitie
 ไม่ serialize runtime context extras; adapter sanitize ซ้ำและคง limits 12/2,000/8,000
 
 ไม่มี tools, external actions, previous_response_id หรือ full-history storage;
-`store:false`, `stream:false`, `max_output_tokens:1200` เป็น technical cost bound ไม่ใช่ Proposal Requirement
+OpenAI ใช้ `store:false`; Groq ไม่ส่ง field `store` เพราะไม่รองรับ ทั้งสองใช้ `stream:false`, `max_output_tokens:1200` เป็น technical cost bound ไม่ใช่ Proposal Requirement
 Token cap รวม output budget ของ API; ความเพียงพอ/latency ยังไม่ได้ยืนยันกับโมเดลจริง
 Incomplete output ถูก reject แล้วใช้ retry/fallback; ไม่เพิ่ม token budget เอง
 `store:false` ไม่ใช่คำรับรอง Zero Data Retention หรือว่าผู้ให้บริการไม่เก็บ abuse-monitoring data
 Prompt ไม่มี score/transition logic และไม่ใช่ production-grade prompt-injection protection
 
 ## Immutable context
+
+Call Center v3 adds a first-class `CHARACTER_OPENING` context with `currentUserMessage=null`
+and backend-pinned private `callStoryId`. Its Responses input is developer context only;
+there is no fabricated user message. Normal turns retain the sanitized user-input path.
+The provider cannot select stories or mutate states. Core commits the opening as one
+character message/action/receipt using CAS; pending recovery, authored fallback and
+late-response rejection are documented in [Call Center foundation](call-center-foundation.md).
 
 ScenarioAIContext มี scenario/template id/version/category/variant/title,
 currentState, characterRole, allowedBehaviors, forbiddenBehaviors,

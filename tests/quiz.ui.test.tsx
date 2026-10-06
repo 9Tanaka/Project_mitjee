@@ -89,7 +89,7 @@ it("finishes all 20 questions, scores on the service and shows accessible explan
   await screen.findByRole("heading",{name:"ผล Quiz ของคุณ"}); expect(screen.getByText("100%")).toBeTruthy();
   expect(screen.getAllByRole("link",{name:/อ่านแนวทางเพิ่มเติม/})).toHaveLength(20);
   expect(screen.queryAllByRole("radio")).toHaveLength(0); expect(screen.queryByText(/ผ่านเกณฑ์|PASSED|70%/)).toBeNull();
-});
+}, 15_000); // Full 20-question UI/service journey; not a runtime latency benchmark.
 it("describes a lower Post-test result in percentage points and links the frozen Pre-test", async () => {
   const pre = await begin(); const raw = (await repository.get(pre.id,"a"))!;
   await service.write(pre.id,"a","SUBMIT",{requestId:randomUUID(),expectedRevision:0,answers:raw.questions.map(q=>({questionId:q.id,optionId:q.correctOptionId}))});

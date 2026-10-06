@@ -1,12 +1,18 @@
 # Playable scenario catalog
 
-STATUS: NINE PUBLIC SCENARIOS; EIGHT TEXT-ONLY + CALL CENTER TEXT/VOICE WITH TWO INTERNAL VARIANTS
+STATUS: NINE PUBLIC SCENARIOS; EIGHT TEXT-ONLY + CALL CENTER PHONE FOUNDATION WITH FOUR INTERNAL STORY IDENTITIES
 
-The nine types in Proposal v6 section 4.1.7.1 are available through the authenticated scenario catalog. Templates have fictional content, backend transitions and explicit decision assessments. Scam templates retain warning evidence, early safe exit and validated critical simulated actions. NORMAL_CALL instead uses neutral evidence and zero critical rules. The non-SMS templates are version 1; SMS / Phishing uses version 4. Historical SMS versions 1–3 stay available for old sessions. All new templates use categorical [Decision Evaluation](decision-evaluation.md).
+The nine types in Proposal v6 section 4.1.7.1 are available through the authenticated catalog.
+Call Center new sessions use [v3 phone foundation](call-center-foundation.md); SMS uses v4;
+the remaining seven templates retain v1. Historical SMS v1–3 and Call Center v1/v2 remain
+available for old sessions. All new starts use categorical [Decision Evaluation](decision-evaluation.md).
+The unchanged eight text categories retain their authored warning evidence, safe exits and
+validated critical actions. The new Call Center foundation has shared identity/verification
+decisions only; full story evidence and critical requests are deferred to Part 2.
 
 | Category | Template ID | Practised risk |
 |---|---|---|
-| Call Center | `call-center-scam` (stable historical ID) | NORMAL_CALL legitimate fictional appointment or SCAM_CALL caller impersonation |
+| Call Center | `call-center-scam` (stable public ID) | Parcel/bank × normal/scam foundation identities; not four full stories |
 | Investment | `investment-scam` | Guaranteed returns and a withdrawal fee |
 | Romance | `romance-scam` | Relationship pressure and an urgent money request |
 | E-commerce | `ecommerce-scam` | Off-platform payment to an unverified shop |
@@ -25,14 +31,16 @@ The early safe stop is available at first contact for scam templates, not the NO
 
 Call Center uses one public card and a neutral public title/description for both variants.
 
-เก้ารายการนี้เป็น category-level runtime scenarios ไม่ใช่ target storyboard ทั้ง 21 เรื่อง: SCAM_CALL ใกล้เคียง CC-02 ส่วน NORMAL_CALL เป็นเจ้าหน้าที่ห้องสมุดสมมตินัดรับหนังสือ CC-01/CC-N01/CC-N02 ยังไม่เป็น runtime story แยก ดู [Current runtime alignment](scenario-story-bank.md#18-current-runtime-alignment)
+เก้ารายการนี้เป็น category-level runtime scenarios ไม่ใช่ target storyboard ทั้ง 21 เรื่อง:
+Call Center v3 มี CC-01/CC-02/CC-N01/CC-N02 เป็น Backend identities ที่ใช้เส้นทางพื้นฐานร่วมกัน
+ไม่ใช่เรื่องเต็มทั้งหมด และไม่เปิดเผย condition บน card ดู [Part 1](call-center-foundation.md)
 The stable historical scenario ID is retained to preserve old session/start identities.
 Backend selection uses crypto.randomInt(2), with an injected selector for deterministic tests.
 The persisted session is authoritative: same owner/scenario/startId replays without reroll;
 concurrent starts may select differently but the losing insert loads the database winner.
-NORMAL_CALL is an additional immutable version tuple, not a rewrite of SCAM_CALL v1.
+Each story pins an immutable id/version/variant tuple, never a rewrite of a published template.
 Browser start DTOs reject variant/callType/seed/probability; AI receives the chosen context only.
-NORMAL_CALL uses a fictional library appointment, D1 context verification, neutral W1,
+Historical NORMAL_CALL v1/v2 use a fictional library appointment, D1 context verification, neutral W1,
 D2 fictional non-sensitive scheduling, S1 normal termination/known callback channel.
 See [approved normal-call assessment](decision-evaluation.md) and [Voice](voice.md).
 

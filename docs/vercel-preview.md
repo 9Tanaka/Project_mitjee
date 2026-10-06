@@ -55,7 +55,7 @@ Select the Groq provider and the approved Groq model in private server configura
 
 The Groq adapter removes the `store` property entirely from the serialized Responses request. The OpenAI adapter still sends `store: false`. Both retain the shared response schema, cancellation and backend validation boundaries. Regression tests inspect the body emitted through the actual SDK with a mocked HTTP transport; they do not establish that private Groq credentials, quota or the selected model are available.
 
-New Call Center sessions use version 2 with neutral text/voice wording. Published version 1 configurations remain registered unchanged for resume and immutability; historical source text is not rewritten. Scenario list badges distinguish text-only from text-or-voice capability. Existing voice code is preserved, but voice is **outside this Vercel Preview verification** and not enabled by the private settings above.
+New Call Center sessions now use [version 3 phone foundation](call-center-foundation.md), with backend-owned parcel/bank story identities and a caller-first opening. Published v1/v2 configurations remain registered unchanged for historical resume. Full four-story contents are pending. Scenario badges still distinguish text-only from text-or-voice. Voice code is preserved; it remains outside this Preview verification. Optional private `CALL_CENTER_DEMO_STORY` pins an exact identity and takes precedence over a valid older variant override. Verification results dated below are historical and do not establish deployed acceptance of the new v3 opening/UI.
 
 ## Verification scope
 

@@ -8,6 +8,7 @@ import { MutationAttempt } from "./api.js";
 import { ActionControl, type ActionPayload } from "./actions.js";
 import { Failure, Loading, Notice } from "./ui.js";
 import { VoiceControls } from "./voice.js";
+import { PhoneSimulator } from "./phone-simulator.js";
 
 const replySchema = z.union([mutationDto, messageDto]);
 export function Training({ sessionId }: { sessionId: string }) {
@@ -25,6 +26,7 @@ export function Training({ sessionId }: { sessionId: string }) {
   if (resource.loading) return <Loading text="กำลังโหลดรอบฝึก…" />;
   if (resource.error) return <Failure error={resource.error} retry={() => void resource.reload()} />;
   if (!s) return <Notice>ยังไม่มีข้อมูลรอบฝึก</Notice>;
+  if (s.scenario.category === "CALL_CENTER" && s.phone) return <PhoneSimulator session={s} onSession={resource.setData} reload={resource.reload} />;
   if (s.status === "ABANDONED" || s.status === "EXPIRED") return <div className="panel terminal-panel">
     <p className="eyebrow">สถานะรอบฝึก</p><h1>{s.status === "ABANDONED" ? "ออกจากรอบฝึกแล้ว" : "รอบฝึกหมดอายุแล้ว"}</h1>
     <p className="muted mt-4">รอบนี้ยังประเมินไม่ได้เพราะยังไม่จบด้วยการกระทำที่ประเมินได้ คุณสามารถเลือกเริ่มสถานการณ์ใหม่ได้</p><Link className="button mt-6" href="/scenarios">กลับไปเลือกสถานการณ์ →</Link></div>;
