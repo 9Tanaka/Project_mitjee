@@ -45,6 +45,11 @@ async function harness(pending = false) {
 async function answerCall() {
   fireEvent.click(screen.getByRole("button", { name: "รับสาย" }));
   await screen.findByLabelText("ตอบผู้โทรด้วยข้อความ");
+  const phone = screen.getByRole("region", { name: "โทรศัพท์จำลอง" });
+  expect(phone.querySelector('.phone-voice-controls')).not.toBeNull();
+  expect(phone.textContent).not.toContain("โหมดเสียงเดิม");
+  expect(screen.getByRole("log", { name: "บทถอดเสียงสายจำลอง" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "กดเพื่อพูด" })).toBeTruthy();
 }
 async function contextual(label: string, choice = false) {
   fireEvent.click(screen.getByRole("button", { name: "ตัวเลือกขณะนี้" }));

@@ -9,7 +9,7 @@ Installation and production builds generate the ignored Prisma client automatica
 โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ 9 ประเภท
 Call Center ใหม่เป็น Phone Simulator v5: checkpoint เฉพาะการตัดสินใจที่มีสาระ และทางเดินตามการกระทำที่ Backend ตรวจสอบแล้ว ดู [Behavior hardening](docs/call-center-behavior-hardening.md)
 Backend เลือกและตรึงหนึ่งในสี่เรื่องพัสดุ/ธนาคารแบบ matched normal/scam โดยไม่ส่งชื่อเรื่องหรือประเภทสายให้ browser ดู [Call Center Part 2](docs/call-center-part2.md)
-คงโค้ด Azure Speech / WebSocket เดิมเป็น integration seams โดยไม่ rebuild เสียงในรอบนี้
+Phone มี Push-to-Talk และ Replay เสียงผู้โทรในหน้ารับสายโดยตรง; HTTP fallback ไม่ต้องใช้ custom WebSocket server ดู [Call Center Part 3](docs/call-center-part3.md)
 เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
 ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
 ผลเก่าของ SMS template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่; เลข version ไม่ใช้เลือกระบบประเมิน
@@ -40,7 +40,7 @@ UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรก�
 | Frontend UI | Implemented — Proposal-aligned shell, responsive navigation, registration/login, searchable nine-scenario catalog, details/safety acknowledgment, training/result, Quiz and FAQ |
 | Live AI Provider | Implemented — Mock/OpenAI/Groq; synthetic Groq live verification passed on 2026-10-04; deployed Preview acceptance tracked in Vercel Preview notes |
 | Call Center text | Four v5 behavior-branched stories; 3 meaningful checkpoints for scams / 2 for normal calls; verified simulator evidence required for verification branch; historical v1–v4 preserved |
-| Voice Call Center | Implemented — Azure STT/TTS adapters, microphone controls, text/HTTP fallback; live Azure NOT RUN (credentials absent) |
+| Voice Call Center | Implemented — Phone-integrated Push-to-Talk, committed opening/state/reply TTS and replay, captions/text/HTTP fallback; live Azure NOT RUN (credentials absent) |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
 | WebSocket | Implemented — authenticated, owned active Call Center session, bounded transport and reconnect/replay |
 | Account / Dashboard UI | Read-only session account; dashboard uses existing Quiz history (up to 50 rounds), not aggregated scenario history or overall mastery |
@@ -66,11 +66,14 @@ Browser / React UI [IMPLEMENTED; public DTOs only]
 ScenarioDialogueOrchestrator → ScenarioModelProvider
                               ├─ Mock Provider [IMPLEMENTED]
                               ├─ OpenAI Responses API Provider [pending credits]
-                              └─ Groq Responses API Provider [historical live verified; new opening transport tested with fake HTTP]
+                              └─ Groq Responses API Provider [four v5 stories live verified; deployed acceptance tracked separately]
 
 Call Center microphone → authenticated WebSocket / bounded HTTP
   → Azure STT → sanitized text → existing Dialogue → atomic commit
   → Azure TTS → in-memory browser audio (text remains available)
+
+Committed caller opening/state/text-reply → protected HTTP /speech (owned turnId only)
+  → Azure TTS → best-effort playback / replay (no AI turn or training action)
 ```
 
 ดูขอบเขตหน้าที่และ Mermaid ใน [Architecture](docs/architecture.md)

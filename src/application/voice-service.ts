@@ -9,6 +9,18 @@ export interface VoiceReply { dialogue: TrainingMessageReply; audio: Uint8Array 
 export class VoiceApplicationService {
   constructor(private readonly app: TrainingApplicationService, private readonly stt: SpeechToTextProvider, private readonly tts: TextToSpeechProvider,
     private readonly pending: Set<string> = new Set()) {}
+  /** Presentation-only replay of an owned committed character turn. No AI or mutation. */
+  async speak(id: string, user: AuthenticatedPrincipal, turnId: string, signal?: AbortSignal) {
+    const session = await this.app.resume(id, user);
+    if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");
+    const message = session.messages.find(m => m.turnId === turnId && m.role === "character");
+    if (!message) throw new DomainError("INVALID_TURN_ID");
+    try {
+      const audio = await speechDeadline(s => this.tts.synthesize(sanitizeMessage(message.text), s), signal);
+      if (!audio.byteLength || audio.byteLength > 4 * 1024 * 1024) throw new SpeechError("SPEECH_UNAVAILABLE");
+      return { audio, audioStatus: "READY" as const };
+    } catch { return { audio: null, audioStatus: "UNAVAILABLE" as const }; }
+  }
   async bind(id: string, user: AuthenticatedPrincipal) {
     const session = await this.app.resume(id, user);
     if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");

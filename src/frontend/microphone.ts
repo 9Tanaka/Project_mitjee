@@ -20,6 +20,7 @@ export function encodePcmWav(chunks: readonly Float32Array[], rate: number): Uin
   return wav;
 }
 export async function startMicrophone(onLimit: () => void, signal: AbortSignal): Promise<Recording> {
+  if (!navigator.mediaDevices?.getUserMedia) throw new DOMException("Microphone unavailable", "NotFoundError");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true }, video: false });
   const stopTracks = () => stream.getTracks().forEach(track => track.stop());
   if (signal.aborted) { stopTracks(); throw new DOMException("Cancelled", "AbortError"); }

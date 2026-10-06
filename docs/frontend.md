@@ -2,14 +2,15 @@
 
 STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 
-Current Call Center uses a dedicated [Phone Simulator v4](call-center-part2.md):
+Current Call Center uses a dedicated [Phone Simulator v5](call-center-behavior-hardening.md):
 incoming/answer/decline, automatic caller-first state turns, transcript, backend-gated
 internal apps, contextual action sheet, neutral fresh critical confirmation and reflection.
 There is no permanent generic checkpoint panel. Only backend-projected current actions
 appear; app viewing cannot itself cause Critical Failure. Historical v3 remains playable
 with its pinned foundation flow; v1/v2 retain the original generic UI and pinned rules.
-Voice controls are retained in an opt-in disclosure after opening is ready; Part 3 owns
-the final voice experience. The remaining eight scenarios retain their existing UI.
+Voice controls now belong inside the active call screen: Push-to-Talk, optional caller speaker,
+presentation-only duration, replay and accessible captions. No legacy voice disclosure remains.
+See [Part 3](call-center-part3.md). The remaining eight scenarios retain their existing UI.
 
 UI refresh on 3 October 2026 follows Proposal figures 7–26 without changing backend contracts.
 See [UI refresh](ui-refresh.md) for the full route/reference mapping, current checks and explicit UI-only limitations.
@@ -17,7 +18,7 @@ This phase extends baseline a114a57f10d98138c06fffdc7b92ec834a483e9e; it does no
 
 ## Architecture and routes
 
-Call Center additionally shows a user-initiated “เริ่มโหมดเสียง” control. No microphone is
+Call Center additionally shows a user-initiated “กดเพื่อพูด” control. No microphone is
 requested during render or page load. Stop/send, cancel and unmount release all tracks;
 the AudioWorklet captures bounded mono samples and encodes PCM WAV in browser memory.
 Voice sends a fixed turnId/revision over the same-origin socket; transport failure retries

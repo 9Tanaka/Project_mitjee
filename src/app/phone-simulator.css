@@ -49,7 +49,10 @@
 .phone-internal-app h2 { margin-top: 38px; }
 .phone-pending { padding: 25px 0; text-align: center; font-size: 13px; }
 .phone-footnote,.phone-request-status { font-size: 12px; text-align: center; max-width: 440px; margin: 14px auto; color: #746982; }
-.phone-voice-seam { margin: 24px auto; max-width: 440px; font-size: 12px; }
-.phone-voice-seam summary { cursor: pointer; padding: 12px; color: #716185; }
+.phone-voice-controls { padding: 16px 0; border-bottom: 1px solid #ded7e8; font-size: 12px; }
+.phone-voice-controls audio { display: block; width: 100%; max-width: 100%; }
+.phone-voice-controls .button { min-width: 0; white-space: normal; }
+.phone-speaker-toggle { display: flex; gap: 8px; align-items: center; }
+.phone-call-timer { text-align: center; font-variant-numeric: tabular-nums; color: #746982; margin-block: 12px; }
 @media (max-width: 480px) { .phone-shell { padding: 7px; border-radius: 30px; } .phone-screen { border-radius: 21px; } .phone-training-heading h1 { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .phone-training * { scroll-behavior: auto; } }

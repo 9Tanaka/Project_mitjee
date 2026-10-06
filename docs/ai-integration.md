@@ -1,6 +1,6 @@
 # AI / Dialogue Integration
 
-STATUS (6 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; historical Groq live verified, latest v5 all-story check FAILED on INVALID_OUTPUT with safe fallback; OpenAI live pending credits. See [current verification](call-center-behavior-hardening.md).
+STATUS (6 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; Part 3 real Groq check passed all four v5 stories without fallback. The historical CC-N01 INVALID_OUTPUT cause remains unconfirmed/not reproduced. OpenAI live pending credits. See [Part 3 evidence and limits](call-center-part3.md); [Part 2 historical evidence](call-center-behavior-hardening.md) is preserved.
 
 [กลับ README](../README.md) · [Security](security.md)
 

@@ -64,6 +64,9 @@ export function ActiveCallScreen({ session, blocked, text, setText, send, reques
 }
 
 export function PhoneSimulator({ session, onSession, reload }: { session: Session; onSession: (s: Session) => void; reload: () => Promise<void> }) {
+  const connectedAt = useRef<number | null>(null);
+  const connectedSession = useRef(session.sessionId);
+  const [callSeconds, setCallSeconds] = useState(0);
   const [text, setText] = useState("");
   const [sheet, setSheet] = useState(false);
   const [internalApp, setInternalApp] = useState<Phone["availableInternalApps"][number] | null>(null);
@@ -76,6 +79,13 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
     if ("turn" in reply) setText("");
   }, reload);
   const phone = session.phone!;
+  useEffect(() => {
+    if (connectedSession.current !== session.sessionId) { connectedSession.current = session.sessionId; connectedAt.current = null; setCallSeconds(0); }
+    if (phone.callStatus !== "CONNECTED") return;
+    connectedAt.current ??= Date.now();
+    const tick = () => setCallSeconds(Math.floor((Date.now() - connectedAt.current!) / 1000));
+    tick(); const timer = setInterval(tick, 1000); return () => clearInterval(timer);
+  }, [phone.callStatus, session.sessionId]);
   const blocked = mutation.blocked || voiceBusy;
   const active = session.status === "ACTIVE";
   const terminal = !active;
@@ -105,7 +115,7 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
     e.preventDefault(); if (blocked || !text.trim()) return;
     void mutation.run(new MutationAttempt(path + "/message", { turnId: crypto.randomUUID(), expectedRevision: session.revision, text }));
   }
-  return <div className="phone-training"><Link href="/scenarios" className="back-link">← สถานการณ์ฝึก</Link>
+  return <div className="phone-training" data-call-state={phone.state} data-caller-status={phone.openingStatus}><Link href="/scenarios" className="back-link">← สถานการณ์ฝึก</Link>
     <header className="phone-training-heading"><p className="eyebrow">INTERACTIVE PHONE SIMULATOR</p><h1>ฝึกรับสาย Call Center</h1>
       <p className="muted">ใช้ข้อมูลสมมติเท่านั้น ห้ามส่ง OTP รหัสผ่าน หรือข้อมูลส่วนบุคคลจริง</p></header>
     {mutation.error && <Failure error={mutation.error} retry={mutation.retryable ? () => void mutation.retry() : undefined} />}
@@ -125,6 +135,9 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
         : internalApp && phone.availableInternalApps.some(a => a.id === internalApp.id) ? <div className="phone-internal-app"><button className="back-link" onClick={() => setInternalApp(null)}>← กลับสายสนทนา</button><h2>{internalApp.label}</h2><p>ไม่มีข้อมูลรายการในรอบฝึกนี้</p><p>หน้านี้ไม่ได้ยืนยันตัวตนหรือทำธุรกรรมจริง</p></div>
           : <ActiveCallScreen session={session} blocked={blocked} text={text} setText={setText} send={send}
             requestOpening={requestOpening} recovery={!!mutation.error}>
+            <p className="phone-call-timer" aria-label="ระยะเวลาสายจำลอง">{String(Math.floor(callSeconds / 60)).padStart(2, "0")}:{String(callSeconds % 60).padStart(2, "0")}</p>
+            {active && phone.callStatus === "CONNECTED" && <VoiceControls session={session} disabled={mutation.blocked || pendingBeat}
+              onReply={r => onSession(r.session)} onBusy={setVoiceBusy} reload={reload} />}
             <PhoneAppSwitcher apps={phone.availableInternalApps} disabled={blocked} open={app => {
               if (!phone.activeApp) { setInternalApp(app); return; }
               const navigation = session.availableActions.find(a => a.navigationTarget === app.id);
@@ -137,8 +150,6 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
               <button className="button mt-4" disabled={blocked} onClick={() => void mutation.run(new MutationAttempt(path + "/quit", { actionId: crypto.randomUUID(), expectedRevision: session.revision }))}>ยืนยันออกจากรอบฝึก</button></section>}
           </ActiveCallScreen>}
     </PhoneShell>
-    {active && phone.openingStatus === "READY" && phone.callStatus === "CONNECTED" && <details className="phone-voice-seam"><summary>โหมดเสียงเดิม (เลือกเปิดเมื่อพร้อม)</summary>
-      <VoiceControls session={session} disabled={mutation.blocked} onReply={r => onSession(r.session)} onBusy={setVoiceBusy} reload={reload} /></details>}
     <p className="phone-footnote">ข้อความและบทถอดเสียงไม่ใช่การยืนยันการกระทำ ระบบประเมินเฉพาะตัวเลือกที่คุณยืนยัน</p>
   </div>;
 }

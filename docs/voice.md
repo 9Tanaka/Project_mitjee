@@ -1,7 +1,7 @@
 # Call Center voice — implemented demo design
 
-Status (2 October 2026): adapters, application orchestration, HTTP/socket transport and UI
-implemented and covered by fake-provider tests. **LIVE AZURE VERIFICATION NOT RUN**:
+Status (6 October 2026): Phone-integrated Push-to-Talk, committed caller opening/state/reply
+TTS, replay and HTTP/socket fallback implemented and covered by fake-provider tests. **LIVE AZURE VERIFICATION NOT RUN**:
 private Speech key/region are absent. This is not a claim of production readiness or measured
 speech quality. See [current verification](realtime-verification.md).
 
@@ -32,9 +32,9 @@ No automatic provider/model substitution occurs. Missing Azure credentials do no
 `npm run dev` runs the custom same-origin HTTP/socket server. For a production build, run
 `npm run build` then `npm start`. See [WebSocket deployment](websocket.md).
 Microphone access requires a secure context (HTTPS or supported loopback development origin).
-Permission is requested only after **เริ่มโหมดเสียง**, never on page load. Stop, cancellation,
+Permission is requested only after **กดเพื่อพูด**, never on page load. Stop, cancellation,
 failed setup and unmount release tracks/worklet/context. Late permission/resume cannot restart
-a cancelled recording. Audio playback is an explicit browser control, not autoplay.
+a cancelled recording. Audio playback has explicit controls and optional best-effort autoplay.
 
 Azure F0 can be selected for development subject to the account's current region, quota and
 availability. The implementation does not provision a resource or promise free unlimited usage.
@@ -60,6 +60,26 @@ Input duration comes from validated byte count/header, not a client duration cla
 files with arbitrary chunks, MP3, WebM, URLs and file uploads are intentionally unsupported.
 HTTP and socket module graphs share primitive admission/rate state, not application class instances.
 These are defensive demo limits, not a measured 20-session performance result or distributed limiter.
+
+## Part 3 committed-turn playback
+
+`POST /api/training/:sessionId/speech` accepts **only an owned committed character turnId**.
+It authenticates, checks same-origin/strict bounded JSON, applies the shared owner rate limit,
+and loads sanitized persisted text. Clients cannot send arbitrary synthesis text. It does not
+call the dialogue provider, submit a training action, or change evaluation/revision. Repeated
+playback may synthesize again because audio is deliberately not persisted; it never duplicates
+dialogue or official actions. Opening, state beats and text replies use this same presentation port.
+
+Speaker opt-in requests audio after text commits; browser autoplay is best effort. Replay stays
+available if autoplay or TTS fails. Recording pauses playback; leaving/changing the call cancels
+pending audio and releases microphone resources. Late aborted audio cannot replace current audio.
+Permission denied/no device, 30-second recording bound, STT failures and uncertain network retries
+have Thai text fallback. Voice request retries retain the original turn/revision/audio.
+HTTP voice deadline is 110 seconds client-side / 120 seconds route-side; presentation speech route
+is bounded at 60 seconds. Existing provider attempt/STT/TTS deadlines remain unchanged.
+The combined voice endpoint does not stream separate STT-completed progress: UI says it is
+transcribing **and** awaiting the caller, not claiming independently measured internal stages.
+See [Part 3 measurements and live evidence](call-center-part3.md).
 
 ## Failure, replay and privacy
 

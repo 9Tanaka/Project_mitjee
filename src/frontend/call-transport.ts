@@ -1,7 +1,11 @@
-import { callServerMessage, voiceReply, type voiceRequest } from "../public-api/voice.js";
+import { callServerMessage, voiceReply, speechReply, type voiceRequest } from "../public-api/voice.js";
 import type { messageDto } from "../public-api/contracts.js";
 import type { z } from "zod";
-import { ApiFailure } from "./api.js";
+import { api, ApiFailure } from "./api.js";
+
+export function httpSpeech(sessionId: string, turnId: string, signal: AbortSignal) {
+  return api(`/api/training/${encodeURIComponent(sessionId)}/speech`, speechReply, { body: JSON.stringify({ turnId }), signal });
+}
 
 export type VoiceRequest = z.infer<typeof voiceRequest>;
 export type VoiceResponse = z.infer<typeof voiceReply>;
@@ -12,7 +16,7 @@ export async function socketVoice(sessionId: string, input: VoiceRequest, signal
     const url = new URL(`/api/call/${encodeURIComponent(sessionId)}/socket`, window.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(url); let done = false, sent = false;
-    const timer = setTimeout(() => finish(new ApiFailure("NETWORK_ERROR", 0)), 70_000);
+    const timer = setTimeout(() => finish(new ApiFailure("NETWORK_ERROR", 0)), 110_000);
     const handshake = setTimeout(() => finish(new ApiFailure("NETWORK_ERROR", 0)), 6000);
     const finish = (error?: Error, reply?: VoiceResponse) => {
       if (done) return; done = true; clearTimeout(timer); clearTimeout(handshake);
@@ -38,7 +42,7 @@ export async function socketVoice(sessionId: string, input: VoiceRequest, signal
 export async function httpVoice(sessionId: string, input: VoiceRequest, signal: AbortSignal): Promise<VoiceResponse> {
   try {
     const response = await fetch(`/api/training/${encodeURIComponent(sessionId)}/voice`, { method: "POST", credentials: "same-origin",
-      headers: { "Content-Type": "application/json" }, body: JSON.stringify(input), signal: AbortSignal.any([signal, AbortSignal.timeout(70_000)]) });
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(input), signal: AbortSignal.any([signal, AbortSignal.timeout(110_000)]) });
     const value: unknown = await response.json();
     if (!response.ok) {
       const error = value as { error?: { code?: string } };

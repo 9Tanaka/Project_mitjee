@@ -14,6 +14,7 @@ const { MockScenarioModelProvider } = await import("../src/dialogue/mock-provide
 const { QuizService } = await import("../src/quiz/service.ts");
 const { InMemoryQuizRepository } = await import("../src/quiz/memory-repository.ts");
 const { publicError } = await import("../src/http/errors.ts");
+const { VoiceApplicationService } = await import("../src/application/voice-service.ts");
 
 const baseURL = process.argv[2] ?? "http://127.0.0.1:3216";
 assert(["127.0.0.1", "localhost"].includes(new URL(baseURL).hostname), "Local test server required");
@@ -22,6 +23,9 @@ await mkdir(output, { recursive: true });
 const phoneRepository = new InMemoryTrainingRepository();
 let selectedStory = "CC-01";
 const app = await createApplication(phoneRepository, new MockScenarioModelProvider(), Date.now, undefined, () => selectedStory);
+let speechCalls = 0;
+const voice = new VoiceApplicationService(app, { async transcribe() { throw new Error("NO_MIC_TEST_AUDIO"); } },
+  { async synthesize() { speechCalls++; throw new Error("SYNTHETIC_TTS_UNAVAILABLE"); } });
 const quiz = new QuizService(new InMemoryQuizRepository(), Date.now, max => max - 1);
 const user = { id: "ui-test-only" };
 const browser = await chromium.launch();
@@ -43,6 +47,10 @@ try {
         if (!operation) data = await app.resume(id, user);
         else if (["message", "action", "quit", "opening"].includes(operation)) data = await app[operation](id, user, body);
         else if (operation === "result") data = await app.result(id, user);
+        else if (operation === "speech") {
+          const reply = await voice.speak(id, user, body.turnId);
+          data = { audioBase64: null, audioMime: "audio/wav", audioStatus: reply.audioStatus };
+        }
         else throw new Error("Unsupported UI test request");
       } else if (path === "/api/quiz") data = await quiz.overview(user.id);
       else if (path === "/api/quiz/attempts") data = await quiz.start(user.id, body);
@@ -174,6 +182,19 @@ try {
   await expect(page.getByRole("log")).toContainText("MITJEE Parcel");
   assert.deepEqual((await phoneRepository.get(callId, user.id)).messages.map(m => m.role), ["character"]);
   await allWidths("call-active");
+  await expect(page.locator(".phone-screen").getByLabel("เสียง Call Center")).toBeVisible();
+  await expect(page.getByText("โหมดเสียงเดิม", { exact: false })).toHaveCount(0);
+  const beforeAudio = await phoneRepository.get(callId, user.id);
+  await page.getByRole("checkbox", { name: "เปิดเสียงผู้โทร", exact: true }).check();
+  await expect(page.getByText(/ไม่สามารถเล่นเสียงได้ในขณะนี้/)).toBeVisible();
+  assert.equal(speechCalls, 1);
+  await page.getByRole("button", { name: "เล่นเสียงผู้โทรอีกครั้ง", exact: true }).click();
+  await expect.poll(() => speechCalls).toBe(2);
+  assert.deepEqual(await phoneRepository.get(callId, user.id), beforeAudio);
+  await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
+  await allWidths("call-inline-voice-fallback");
+  await page.getByRole("checkbox", { name: "เปิดเสียงผู้โทร", exact: true }).uncheck();
+  evidence.checks.push("Phone-integrated TTS opening/replay unavailable presentation preserves committed aggregate and text at 375/768/1440; synthetic TTS only, not Azure verification");
   const phoneBefore = await phoneRepository.get(callId, user.id);
   await page.getByLabel("ตอบผู้โทรด้วยข้อความ").fill("เขาขอให้ผมโอนเงิน ขอพิจารณาข้อมูลก่อน");
   await page.getByRole("button", { name: "ส่งข้อความ", exact: true }).click();
@@ -259,7 +280,7 @@ try {
     await expect(page.getByRole("heading", { name: "ลำดับพฤติกรรมที่ยืนยัน", exact: true })).toBeVisible();
     await allWidths(`call-${story}-reflection`);
   }
-  evidence.checks.push("All four v4 stories: detail/prepare/acknowledgment, every automatic caller beat, state-gated apps/refresh, stable OTP, neutral explicit critical controls for both scams, normal matched checks/acknowledgment/end/reflection at 375/768/1440");
+  evidence.checks.push("All four v5 stories: detail/prepare/acknowledgment, every automatic caller beat, state-gated apps/refresh, stable OTP, neutral explicit critical controls for both scams, normal matched checks/acknowledgment/end/reflection at 375/768/1440");
   await page.goto("/quiz/details/pre");
   await page.getByRole("button", { name: "เริ่มทำแบบทดสอบ", exact: true }).click();
   await expect(page).toHaveURL(/\/quiz\/q-/);
