@@ -167,18 +167,19 @@ export class PrismaTrainingRepository implements TrainingRepository {
         // Everything following it rolls back together, including the revision increment.
         const changed = await tx.trainingSession.updateMany({
           where: { id: snapshot.id, revision: expectedRevision },
-          data: { revision: { increment: 1 } },
+          // Mutable header and revision share the same CAS/row lock. Identity/history
+          // validation and child writes still occur before COMMIT; any failure rolls
+          // this entire header change back. No second header UPDATE round trip.
+          data: { revision: { increment: 1 }, status: snapshot.status, state: snapshot.state,
+            lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt) },
         });
         if (changed.count !== 1) throw new DomainError("REVISION_CONFLICT");
         const row = await tx.trainingSession.findUniqueOrThrow({ where: { id: snapshot.id }, include });
         const current = decode(row); current.revision = expectedRevision;
         assertUpdate(current, snapshot, expectedRevision);
-        await tx.trainingSession.update({ where: { id: snapshot.id }, data: {
-          status: snapshot.status, state: snapshot.state, lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt),
-        } });
         await this.writeChildren(tx, snapshot, current);
         await this.options.beforeCommit?.();
-      }, { isolationLevel: "ReadCommitted", timeout: 10_000 });
+      }, { isolationLevel: "ReadCommitted", timeout: 15_000 });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") throw new DomainError("REVISION_CONFLICT");
       throw error;
@@ -210,9 +211,13 @@ export class PrismaTrainingRepository implements TrainingRepository {
         state: t.state, templateVersion: t.templateVersion, snapshotRevision: t.snapshotRevision, committedRevision: t.committedRevision,
         response: json(t.response), candidateStatus: t.candidateStatus, usedFallback: t.usedFallback, failureReason: t.failureReason, attempts: t.attempts } });
     }
-    for (const [position, m] of s.messages.entries()) {
-      if (position < (previous?.messages.length ?? 0)) continue;
-      await tx.trainingMessage.create({ data: { sessionId: s.id, position, id: m.id, turnId: m.turnId, role: m.role, text: m.text, state: m.state, at: new Date(m.at) } });
+    const newMessages = s.messages.slice(previous?.messages.length ?? 0);
+    if (newMessages.length) {
+      // One bounded Core commit adds at most a user/character pair. Keep unique/FK
+      // failures fatal (no skipDuplicates), after the matching receipt is created.
+      await tx.trainingMessage.createMany({ data: newMessages.map((m, offset) => ({ sessionId: s.id,
+        position: (previous?.messages.length ?? 0) + offset, id: m.id, turnId: m.turnId,
+        role: m.role, text: m.text, state: m.state, at: new Date(m.at) })) });
     }
     if (s.result && !previous?.result) {
       const r = s.result;
