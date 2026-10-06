@@ -23,7 +23,7 @@ const output = `frontend-artifacts/part3-preview/${expectedStory ? expectedStory
 function assertConcealed(payload) {
   assert.ok(!/CC-(?:01|02|N01|N02)|SCAM_CALL|NORMAL_CALL/.test(JSON.stringify(payload)), "PUBLIC_STORY_LEAK");
 }
-let stage = "PUBLIC_ACCESS", check = "public-page", browser, database, page, context;
+let stage = "PUBLIC_ACCESS", check = "public-page", browser, database, repository, page, context;
 try {
   browser = await chromium.launch();
   context = await browser.newContext({ baseURL: origin, viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
@@ -33,9 +33,10 @@ try {
   page.on("response", response => {
     const path = new URL(response.url()).pathname;
     if (path.startsWith("/api/")) {
-      const headers = response.headers(), category = headers["x-mitjee-failure-category"], failureStage = headers["x-mitjee-failure-stage"];
+      const headers = response.headers(), category = headers["x-mitjee-failure-category"], failureStage = headers["x-mitjee-failure-stage"], requestId = headers["x-mitjee-request-id"];
       report.requests.push({ path: path.startsWith("/api/training/") ? path.replace(/\/api\/training\/[^/]+/, "/api/training/:session") : path, method: response.request().method(), status: response.status(),
         ...(category && ["DATABASE_TRANSACTION", "DATABASE_CONNECTION", "DATABASE_UNIQUE", "DATABASE_FOREIGN_KEY", "TEMPLATE_IMMUTABILITY", "TEMPLATE_VALIDATION", "SCHEMA_VALIDATION", "SESSION_NOT_FOUND", "DOMAIN_FAILURE", "UNKNOWN_INTERNAL"].includes(category) ? { category } : {}),
+        ...(requestId && /^[a-zA-Z0-9_-]{1,100}$/.test(requestId) ? { requestId } : {}),
         ...(failureStage && ["AUTH", "INPUT", "INITIALIZATION", "APPLICATION", "OUTPUT"].includes(failureStage) ? { failureStage } : {}) });
     }
   });
@@ -115,6 +116,10 @@ try {
   assert.equal((await opening).status(), 200); await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
   const ready = await context.request.get(`/api/training/${sessionId}`); const initial = (await ready.json()).data;
   assertConcealed(initial); assertConcealed(page.url()); assertConcealed(await page.locator("main").innerText());
+  const { createDatabase } = await import("../src/server/database.ts");
+  const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
+  database = createDatabase(); repository = new PrismaTrainingRepository(database);
+  const beforeText = await repository.get(sessionId, ownerId);
   assert.deepEqual(initial.messages.map(m => m.role), ["character"]); report.stages.push(stage);
   stage = "LIVE_TEXT_AND_CONTEXTUAL_ACTIONS";
   check = "live-message-and-contextual-exit";
@@ -128,11 +133,17 @@ try {
   assert.ok(replied.turn.characterMessage.trim()); assert.equal(replied.session.phone.state, initial.phone.state);
   assert.deepEqual(replied.session.availableActions, initial.availableActions);
   assert.equal(replied.session.status, "ACTIVE");
+  const afterText = await repository.get(sessionId, ownerId);
+  assert.equal(afterText.state, beforeText.state);
+  assert.deepEqual(afterText.events, beforeText.events); assert.deepEqual(afterText.opportunities, beforeText.opportunities);
+  assert.equal(afterText.result, null);
+  report.freeTextAuthority = { stateUnchanged: true, eventsUnchanged: true, opportunitiesUnchanged: true, noResult: true };
   if (expectedStory) {
     let current = replied.session;
     let lastCallerAt = Date.now();
     async function command(label, choice) {
       const action = current.availableActions.find(a => a.label === label); assert.ok(action, "REQUIRED_STORY_ACTION_MISSING");
+      check = `story-action:${current.phone.state}:${action.input}:${label}`;
       if (process.argv.includes("--paced") && ["ดำเนินบทสนทนาต่อ", "ฟังคำขอถัดไป", "ฟังคำขอจากผู้โทร"].includes(label)) {
         await new Promise(r => setTimeout(r, Math.max(0, 30000 - (Date.now() - lastCallerAt))));
       }
@@ -150,6 +161,7 @@ try {
       } else await page.getByRole("button", { name: label, exact: true }).click();
       const response = await actionResponse; assert.equal(response.status(), 200, "STORY_ACTION_FAILED");
       current = (await response.json()).data.session;
+      console.log(JSON.stringify({ stage: "STORY_ACTION", state: current.phone.state, status: current.status, input: action.input }));
       if (current.status === "ACTIVE") { assertConcealed(current); assertConcealed(await page.locator("main").innerText()); }
       await expect(page.locator(".phone-training")).toHaveAttribute("data-call-state", current.phone.state);
       if (current.phone.openingStatus === "PENDING" && current.phone.callStatus === "CONNECTED") {
@@ -205,23 +217,23 @@ try {
   }
   stage = "OWNED_RECEIPT_EVIDENCE";
   check = "owned-persisted-result";
-  const { createDatabase } = await import("../src/server/database.ts");
-  const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
-  database = createDatabase(); const repo = new PrismaTrainingRepository(database);
-  const saved = await repo.get(sessionId, ownerId);
+  const saved = await repository.get(sessionId, ownerId);
   assert.equal(saved.templateVersion, 5); assert.equal(saved.state, "END_SCENARIO"); assert.equal(saved.status, criticalPath ? "FAILED" : "COMPLETED");
   if (expectedStory) {
-    const template = await repo.getTemplate(saved.templateId, saved.templateVersion, saved.variant);
+    const template = await repository.getTemplate(saved.templateId, saved.templateVersion, saved.variant);
     assert.equal(template.callCenter.storyId, expectedStory, "SERVER_STORY_OVERRIDE_MISMATCH");
     report.story = expectedStory; report.path = criticalPath ? "explicit-critical" : "safe";
   }
   assert.ok(saved.dialogueTurns.length >= 4 && saved.dialogueTurns.every(t => !t.usedFallback && t.failureReason === null));
   assert.equal(saved.events.filter(e => e.critical).length, criticalPath ? 1 : 0); assert.equal(saved.result.trainingScore, null);
   assert.equal(saved.result.outcome, criticalPath ? "CRITICAL_FAILURE" : "PASSED");
-  if (expectedStory) assert.equal(saved.result.decisionSummary.encountered, expectedStory.startsWith("CC-N") ? 2 : 3);
+  if (expectedStory) assert.equal(saved.result.decisionSummary.encountered, criticalPath || expectedStory.startsWith("CC-N") ? 2 : 3);
   assert.equal(saved.actions.filter(a => a.kind === "CHARACTER_OPENING").length, 1);
   report.receipts = saved.dialogueTurns.map(t => ({ turnId: t.id, usedFallback: t.usedFallback, attempts: t.attempts, failureReason: t.failureReason, state: t.state }));
-  report.result = { templateVersion: saved.templateVersion, outcome: saved.result.outcome, trainingScore: saved.result.trainingScore, officialResultCount: await database.trainingResult.count({ where: { sessionId } }) };
+  report.result = { templateVersion: saved.templateVersion, outcome: saved.result.outcome, trainingScore: saved.result.trainingScore,
+    encountered: saved.result.decisionSummary?.encountered, critical: saved.result.decisionSummary?.critical,
+    userMessageCount: saved.messages.filter(m => m.role === "user").length, characterMessageCount: saved.messages.filter(m => m.role === "character").length,
+    officialResultCount: await database.trainingResult.count({ where: { sessionId } }) };
   assert.equal(report.result.officialResultCount, 1); report.stages.push(stage);
   stage = "LOGOUT";
   check = "logout-revokes-access";

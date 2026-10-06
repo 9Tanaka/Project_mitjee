@@ -39,6 +39,18 @@ it("TTS failure preserves committed caller dialogue and retry uses the same stor
   await expect(h.voice.speak(id, { id: "foreign" }, "caller-opening")).rejects.toThrow("SESSION_NOT_FOUND");
   await expect(h.voice.speak(id, h.user, "invented-text")).rejects.toThrow("INVALID_TURN_ID");
 });
+it("presentation speech shares bounded admission with voice; overlapping replay cannot fan out", async () => {
+  const h = await harness(), id = h.session().sessionId;
+  let release!: (audio: Uint8Array) => void;
+  h.tts.synthesize.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  const first = h.voice.speak(id, h.user, "caller-opening");
+  await vi.waitFor(() => expect(h.tts.synthesize).toHaveBeenCalledOnce());
+  await expect(h.voice.speak(id, h.user, "caller-opening")).rejects.toThrow("VOICE_BUSY");
+  release(pcmWav()); await first;
+  expect((await h.voice.speak(id, h.user, "caller-opening")).audioStatus).toBe("READY");
+  const saturated = new VoiceApplicationService(h.app, h.stt, h.tts, new Set(Array.from({ length: 20 }, (_, i) => `pending-${i}`)));
+  await expect(saturated.speak(id, h.user, "caller-opening")).rejects.toThrow("VOICE_BUSY");
+});
 it.each(["CC-01", "CC-02"] as const)("%s voice OTP/transfer agreement is sanitized free text and cannot score or fail", async story => {
   const h = await harness(story), s = h.session(), before = await h.repo.get(s.sessionId, h.user.id);
   h.stt.transcribe.mockResolvedValue(story === "CC-02" ? "รหัสคือ 482193" : "ตกลง ผมจะโอน");

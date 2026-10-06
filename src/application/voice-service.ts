@@ -15,11 +15,15 @@ export class VoiceApplicationService {
     if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");
     const message = session.messages.find(m => m.turnId === turnId && m.role === "character");
     if (!message) throw new DomainError("INVALID_TURN_ID");
+    const key = JSON.stringify([user.id, id]);
+    if (this.pending.has(key) || this.pending.size >= 20) throw new SpeechError("VOICE_BUSY");
+    this.pending.add(key);
     try {
       const audio = await speechDeadline(s => this.tts.synthesize(sanitizeMessage(message.text), s), signal);
       if (!audio.byteLength || audio.byteLength > 4 * 1024 * 1024) throw new SpeechError("SPEECH_UNAVAILABLE");
       return { audio, audioStatus: "READY" as const };
     } catch { return { audio: null, audioStatus: "UNAVAILABLE" as const }; }
+    finally { this.pending.delete(key); }
   }
   async bind(id: string, user: AuthenticatedPrincipal) {
     const session = await this.app.resume(id, user);
