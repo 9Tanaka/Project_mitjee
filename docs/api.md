@@ -8,7 +8,7 @@ HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
 Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว
-Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม; ไม่มี token streaming การลอง OpenAI Luna ครั้งก่อนติด `429 credit_balance_exhausted` ส่วน live Groq ยัง NOT RUN ดู [ผล verification](realtime-verification.md)
+Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม; ไม่มี token streaming การลอง OpenAI Luna ครั้งก่อนติด `429 credit_balance_exhausted` ส่วน Groq ผ่านการตรวจจริงครบสี่เรื่อง Call Center v5 แล้ว ดู [ผลล่าสุดและขอบเขต](call-center-part3.md)
 
 ## Authentication and composition
 
@@ -211,3 +211,14 @@ Success replaces the session snapshot. Uncertain retries retain the full origina
 ID/revision/payload; 409 refreshes current data and asks the user to decide again.
 401 routes to login; raw backend errors are never displayed.
 No API path or payload extension was needed for this phase. See [Frontend](frontend.md).
+
+## Call Center Part 3 presentation speech
+
+`POST /api/training/:sessionId/speech` is a new presentation-only endpoint alongside the
+unchanged `/voice` contract. Strict body: `{ turnId }`; output: audioBase64 (nullable),
+audioMime (`audio/wav`) and audioStatus (`READY` / `UNAVAILABLE`). Verified Auth.js owner,
+same-origin, bounded JSON, rate/admission limits and owned committed character turn are
+required. Arbitrary synthesis text/URLs/provider configuration are rejected. No dialogue
+generation, training action, score or critical event is submitted by this endpoint.
+TTS failure returns unavailable audio with committed transcript preserved. No audio is
+persisted. See [Voice](voice.md) for retries, transient WAV limits and live-Azure status.

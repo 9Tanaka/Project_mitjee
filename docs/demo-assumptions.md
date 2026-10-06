@@ -25,6 +25,7 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 | Explicit critical action | FREE_TEXT/candidate ไม่มีอำนาจ; Backend ตรวจ SIMULATED_ACTION confirmation | Implemented |
 | Event Code names | reusable domain registry + State allowed events | Implemented; SMS ใช้ Critical Rules สองรายการ |
 | Acyclic progression | ไม่มี cycle ใน Template graph; ยังสนทนาซ้ำใน State เดิมได้ | Implemented |
+| Call Center v5 matched stories | PARCEL/BANK × NORMAL_CALL/SCAM_CALL; backend 50/50 condition and topic; three meaningful scam checkpoints / two normal checkpoints | Implemented; server-only story override for verification, immutable session pinning; see [Part 3](call-center-part3.md) |
 | Weakest skill tie (legacy) | เก็บ array, recommendation เดียวใช้ D → W → S; tolerance <1e-10 | Legacy implemented; categorical result has no numeric weakest skill |
 | Recommendation scope | Scenario คืน type/key/reason; Quiz Pre/Post เป็น module แยก | Metadata and Quiz Pre/Post implemented; lesson/Knowledge/Review content out of current scope |
 
@@ -58,7 +59,6 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 | Assumption / target | ค่า | Status |
 |---|---|---|
-| Call Center story foundation | PARCEL/BANK × NORMAL_CALL/SCAM_CALL; secure backend 50/50 condition, 50/50 topic | Part 1 implemented; private CALL_CENTER_DEMO_STORY takes precedence over valid variant override; persisted duplicate starts never reroll; full stories pending |
 | Non-AI backend response target | <1 วินาที | Target เท่านั้น ยังไม่มี benchmark รับรอง |
 | AI interaction target | <10 วินาทีใน test environment | Target เท่านั้น; Mock ไม่พิสูจน์ live latency |
 | Concurrent demo | 20 active sessions | Functional isolation test มีแล้ว; ไม่ใช่ production/load benchmark |
@@ -77,7 +77,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 - Async TrainingRepository port, detached snapshots, CAS และ append-only history เป็น technical design
 - Prisma configuration อยู่ใน JSON version พร้อม SQL triggers; MySQL 8+ ใช้ utf8mb4_0900_bin
 - MySQL 8.4.11 เป็น version ที่เคยทดสอบ ไม่ใช่ version ที่ Proposal บังคับ
-- Prisma connectionLimit=8, UTC mapping, save timeout 10 วินาที และ isolation levels เป็น adapter choices
+- Prisma connectionLimit=8, UTC mapping, GET/SAVE timeout 15 วินาที, CREATE/PUBLISH 10 วินาที, maxWait 5 วินาที และ isolation levels เป็น adapter choices ไม่ใช่ Proposal numbers ดู [Part 3 measurements](call-center-part3.md)
 - Local sanitizer เป็น demonstration control ไม่ใช่ production PII detector
 
 รายละเอียด implementation อยู่ใน [Persistence](persistence.md) และ [Security](security.md)
@@ -85,7 +85,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Next.js 16.3.8 (security patch 2 October), React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
-- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v4 full text/interactivity, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1/v2/v3 สำหรับประวัติ
+- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v5 behavior-derived full text/interactivity, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1–v4 สำหรับประวัติ
 - Call Center semantic states, caller-turn metadata, per-session synthetic OTP, state-gated phone apps และ fresh explicit confirmation เป็น approved implementation choices ไม่ใช่ชื่อ State หรือสูตรใหม่จาก Proposal ดู [Part 2](call-center-part2.md)
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State
@@ -137,3 +137,10 @@ handshake, 15-second heartbeat, 10-minute socket lifetime, 6 MiB outbound backpr
 Audio is sent as one bounded recording, not arbitrary streaming chunks. These bounds are
 not evidence of meeting the earlier latency/concurrency performance targets.
 See [Voice](voice.md), [WebSocket](websocket.md) and [verification](realtime-verification.md).
+
+Part 3 adds Phone-integrated Push-to-Talk, opt-in committed-turn TTS and replay; text/captions
+remain usable. Basic Vercel transport uses HTTP when the socket server is unavailable. Client
+voice wait 110 seconds, voice route 120, presentation speech route 60; provider deadlines stay
+unchanged. These are implementation bounds, not promised latency. Azure live verification is
+NOT RUN because private key/region are absent. No timer/STT/TTS/AI observation gains evaluation
+authority; only explicit simulator preparation and fresh confirmation can be critical.

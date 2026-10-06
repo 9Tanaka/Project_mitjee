@@ -60,7 +60,7 @@ flowchart LR
     dialogue --> provider["ScenarioModelProvider port"]
     provider --> mock["Mock Provider - IMPLEMENTED"]
     provider --> live["OpenAI Responses adapter - IMPLEMENTED / network NOT VERIFIED"]
-    provider --> groq["Groq Responses adapter - IMPLEMENTED / live NOT RUN"]
+    provider --> groq["Groq Responses adapter - IMPLEMENTED / four v5 stories live verified"]
     browser --> socket["Owned Call Center WebSocket"]
     socket --> voice["Voice Application Service"]
     http --> voice
@@ -82,7 +82,7 @@ flowchart LR
 | Next.js Server pages + interactive Client Components | Thai presentation, auth UX, public DTO fetch/mutations; no state/scoring/identity authority |
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
 | RequestAuthenticator | Auth.js verified session → minimal principal; Credentials + verified JWT/cookie; session resolver mock อยู่เฉพาะ tests |
-| Application service / catalog | เลือก SMS v4 และอีก 8 scenario v1; derive command จาก opaque public action ID; project public response |
+| Application service / catalog | เลือก current pinned templates รวม Call Center v5; derive command จาก opaque public action ID; project public response |
 | Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
 | Template Validator | ตรวจ schema/graph และ policy ตาม evaluationMode; D/W/S invariant สำหรับ legacy weighted; categorical อนุญาต early safe exit ตามกฎที่อนุมัติ |

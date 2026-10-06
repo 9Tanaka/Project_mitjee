@@ -1,5 +1,9 @@
 # Live AI + Voice Call Center + WebSocket — verification
 
+Historical 2 October snapshot. Current Call Center v5 performance, all-four-story Groq
+and Phone voice evidence/limitations are in [Part 3](call-center-part3.md). The dated
+NOT RUN entries below describe that earlier verification, not the latest provider status.
+
 Date: **2 October 2026**. Branch: `feat/rule-based-evaluation`.
 Repository: `D:\Projects\Project_mitjee`. Starting remote tip was rechecked and fast-forwarded
 to `2d2edd287a4dd060efc162f53a196cce6ca586cd` (five nonoverlapping documentation commits).
