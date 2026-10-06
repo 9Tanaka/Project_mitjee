@@ -8,6 +8,18 @@ import { answer, context, deferred, envelope, fakeClient, refusal } from "./open
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 it.each([
+  [envelope(answer({ candidate_event: "NONE", event_code: "VERIFY_SOURCE" })), "EVENT_PAIR"],
+  [envelope({ ...answer(), observed_intent: "invented-private-intent" }), "SCHEMA_ENUM"],
+  [envelope({ ...answer(), score: 100 }), "SCHEMA_SHAPE"],
+  [{ status: "incomplete", output: [] }, "ENVELOPE"],
+] as const)("invalid output diagnostics contain only a closed detail %#", async (raw, detail) => {
+  const client = fakeClient(); client.create.mockResolvedValue(raw);
+  const error = await new GroqScenarioModelProvider(client, "test-model").generateCharacterResponse(context()).catch(e => e);
+  expect(error).toMatchObject({ category: "INVALID_OUTPUT", detail });
+  expect(JSON.stringify(error)).not.toContain("invented-private-intent");
+});
+
+it.each([
   { AI_PROVIDER: "groq" },
   { AI_PROVIDER: "groq", GROQ_API_KEY: "test-key" },
   { AI_PROVIDER: "groq", GROQ_MODEL: "openai/gpt-oss-120b", OPENAI_API_KEY: "must-not-reuse" },

@@ -7,8 +7,9 @@ import { buildOpenAIRequest } from "./openai-prompt.js";
 import { z } from "zod";
 
 export const GROQ_ENDPOINT = "https://api.groq.com/openai/v1";
+export type GroqOutputDetail = "ENVELOPE" | "OUTPUT_PARTS" | "MALFORMED_JSON" | "EVENT_PAIR" | "SCHEMA_ENUM" | "SCHEMA_SHAPE";
 export class GroqProviderError extends Error {
-  constructor(readonly category: "RATE_LIMITED" | "AUTHENTICATION" | "API_INCOMPATIBLE" | "INVALID_OUTPUT" | "UNAVAILABLE", readonly status?: number) {
+  constructor(readonly category: "RATE_LIMITED" | "AUTHENTICATION" | "API_INCOMPATIBLE" | "INVALID_OUTPUT" | "UNAVAILABLE", readonly status?: number, readonly detail?: GroqOutputDetail) {
     super(`Groq provider: ${category}`); this.name = "GroqProviderError";
   }
 }
@@ -43,14 +44,15 @@ export class GroqScenarioModelProvider implements ScenarioModelProvider {
       });
       options?.signal?.throwIfAborted();
       const parsed = envelope.safeParse(raw);
-      if (!parsed.success) throw new GroqProviderError("INVALID_OUTPUT");
+      if (!parsed.success) throw new GroqProviderError("INVALID_OUTPUT", undefined, "ENVELOPE");
       const parts = parsed.data.output.flatMap(item => item.type === "message" ? item.content : []);
       if (parts.some(part => part.type === "refusal")) throw new ProviderRefusal("Provider refused scenario dialogue");
-      if (parts.length !== 1 || parts[0]?.type !== "output_text") throw new GroqProviderError("INVALID_OUTPUT");
+      if (parts.length !== 1 || parts[0]?.type !== "output_text") throw new GroqProviderError("INVALID_OUTPUT", undefined, "OUTPUT_PARTS");
       let value: unknown;
-      try { value = JSON.parse(parts[0].text); } catch { throw new GroqProviderError("INVALID_OUTPUT"); }
+      try { value = JSON.parse(parts[0].text); } catch { throw new GroqProviderError("INVALID_OUTPUT", undefined, "MALFORMED_JSON"); }
       const response = aiCharacterResponseSchema.safeParse(value);
-      if (!response.success) throw new GroqProviderError("INVALID_OUTPUT");
+      if (!response.success) throw new GroqProviderError("INVALID_OUTPUT", undefined,
+        response.error.issues.some(i => i.code === "custom") ? "EVENT_PAIR" : response.error.issues.some(i => i.code === "invalid_value") ? "SCHEMA_ENUM" : "SCHEMA_SHAPE");
       return response.data;
     } catch (error) {
       if (options?.signal?.aborted) throw new DOMException("Provider request cancelled", "AbortError");
