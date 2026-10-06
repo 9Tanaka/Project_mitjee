@@ -19,7 +19,7 @@ assert.equal(new URL(origin).origin, origin, "PREVIEW_ORIGIN_ONLY");
 assert.equal(new URL(origin).hostname, "mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app", "APPROVED_PREVIEW_ONLY");
 const report = { status: "FAILED", scope: "Real Preview browser/Auth.js/MySQL/Groq; no intercepted API", origin,
   stages: [], requests: [], sessionId: null, receipts: [], result: null, browserErrorCount: 0, failureStage: null, failureCategory: null };
-const output = `frontend-artifacts/part3-preview/${expectedStory ? expectedStory + (criticalPath ? '-critical' : '-safe') : process.argv.includes('--start-only') ? 'timing' : 'smoke'}`;
+const output = `frontend-artifacts/part3-preview/${process.argv.includes('--auth-only') ? 'auth-diagnostic' : expectedStory ? expectedStory + (criticalPath ? '-critical' : '-safe') : process.argv.includes('--start-only') ? 'timing' : 'smoke'}`;
 function assertConcealed(payload) {
   assert.ok(!/CC-(?:01|02|N01|N02)|SCAM_CALL|NORMAL_CALL/.test(JSON.stringify(payload)), "PUBLIC_STORY_LEAK");
 }
@@ -64,7 +64,20 @@ try {
   check = "verified-session";
   const auth = await context.request.get("/api/auth/session");
   const ownerId = (await auth.json()).user?.id; assert.ok(ownerId, "VERIFIED_SESSION_MISSING");
-  if (process.argv.includes("--start-only")) {
+  if (process.argv.includes("--auth-only")) {
+    report.scope = "Real Preview registration/Auth.js/logout; compare browser and API-context transport; no AI";
+    report.stages.push("LOGIN"); stage = "LOGOUT"; check = "logout-browser-and-api-context";
+    const signedOut = page.waitForResponse(r => new URL(r.url()).pathname === "/api/auth/signout" && r.request().method() === "POST");
+    await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click();
+    assert.equal((await signedOut).status(), 200);
+    await expect(page).toHaveURL(origin + "/login");
+    const browserStatus = await page.evaluate(async () => (await fetch("/api/scenarios", { cache: "no-store" })).status);
+    const apiContextStatus = (await context.request.get("/api/scenarios")).status();
+    report.logoutDiagnostic = { browserStatus, apiContextStatus,
+      sessionCookiePresent: (await context.cookies()).some(c => /authjs\.session-token/.test(c.name) && !!c.value) };
+    assert.equal(browserStatus, 401); assert.equal(apiContextStatus, 401);
+    report.stages.push(stage); report.status = "PASSED";
+  } else if (process.argv.includes("--start-only")) {
     // Isolate start/replay on the real authenticated API; no catalog interception or mock auth.
     report.scope = "Real Preview registration/Auth.js/start/replay; no AI request";
     report.stages.push("LOGIN"); stage = "START_API_DIAGNOSTIC"; check = "authenticated-start-replay";
@@ -105,6 +118,7 @@ try {
   check = "start-training-navigation";
   await expect(page).toHaveURL(/\/training\/[a-f0-9]+$/);
   const sessionId = new URL(page.url()).pathname.split("/").at(-1); report.sessionId = sessionId;
+  console.log(JSON.stringify({ stage: "SESSION_STARTED", status: "PASSED" }));
   await expect(page.getByRole("button", { name: "รับสาย", exact: true })).toBeVisible(); report.stages.push(stage);
   stage = "ANSWER_PENDING_AUTOMATIC_OPENING";
   check = "answer-pending-and-caller-opening";

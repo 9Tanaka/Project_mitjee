@@ -79,8 +79,16 @@ it("successful login uses official Credentials client and redirects", async () =
 it("logout uses supported signOut without owner/token controls", async () => {
   mocks.status = "authenticated"; render(<AuthNavigation />);
   fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
-  await waitFor(() => expect(mocks.signOut).toHaveBeenCalledWith({ redirect: false, redirectTo: "/login" }));
-  expect(mocks.replace).toHaveBeenCalledWith("/login");
+  await waitFor(() => expect(mocks.signOut).toHaveBeenCalledWith({ redirect: true, redirectTo: "/login" }));
+  expect(mocks.replace).not.toHaveBeenCalled(); expect(mocks.refresh).not.toHaveBeenCalled();
+});
+it("failed logout keeps the authenticated UI and reports retry without manual navigation", async () => {
+  mocks.status = "authenticated"; mocks.signOut.mockRejectedValue(new Error("PRIVATE_AUTH_FAILURE"));
+  render(<AuthNavigation />); fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง");
+  expect(screen.getByRole("button", { name: "ออกจากระบบ" })).toBeTruthy();
+  expect(mocks.replace).not.toHaveBeenCalled(); expect(mocks.refresh).not.toHaveBeenCalled();
+  expect(document.body.textContent).not.toContain("PRIVATE_AUTH_FAILURE");
 });
 it.each(["unauthenticated", "loading"])("gate hides protected content while %s", status => {
   mocks.status = status; render(<AuthGate><p>private training content</p></AuthGate>);
