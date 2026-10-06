@@ -21,7 +21,8 @@ const report = await runAllCallStories(async story => {
     assert.equal(process.env.AI_PROVIDER, "groq"); const actual = createScenarioProvider(process.env);
     const provider = { async generateCharacterResponse(c, options) {
       try { return await actual.generateCharacterResponse(c, options); }
-      catch (e) { failures.push({ state: c.currentState, category: e instanceof GroqProviderError ? e.category : "PROVIDER_ERROR" }); throw e; }
+      catch (e) { failures.push({ state: c.currentState, category: e instanceof GroqProviderError ? e.category : "PROVIDER_ERROR",
+        ...(e instanceof GroqProviderError && e.detail ? { detail: e.detail } : {}) }); throw e; }
     } };
     const repo = new InMemoryTrainingRepository(), owner = { id: randomUUID() };
     const app = await createApplication(repo, provider, Date.now, undefined, () => story);

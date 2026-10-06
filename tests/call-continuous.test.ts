@@ -5,7 +5,8 @@ import { TrainingCore } from "../src/core.js";
 import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { registeredTemplates } from "../src/application/catalog.js";
 import { MockScenarioModelProvider, normalMockResponse } from "../src/dialogue/mock-provider.js";
-import type { AICharacterResponse, ScenarioModelProvider } from "../src/dialogue/contracts.js";
+import type { AICharacterResponse, ScenarioAIContext, ScenarioModelProvider } from "../src/dialogue/contracts.js";
+import { buildOpenAIRequest } from "../src/providers/openai-prompt.js";
 import type { PublicTrainingSession } from "../src/application/contracts.js";
 import { callCenterContinuousTemplates } from "../src/fixtures/call-center-continuous-stories.js";
 import { callCenterBehaviorTemplates } from "../src/fixtures/call-center-behavior-stories.js";
@@ -46,6 +47,25 @@ export async function continuousHarness(story: Story = "CC-01", provider: Scenar
 }
 
 describe("Call Center v6 semantic continuous dialogue", () => {
+  it("provider wire schema requires bounded Call fields but leaves legacy output unchanged", async () => {
+    let context: ScenarioAIContext | undefined;
+    const provider: ScenarioModelProvider = { async generateCharacterResponse(c) { context = c; return normalMockResponse(c); } };
+    const h = await continuousHarness("CC-01", provider); await h.act("รับสาย"); await h.open();
+    const request = buildOpenAIRequest(context!, "schema-test"), format = request.text!.format!;
+    expect(format.type).toBe("json_schema");
+    if (format.type !== "json_schema") throw new Error("INVALID_TEST_SCHEMA");
+    expect(format.schema).toMatchObject({ additionalProperties: false,
+      required: expect.arrayContaining(["interaction_signal", "conversation_status"]),
+      properties: { interaction_signal: { enum: expect.arrayContaining(["NONE", "OTP_REQUEST", "TRANSFER_REQUEST"]) },
+        conversation_status: { enum: ["CONTINUE_STATE", "STATE_COMPLETE"] } } });
+    expect(context!.callConversation).not.toHaveProperty("autoTransitionIds");
+    expect(context).not.toHaveProperty("next_state"); expect(context).not.toHaveProperty("opportunities");
+    const { callConversation: _semanticContract, ...legacy } = context!;
+    const oldFormat = buildOpenAIRequest(legacy, "schema-test").text!.format!;
+    if (oldFormat.type !== "json_schema") throw new Error("INVALID_TEST_SCHEMA");
+    expect(oldFormat.schema.properties).not.toHaveProperty("interaction_signal");
+    expect(oldFormat.schema.properties).not.toHaveProperty("conversation_status");
+  });
   it.each(callCenterContinuousTemplates)("$id publishes v6 without mutating v5", t => {
     expect(validateTemplate(t)).toEqual(t); expect(t.version).toBe(6);
     const old = callCenterBehaviorTemplates.find(v => v.id === t.id)!;
@@ -74,6 +94,15 @@ describe("Call Center v6 semantic continuous dialogue", () => {
     await h.say(); expect(h.s().phone!.contextualDecision).toBeUndefined(); await h.say();
     expect(h.s().phone!.contextualDecision?.available).toBe(true); expect((await h.raw()).dialogueTurns.at(-1)!.usedFallback).toBe(true);
   });
+  it("adapter-rejected malformed Call output retains INVALID_OUTPUT telemetry and authored fallback signal", async () => {
+    const provider: ScenarioModelProvider = { async generateCharacterResponse() {
+      throw Object.assign(new Error("Structured response rejected"), { category: "INVALID_OUTPUT" });
+    } };
+    const h = await continuousHarness("CC-02", provider); await h.act("รับสาย"); await h.open();
+    expect((await h.raw()).dialogueTurns.at(-1)).toMatchObject({ failureReason: "INVALID_OUTPUT", attempts: 2,
+      usedFallback: true, response: { interaction_signal: "IDENTITY_INFORMATION" } });
+    expect(h.s().phone!.contextualDecision).toBeUndefined(); expect((await h.raw()).result).toBeNull();
+  });
   it("same caller replay and stale concurrent opening cannot duplicate the opportunity or advance twice", async () => {
     const h = await continuousHarness(); await h.context(); const before = await h.raw();
     const last = before.dialogueTurns.at(-1)!;
@@ -88,6 +117,26 @@ describe("Call Center v6 semantic continuous dialogue", () => {
     for (let i = 0; i < 4; i++) await h.say("ผมจะโอน รหัสคือ 482193");
     const after = await h.raw(); expect(after.state).toBe("CONTEXT_CLAIM"); expect(after.result).toBeNull(); expect(after.events).toEqual([]);
     expect(after.opportunities[0]!.finalizedAt).toBeNull();
+  });
+  it("simultaneous semantic caller commits use CAS: one receipt/opportunity, no partial duplicate", async () => {
+    let release!: () => void, both!: () => void, calls = 0;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const ready = new Promise<void>(resolve => { both = resolve; });
+    const provider: ScenarioModelProvider = { async generateCharacterResponse(c) {
+      if (c.currentState === "CONTEXT_CLAIM") { if (++calls === 2) both(); await gate; }
+      return normalMockResponse(c);
+    } };
+    const h = await continuousHarness("CC-01", provider);
+    await h.act("รับสาย"); await h.open(); await h.open(); await h.say(); await h.say();
+    const before = await h.raw(), request = { expectedRevision: before.revision };
+    const first = h.app.opening(before.id, h.owner, request), second = h.app.opening(before.id, h.owner, request);
+    await ready; release(); const outcomes = await Promise.allSettled([first, second]);
+    expect(outcomes.some(r => r.status === "fulfilled")).toBe(true);
+    for (const r of outcomes) if (r.status === "rejected") expect(r.reason.code).toBe("REVISION_CONFLICT");
+    const after = await h.raw(); expect(after.revision).toBe(before.revision + 1);
+    expect(after.dialogueTurns.filter(t => t.state === "CONTEXT_CLAIM")).toHaveLength(1);
+    expect(after.opportunities.filter(o => o.state === "CONTEXT_CLAIM")).toHaveLength(1);
+    expect(after.events).toEqual(before.events); expect(after.state).toBe("CONTEXT_CLAIM"); expect(after.result).toBeNull();
   });
   it.each(["CC-01", "CC-02"] as const)("%s critical app is unavailable before committed request signal; signal alone never fails", async story => {
     const h = await continuousHarness(story); await h.context();

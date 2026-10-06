@@ -149,7 +149,9 @@ export class ScenarioDialogueOrchestrator {
         break;
       } catch (error) {
         response = null;
-        failureReason = error instanceof AttemptFailure ? error.reason : error instanceof ProviderRefusal ? "REFUSAL" : "ERROR";
+        // Closed provider diagnostic only, never output/event authority; keep legacy telemetry unchanged.
+        const invalidCallOutput = context.callConversation && error instanceof Error && "category" in error && error.category === "INVALID_OUTPUT";
+        failureReason = error instanceof AttemptFailure ? error.reason : error instanceof ProviderRefusal ? "REFUSAL" : invalidCallOutput ? "INVALID_OUTPUT" : "ERROR";
         if (failureReason === "SAFETY_BLOCKED") break; // Do not retry a known unsafe response.
       }
     }

@@ -18,6 +18,6 @@ export async function startPinnedStory(repository: TrainingRepository, app: Trai
   owner: { id: string }, story: "CC-01" | "CC-02" | "CC-N01" | "CC-N02", version = 5, now: () => number = Date.now) {
   const core = await TrainingCore.create(registeredTemplates, repository, now);
   const t = registeredTemplates.find(t => t.version === version && t.callCenter?.storyId === story)!;
-  const id = randomUUID(); await core.start(id, owner.id, t.id, version, t.variant);
+  const id = randomUUID().replaceAll("-", ""); await core.start(id, owner.id, t.id, version, t.variant);
   return app.resume(id, owner);
 }

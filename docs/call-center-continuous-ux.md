@@ -135,7 +135,8 @@ for acceptance, then is cleared; no browser variant selector is introduced. Arti
 `frontend-artifacts/call-ux/` are ignored and contain bounded metadata/screenshots, not keys,
 passwords, raw provider bodies or hidden answer keys in public DTOs.
 
-Local browser: all four full safe stories passed at 375/768/1440px (12 cases), with no
+Local browser: all four full safe stories passed at 375/768/1440px (12 cases), including
+popup dismissal/refresh/explicit reopening without aggregate changes, with no
 horizontal overflow, browser exceptions or API 500; popup contents exclude phone navigation
 and answer labels. Unit/integration checks cover malformed signals, authored fallback,
 multi-turn/anti-deadlock, required guards, replay, critical confirmations and historical pins.
@@ -143,12 +144,42 @@ Real Groq and deployed acceptance are reported separately below; a functional fa
 completion is **not** counted as live Groq success. Dedicated MySQL test/E2E suite and live
 Azure are NOT RUN without their private test resources. No production deployment is made.
 
+| Gate | Result |
+|---|---|
+| prisma:generate / prisma:validate / typecheck | PASS |
+| npm test | 876 passed, 49 skipped (dedicated external test resources unavailable) |
+| test:call:ux (separate) | 36 passed |
+| test:frontend / test:auth / test:ai | 109 / 82 / 211 passed |
+| test:speech / test:websocket | 82 / 20 passed; fake speech/transport, not live Azure |
+| build / audit:client / diff --check | PASS; 69 client JS artifacts audited |
+| Current v6 browser, in-memory/Mock | 12 full stories at 375/768/1440px passed |
+| Historical shell/v5 browser regression | 120 screenshots, 9 flow groups passed |
+
 ### External verification record
 
 Initial unpaced Groq run on 7 October 2026 encountered `RATE_LIMITED` in all four stories;
 valid responses and fallback completion were observed, but this was **FAILED live
-verification**, not a successful all-model run. Paced rerun and Preview evidence are being
-collected. This section will record the final outcome before handoff.
+verification**, not a successful all-model run. The paced in-memory rerun completed all
+four stories: CC-01, CC-02 and CC-N02 passed without fallback; CC-N01 used one
+`INVALID_OUTPUT` fallback in IDENTITY_CLAIM after two attempts. Aggregate live-run status
+remains **FAILED**, despite functional completion. CC-01 recovered one MAIN_REQUEST
+invalid provider attempt on retry with no fallback and null terminal failureReason;
+CC-N02 likewise had a successful recovered retry. The historical precise CC-N01 raw
+output root cause is not inferred from a closed category.
+
+Preview uses real browser/Auth.js/MySQL/Groq without API interception. Its provider
+configuration was checked privately as Groq, scoped to this Preview branch. CC-01 passed
+with six committed receipts, all first-attempt, `usedFallback=false`, `failureReason=null`:
+IDENTITY_INFORMATION → identity discussion → VERIFY_CONTEXT → SECRECY_PRESSURE →
+TRANSFER_REQUEST, explicit decisions → PASSED categorical result → logout/protected 401.
+No browser errors, horizontal overflow or API 500 occurred. CC-02 also passed the real
+browser/Auth/MySQL full safe path and logout/401, including contextual popup refresh without
+duplication. Its seven receipts included one IDENTITY_CLAIM `INVALID_OUTPUT` fallback after
+two attempts; CONTEXT/PRESSURE/OTP request were real first-attempt Groq responses. Functional
+acceptance passed, but its no-fallback live-Groq subcheck is FAILED. v6 adapter-level invalid
+output diagnostics now retain `INVALID_OUTPUT` rather than generic ERROR; legacy telemetry
+is unchanged and recovered successful retries still clear terminal failureReason. Remaining
+normal-control Preview evidence is being collected and will be finalized before handoff.
 
 ### Remaining UX limitations
 

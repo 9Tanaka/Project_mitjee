@@ -44,7 +44,7 @@ try {
       if (path === "/api/auth/session") return route.fulfill({ json: { user: { id: user.id, email: "ui-preview@example.test" }, expires: "2099-01-01T00:00:00.000Z" } });
       if (path === "/api/scenarios") data = app.listScenarios();
       else if (/^\/api\/scenarios\/[^/]+\/start$/.test(path)) data = path.split("/")[3] === "call-center"
-        ? { session: (await startPinnedStory(phoneRepository, app, user, selectedStory, 5)).session, duplicate: false }
+        ? { session: await startPinnedStory(phoneRepository, app, user, selectedStory, 5), duplicate: false }
         : await app.start(path.split("/")[3], user, body);
       else if (/^\/api\/scenarios\/[^/]+$/.test(path)) data = app.scenario(path.split("/")[3]);
       else if (path.startsWith("/api/training/")) {
@@ -176,7 +176,7 @@ try {
   await allWidths("training-result");
   evidence.checks.push("details/acknowledgment, multi-turn text no automatic transition, refresh, full safe path and real categorical result");
   const call = app.listScenarios().find(s => s.category === "CALL_CENTER");
-  const callSession = await app.start(call.id, user, { startId: randomUUID(), expectedRevision: 0 });
+  const callSession = { session: await startPinnedStory(phoneRepository, app, user, selectedStory, 5) };
   const callId = callSession.session.sessionId;
   await page.goto("/training/" + callId); await allWidths("call-incoming");
   await expect(page.getByRole("button", { name: "รับสาย", exact: true })).toBeVisible();
