@@ -1,5 +1,8 @@
 # Call Center v5 — behavior and startup hardening
 
+Historical v5 milestone. Current new sessions use [v6 continuous UX](call-center-continuous-ux.md);
+v5 configuration and its pinned session behavior remain unchanged.
+
 Approved demo implementation decisions, not requirements retroactively attributed to
 the Proposal. New starts use v5 for CC-01 / CC-02 / CC-N01 / CC-N02. Historical v1–v4
 remain registered without configuration changes; no migration or reset is required.

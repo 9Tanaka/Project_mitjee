@@ -1,5 +1,24 @@
 # Minimal Vercel Preview
 
+## Call Center v6 acceptance — 2026-10-07
+
+All four authored Call Center stories passed the real 375px Preview browser flow:
+register/login/refresh → answer/caller-first text → contextual decisions → persisted
+categorical PASSED result → logout/protected 401. No API/auth interception, browser
+exceptions, horizontal overflow or API 500. Backend-only story selection was restored
+after testing; no Production configuration or deployment was changed. Sources:
+`a84ab3b817a344dc31a8b955006dd19480b7fd85` (UX) and
+`7bebda68dafec24f4986a0766f282ad767aae018` (diagnostics/regressions).
+
+Groq was privately confirmed as the Preview provider. CC-01/CC-N01 had no fallback;
+CC-02/CC-N02 each had one INVALID_OUTPUT authored fallback after two attempts. Therefore
+functional acceptance is PASS, but an all-turns/no-fallback Groq claim is not made. All
+committed model/fallback signals passed state/template validation. Full 375/768/1440px
+flows also passed locally in the explicitly in-memory/Mock UI bridge (not live E2E).
+See [continuous UX architecture, receipt/deployment matrix and limits](call-center-continuous-ux.md).
+
+The following sections preserve earlier milestone diagnostics and prerequisites.
+
 ## Registration runtime diagnostics
 
 An unexpected registration failure still returns the fixed public `500 INTERNAL_ERROR` contract. Server logs now include only `registration_failed`, the processing stage, a fixed failure category and elapsed milliseconds. Raw exceptions, stacks, SQL, submitted credentials, email addresses, database URLs and CA content are not logged. Use these categories to distinguish configuration, TLS, database authentication/schema/network/timeouts and missing runtime dependencies; a category is diagnostic evidence, not proof of its underlying infrastructure cause. Expected validation/duplicate-account errors are not logged as internal failures.

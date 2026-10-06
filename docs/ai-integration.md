@@ -10,6 +10,12 @@ context, validated against the authored state before commit. Other providers/cat
 keep their legacy response schema. Historical live v5 evidence above is not evidence of
 v6 success; v6 live quota/semantic results and Preview acceptance are recorded separately.
 
+Verification on 7 October 2026: all four real v6 Preview browser/Auth/MySQL paths completed
+through explicit decisions, result and logout. CC-01/CC-N01 used only first-attempt Groq;
+CC-02/CC-N02 each used one INVALID_OUTPUT authored fallback. The stricter paced in-memory
+all-model run also remained FAILED (one CC-N01 fallback), despite functional completion.
+Do not merge these scopes or claim zero provider failures; see the v6 receipt matrix.
+
 ## Provider contract
 
 ```typescript

@@ -178,8 +178,40 @@ duplication. Its seven receipts included one IDENTITY_CLAIM `INVALID_OUTPUT` fal
 two attempts; CONTEXT/PRESSURE/OTP request were real first-attempt Groq responses. Functional
 acceptance passed, but its no-fallback live-Groq subcheck is FAILED. v6 adapter-level invalid
 output diagnostics now retain `INVALID_OUTPUT` rather than generic ERROR; legacy telemetry
-is unchanged and recovered successful retries still clear terminal failureReason. Remaining
-normal-control Preview evidence is being collected and will be finalized before handoff.
+is unchanged and recovered successful retries still clear terminal failureReason.
+
+All four deployed **functional** acceptance paths passed on 7 October 2026, including real
+registration/login, cookie persistence after refresh, caller-first conversation, meaningful
+decisions, persisted categorical result and logout/protected 401. Preview browser width was
+375px; 768/1440px full UI flows were verified in the explicitly local production/Mock bridge.
+No API interception was used on Preview. No browser exceptions, overflow or API 500 occurred.
+
+| Story | Deployment / source | Committed caller receipts | No-fallback Groq subcheck | Request signal |
+|---|---|---:|---|---|
+| CC-01 | dpl_FexMkGfKjGF77bZ3me54HXXnFA6M / a84ab3b | 6 | PASS; all attempts=1, failureReason=null | TRANSFER_REQUEST |
+| CC-02 | dpl_Hr4ooLDMYTtE7ME92GfkcNktETAL / a84ab3b | 7 | FAIL; one IDENTITY_CLAIM INVALID_OUTPUT fallback, attempts=2 | OTP_REQUEST (real Groq, first attempt) |
+| CC-N01 | dpl_5qYfPiKwcrpf4kG4W6HnCKAJtpja / 7bebda6 | 5 | PASS; all attempts=1, failureReason=null | DELIVERY_CONFIRMATION |
+| CC-N02 | dpl_FtoBsfoertTseEjceNtbp1E5y2so / 7bebda6 | 6 | FAIL; one MAIN_REQUEST INVALID_OUTPUT fallback, attempts=2 | TRANSACTION_NOTIFICATION (authored fallback) |
+
+Across the four Preview sessions, 24 caller receipts were committed: 22 first-attempt model
+responses and two authored fallbacks. Every committed signal matched its pinned authored
+state. Fallback receipts do not count as model success. Both normal controls had no
+PRESSURE, OTP or transfer signal/opportunity. Final PASSED results have null numerical
+trainingScore and three encountered decisions for scams / two for normal controls; this
+does not assert whole-category mastery. Source a84ab3b implements the UX; 7bebda6 preserves
+the same template/UX rules while adding bounded invalid-output diagnostics and verification
+regressions. Failure screenshots from early harness issues are not product-error evidence:
+mobile logout required opening its menu, the initial expect timeout was too short, and the
+historical shell verifier needed explicitly pinned v5 session IDs. Those assertions were
+corrected and rerun; no Auth bypass or backend safety weakening was introduced.
+
+Stable Preview: [MITJEE branch Preview](https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app).
+The existing project's backend-only `CALL_CENTER_DEMO_STORY` override was temporarily
+selected per story for acceptance, then restored to an empty/unset value before final
+rollout. The existing variant configuration and all Production protection/environment
+settings remain unchanged. Synthetic accounts/history are retained; no destructive DB
+cleanup/migration or Production deployment occurred. Final rollout is a documentation-only
+commit over the verified source, using the existing Git-connected Preview project.
 
 ### Remaining UX limitations
 

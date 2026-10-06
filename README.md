@@ -38,7 +38,7 @@ UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรก�
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
 | Frontend UI | Implemented — Proposal-aligned shell, responsive navigation, registration/login, searchable nine-scenario catalog, details/safety acknowledgment, training/result, Quiz and FAQ |
-| Live AI Provider | Implemented — Mock/OpenAI/Groq; four v5 Call Center stories passed real Groq verification on 2026-10-06; deployed acceptance/error evidence tracked separately in Part 3 |
+| Live AI Provider | Implemented — Mock/OpenAI/Groq; all four v6 Preview flows functionally passed on 2026-10-07, but two used one INVALID_OUTPUT fallback each; [bounded receipt evidence](docs/call-center-continuous-ux.md); historical v5 results retained in Part 3 |
 | Call Center text | Four v6 continuous semantic-gated stories; 3 meaningful checkpoints for scams / 2 for normal calls; verified simulator evidence required for verification branch; historical v1–v5 preserved; [current verification](docs/call-center-continuous-ux.md) |
 | Voice Call Center | Implemented — Phone-integrated Push-to-Talk, committed opening/state/reply TTS and replay, captions/text/HTTP fallback; live Azure NOT RUN (credentials absent) |
 | Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
@@ -46,7 +46,7 @@ UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรก�
 | Account / Dashboard UI | Read-only session account; dashboard uses existing Quiz history (up to 50 rounds), not aggregated scenario history or overall mastery |
 | Investigation Game / Knowledge Base | UI-only labeled previews and honest empty states; backend/content publishing/progress not implemented |
 
-ยืนยัน Groq ด้วยคำขอจริงครบสี่เรื่อง Call Center แล้วในวันที่ 6 ตุลาคม 2026 ส่วน Azure ยังไม่ได้ทดสอบจริง และผล local ไม่ใช่หลักฐานว่า Preview ผ่านครบทุกขั้นตอน ดูผล browser จริงและข้อจำกัดใน [Part 3](docs/call-center-part3.md)
+วันที่ 7 ตุลาคม 2026 ทดสอบ browser จริงบน Preview ครบสี่เรื่อง Call Center v6 ผ่านถึงผลและ logout; CC-02/CC-N02 ใช้ fallback อย่างละหนึ่ง turn จึงไม่อ้างว่าทุกคำขอ AI สำเร็จทั้งหมด ดู [ผล v6 และข้อจำกัด](docs/call-center-continuous-ux.md) ส่วน Azure ยังไม่ได้ทดสอบจริง และการตรวจ local เป็น in-memory/Mock แยกจากหลักฐาน Preview; [Part 3](docs/call-center-part3.md) เก็บผล v5 เดิม
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
 ผลรอบล่าสุดอยู่ใน [Live AI + Voice + WebSocket verification](docs/realtime-verification.md)
 

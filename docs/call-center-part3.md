@@ -1,5 +1,9 @@
 # Call Center Part 3 — performance, live dialogue and Phone voice
 
+Historical milestone record. Current new sessions use
+[v6 continuous semantic-gated UX](call-center-continuous-ux.md); the measurements and
+v5 verification below describe the Part 3 source, not a claim about current v6 results.
+
 Implementation decisions, not a rewrite of the Proposal. Starting HEAD:
 `787a15c62de1ea8e96cf8eebd3f106e36fe377a2`, branch `feat/rule-based-evaluation`.
 No template v1–v5 configuration, migration, scoring formula or other-category redesign.
