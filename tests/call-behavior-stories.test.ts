@@ -10,13 +10,14 @@ import { callCenterBehaviorTemplates } from "../src/fixtures/call-center-behavio
 import { callCenterStoryTemplates } from "../src/fixtures/call-center-stories.js";
 import { validateTemplate } from "../src/domain/template-validator.js";
 import type { CallStoryId } from "../src/fixtures/call-center-foundation.js";
+import { startPinnedStory } from "./call-foundation.helpers.js";
 
 const user = { id: "behavior-user" };
 async function harness(story: CallStoryId) {
   const repo = new InMemoryTrainingRepository(), provider = new MockScenarioModelProvider();
   const app = await createApplication(repo, provider, Date.now, undefined, () => story);
   const core = await TrainingCore.create(registeredTemplates, repo);
-  const initial = (await app.start("call-center", user, { startId: randomUUID(), expectedRevision: 0 })).session;
+  const initial = await startPinnedStory(repo, app, user, story);
   async function action(s: PublicTrainingSession, label: string, choiceLabel?: string) {
     const a = s.availableActions.find(a => a.label === label)!;
     expect(a, `${s.phone?.state}: ${label}`).toBeDefined();

@@ -20,6 +20,29 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
   const t = parsed.data;
   const decisionRules = t.evaluationMode === "DECISION_RULES_V1";
   const terminal = terminalState(t);
+  const continuous = t.callCenter?.continuousConversation;
+  requireRule(!continuous || (t.version >= 6 && t.callCenter?.fullStory), "Continuous conversation requires new full-story publication");
+  for (const state of t.states) {
+    const p = state.conversation;
+    requireRule(!p || continuous, "Semantic policy is Call Center v6 only");
+    if (continuous && !["INCOMING_CALL", "END_SCENARIO"].includes(state.id)) {
+      requireRule(!!p && p.allowedSignals.includes(p.fallbackSignal), "Missing valid authored fallback signal");
+      const stateSignals = state.id === "CALL_CONNECTED" ? ["NONE", "IDENTITY_INFORMATION"]
+        : state.id === "IDENTITY_CLAIM" ? ["IDENTITY_INFORMATION"]
+          : state.id === "CONTEXT_CLAIM" ? ["CONTEXT_INFORMATION", "VERIFY_CONTEXT"]
+            : state.id === "PRESSURE" ? ["URGENCY_PRESSURE", "SECRECY_PRESSURE"]
+              : state.id === "MAIN_REQUEST" ? [t.variant === "SCAM_CALL" ? (t.callCenter!.topic === "PARCEL" ? "TRANSFER_REQUEST" : "OTP_REQUEST") : (t.callCenter!.topic === "PARCEL" ? "DELIVERY_CONFIRMATION" : "TRANSACTION_NOTIFICATION")] : ["NONE"];
+      requireRule(p.allowedSignals.every(x => stateSignals.includes(x)), "Signal not allowed in authored state");
+      unique(p.allowedSignals, "semantic signal"); unique(p.autoTransitionIds, "automatic edge");
+      requireRule(p.decisionSignals.every(x => x !== "NONE" && p.allowedSignals.includes(x)), "Invalid decision signal");
+      requireRule(p.autoTransitionIds.every(id => state.transitions.some(e => e.id === id && e.internalOnly && !e.earlySafeResolution)), "Invalid automatic edge");
+      if (t.variant === "NORMAL_CALL") requireRule(!p.allowedSignals.some(x => ["URGENCY_PRESSURE", "SECRECY_PRESSURE", "OTP_REQUEST", "TRANSFER_REQUEST"].includes(x)), "Normal control forbids scam signals");
+      const opportunity = t.opportunities.find(o => o.state === state.id);
+      requireRule(!opportunity || (opportunity.activation === "CALLER_SIGNAL" && p.decisionSignals.length > 0), "Contextual opportunity must be signal gated");
+      for (const gate of state.appSignalGates ?? []) requireRule(state.internalApps?.includes(gate.app) && gate.signals.every(x => p.allowedSignals.includes(x)), "Invalid app signal gate");
+    }
+  }
+  for (const o of t.opportunities) requireRule(o.activation !== "CALLER_SIGNAL" || continuous, "Signal activation requires continuous Call Center");
   if (t.callCenter) {
     const { storyId, topic } = t.callCenter;
     requireRule(t.category === "CALL_CENTER" && decisionRules && t.publicActionBindings && t.initialState === "INCOMING_CALL", "Invalid phone template");
@@ -142,7 +165,7 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
     }
   }
 
-  // Deliberately acyclic MVP progression; multi-turn chat does not change the state.
+  // Deliberately acyclic authored graph; v6 chat may traverse only guarded internal edges.
   // Enumerate every path, carrying eligible opportunities (not merely global presence).
   const reached = new Set<string>();
   let safePaths = 0;

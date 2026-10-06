@@ -12,19 +12,20 @@ import { CALL_PUBLIC_ID, callCenterFoundationTemplates } from "../fixtures/call-
 import { callerTurnReady } from "../domain/call-center.js";
 import { callCenterStoryTemplates } from "../fixtures/call-center-stories.js";
 import { callCenterBehaviorTemplates } from "../fixtures/call-center-behavior-stories.js";
+import { callCenterContinuousTemplates } from "../fixtures/call-center-continuous-stories.js";
 import { activePhoneApp, freshConfirmation, hasBehavior, interactionAvailable } from "../domain/call-behavior.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
-// Published v1/v2/v3/v4 remain unchanged. New Call Center starts use behavior-derived v5.
+// Published v1-v5 remain unchanged. New Call Center starts use signal-gated v6.
 const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenarios.find(t => t.category === "CALL_CENTER")!),
   version: 2, description: "ฝึกตรวจสอบและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง",
   characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
 const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
 export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER"
-  ? { ...callCenterBehaviorTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
+  ? { ...callCenterContinuousTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
 export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates.filter(t => !t.callCenter),
-  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates, ...callCenterStoryTemplates, ...callCenterBehaviorTemplates];
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates, ...callCenterStoryTemplates, ...callCenterBehaviorTemplates, ...callCenterContinuousTemplates];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],
@@ -137,6 +138,7 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
   }
   let next = t.opportunities.length + 1;
   for (const state of t.states) for (const edge of state.transitions) {
+    if (edge.internalOnly) continue;
     if (t.callCenter?.fullStory && state.interactions?.some(i => i.transitionId === edge.id)) continue;
     result.push({ state: state.id, transitionId: edge.id, visible: s => !t.callCenter?.fullStory || activePhoneApp(s, t) === "CALL", public: { id: `a${String(next++).padStart(2, "0")}`, label: edge.publicLabel!, input: "NONE", options: [] },
       toDomain(input) { payload(none, input); return { kind: "PROGRESS", transitionId: edge.id }; } });
@@ -159,7 +161,7 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
 }
 export function availableActions(s: TrainingSession, t: ScenarioTemplate): PublicActionDefinition[] {
   if (s.status !== "ACTIVE") return [];
-  if (!callerTurnReady(s, t)) return [];
+  if (!callerTurnReady(s, t) && !t.callCenter?.continuousConversation) return [];
   return actionBindings(t).filter(b => b.state === s.state && (!b.opportunityId || s.opportunities.some(o =>
     o.definitionId === b.opportunityId && o.state === s.state && o.finalizedAt === null)) &&
     (!t.publicActionBindings || !b.transitionId || transitionAvailable(s, t, b.transitionId)) && (!b.visible || b.visible(s))).map(b => {

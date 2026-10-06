@@ -1,6 +1,8 @@
 // UI-only browser verification against a running production Next server.
 // Browser requests are bridged to the real application services IN MEMORY.
 // This is not Auth.js/MySQL/live-provider E2E; no application authentication bypass is added.
+// Call Center coverage in this legacy shell verifier is explicitly pinned to v5.
+// Current v6 four-story coverage: verify-call-ux-browser.mjs.
 // Run: node scripts/verify-ui.mjs [http://127.0.0.1:3216]
 import { chromium, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -15,6 +17,7 @@ const { QuizService } = await import("../src/quiz/service.ts");
 const { InMemoryQuizRepository } = await import("../src/quiz/memory-repository.ts");
 const { publicError } = await import("../src/http/errors.ts");
 const { VoiceApplicationService } = await import("../src/application/voice-service.ts");
+const { startPinnedStory } = await import("../tests/call-foundation.helpers.ts");
 
 const baseURL = process.argv[2] ?? "http://127.0.0.1:3216";
 assert(["127.0.0.1", "localhost"].includes(new URL(baseURL).hostname), "Local test server required");
@@ -40,7 +43,9 @@ try {
       let data;
       if (path === "/api/auth/session") return route.fulfill({ json: { user: { id: user.id, email: "ui-preview@example.test" }, expires: "2099-01-01T00:00:00.000Z" } });
       if (path === "/api/scenarios") data = app.listScenarios();
-      else if (/^\/api\/scenarios\/[^/]+\/start$/.test(path)) data = await app.start(path.split("/")[3], user, body);
+      else if (/^\/api\/scenarios\/[^/]+\/start$/.test(path)) data = path.split("/")[3] === "call-center"
+        ? { session: (await startPinnedStory(phoneRepository, app, user, selectedStory, 5)).session, duplicate: false }
+        : await app.start(path.split("/")[3], user, body);
       else if (/^\/api\/scenarios\/[^/]+$/.test(path)) data = app.scenario(path.split("/")[3]);
       else if (path.startsWith("/api/training/")) {
         const [, , , id, operation] = path.split("/");

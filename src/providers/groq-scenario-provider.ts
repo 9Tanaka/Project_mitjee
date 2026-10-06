@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
-import { aiCharacterResponseSchema, ProviderRefusal } from "../dialogue/contracts.js";
+import { responseSchemaFor, ProviderRefusal } from "../dialogue/contracts.js";
 import type { AICharacterResponse, ProviderOptions, ScenarioAIContext, ScenarioModelProvider } from "../dialogue/contracts.js";
 import type { ResponsesClient } from "./openai-scenario-provider.js";
 import { buildOpenAIRequest } from "./openai-prompt.js";
@@ -50,7 +50,7 @@ export class GroqScenarioModelProvider implements ScenarioModelProvider {
       if (parts.length !== 1 || parts[0]?.type !== "output_text") throw new GroqProviderError("INVALID_OUTPUT", undefined, "OUTPUT_PARTS");
       let value: unknown;
       try { value = JSON.parse(parts[0].text); } catch { throw new GroqProviderError("INVALID_OUTPUT", undefined, "MALFORMED_JSON"); }
-      const response = aiCharacterResponseSchema.safeParse(value);
+      const response = responseSchemaFor(context).safeParse(value);
       if (!response.success) throw new GroqProviderError("INVALID_OUTPUT", undefined,
         response.error.issues.some(i => i.code === "custom") ? "EVENT_PAIR" : response.error.issues.some(i => i.code === "invalid_value") ? "SCHEMA_ENUM" : "SCHEMA_SHAPE");
       return response.data;

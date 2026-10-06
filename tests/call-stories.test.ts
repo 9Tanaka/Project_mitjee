@@ -184,7 +184,8 @@ describe("full immutable Call Center stories", () => {
     s = (await app.action(s.sessionId, user, { actionId: "answer", expectedRevision: 0, actionDefinitionId: s.availableActions[0]!.id, payload: {} })).session;
     expect(s.phone).toMatchObject({ callStatus: "CONNECTED", openingStatus: "PENDING" }); expect(generate).not.toHaveBeenCalled();
     const work = app.opening(s.sessionId, user, { expectedRevision: s.revision });
-    late.resolve(answer({ candidate_event: "POSSIBLE_CRITICAL_FAILURE", event_code: "DISCLOSE_OTP", confidence: 1 }));
+    late.resolve(answer({ candidate_event: "POSSIBLE_CRITICAL_FAILURE", event_code: "DISCLOSE_OTP", confidence: 1,
+      interaction_signal: "IDENTITY_INFORMATION", conversation_status: "STATE_COMPLETE" }));
     await work; const raw = await repo.get(s.sessionId, user.id);
     expect(raw.status).toBe("ACTIVE"); expect(raw.events).toEqual([]); expect(raw.result).toBeNull(); expect(raw.dialogueTurns[0]!.candidateStatus).toBe("REJECTED");
   });

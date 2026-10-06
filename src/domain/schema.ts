@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CALL_STORIES, CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js";
 import { CALL_BEHAVIORS, PHONE_APPS, callInteractionSchema, phoneContentSchema } from "./phone-model.js";
+import { callConversationPolicySchema, callSignalSchema } from "./call-signals.js";
 
 const id = z.string().min(1).max(120).regex(/^[a-zA-Z0-9_-]+$/);
 const event = z.enum(EVENT_CODES);
@@ -12,7 +13,7 @@ const common = {
   state: z.enum(STATES),
   required: z.boolean(),
   // MVP: static, backend-owned content is offered on state entry; no AI exposure inference.
-  activation: z.literal("STATE_ENTRY"),
+  activation: z.enum(["STATE_ENTRY", "CALLER_SIGNAL"]),
   publicCheckpointLabel: z.string().min(1).optional(),
   publicResultLabel: z.string().min(1).optional(),
   unassessedFeedback: z.string().min(1).optional(),
@@ -59,19 +60,22 @@ export const scenarioTemplateSchema = z.strictObject({
   characterRole: z.string().min(1).max(1000).optional(),
   fictionalOnly: z.literal(true), initialState: z.enum(["contact", "INCOMING_CALL"]),
   callCenter: z.strictObject({ storyId: z.enum(CALL_STORIES), topic: z.enum(["PARCEL", "BANK"]),
-    openingFallback: z.string().trim().min(1).max(8000), fullStory: z.literal(true).optional(), content: phoneContentSchema.optional() }).optional(),
+    openingFallback: z.string().trim().min(1).max(8000), fullStory: z.literal(true).optional(), content: phoneContentSchema.optional(), continuousConversation: z.literal(true).optional() }).optional(),
   states: z.array(z.strictObject({
     id: z.enum(STATES), objective: z.string().min(1),
     allowedBehaviors: z.array(z.string()), forbiddenBehaviors: z.array(z.string()),
     allowedEventCodes: z.array(event),
     fallbackMessage: z.string().min(1),
     callerTurnRequired: z.boolean().optional(), internalApps: z.array(z.enum(PHONE_APPS)).optional(),
+    conversation: callConversationPolicySchema.optional(),
+    appSignalGates: z.array(z.strictObject({ app: z.enum(PHONE_APPS), signals: z.array(callSignalSchema).min(1) })).optional(),
     interactions: z.array(callInteractionSchema).optional(),
     transitions: z.array(z.strictObject({
       id, target: z.enum(STATES), publicLabel: z.string().min(1).optional(),
       requiresFinalized: z.array(id), requiresEvents: z.array(event),
       safeResolution: z.boolean(),
       earlySafeResolution: z.boolean().optional(),
+      internalOnly: z.literal(true).optional(),
       behavior: z.enum(CALL_BEHAVIORS).optional(),
       requiresBehaviors: z.array(z.enum(CALL_BEHAVIORS)).optional(),
       requiresChoices: z.array(z.strictObject({ opportunityId: id, choiceIds: z.array(id).min(1) })).optional(),

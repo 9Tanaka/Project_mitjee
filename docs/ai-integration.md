@@ -4,6 +4,12 @@ STATUS (6 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; Part 3 real 
 
 [กลับ README](../README.md) · [Security](security.md)
 
+Current Call Center starts use [v6 continuous semantic output](call-center-continuous-ux.md).
+Strict enum `interaction_signal` and `conversation_status` are required only for that
+context, validated against the authored state before commit. Other providers/categories
+keep their legacy response schema. Historical live v5 evidence above is not evidence of
+v6 success; v6 live quota/semantic results and Preview acceptance are recorded separately.
+
 ## Provider contract
 
 ```typescript

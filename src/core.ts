@@ -13,6 +13,7 @@ import type { TrainingSession, ValidationStatus } from "./domain/types.js";
 import { aiCharacterResponseSchema } from "./dialogue/contracts.js";
 import type { CommitCharacterOpening, CommitDialogueTurn, DialogueReply } from "./dialogue/contracts.js";
 import { callerTurnId, callerTurnKey, isCallerTurnId, terminalState } from "./domain/call-center.js";
+import { validateCallOutput, progressConversation } from "./domain/call-conversation.js";
 
 export interface SubmitCommand {
   sessionId: string;
@@ -121,6 +122,8 @@ export class TrainingCore {
   async commitCharacterOpening(input: CommitCharacterOpening): Promise<DialogueReply> {
     if (!isCallerTurnId(input.turnId)) throw new DomainError("INVALID_TURN_ID");
     const snapshot = await this.resume(input.sessionId, input.ownerId);
+    const prior = snapshot.dialogueTurns.find(t => t.id === input.turnId);
+    if (prior) return { turn: copy(prior), duplicate: true };
     if (input.turnId !== callerTurnId(snapshot.state)) throw new DomainError("INVALID_TURN_ID");
     const response = aiCharacterResponseSchema.parse(input.response);
     const committed = await this.apply({ sessionId: input.sessionId, ownerId: input.ownerId,
@@ -133,8 +136,8 @@ export class TrainingCore {
     const action = parseAction(command.action);
     const opening = dialogue && "kind" in dialogue;
     const session = await this.resume(command.sessionId, command.ownerId);
-    const key = dialogue ? opening ? callerTurnKey(session.state) : JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
     const previous = session.actions.find(a => a.id === command.actionId);
+    const key = dialogue ? opening ? callerTurnKey(previous?.state ?? session.state) : JSON.stringify({ sanitizedText: dialogue.sanitizedUserMessage }) : fingerprint(action);
     if (previous) {
       if (previous.fingerprint !== key) throw new DomainError("IDEMPOTENCY_CONFLICT");
       return { session, duplicate: true, validationStatus: previous.validationStatus };
@@ -144,6 +147,7 @@ export class TrainingCore {
     const template = await this.template(session.templateId, session.templateVersion, session.variant);
     const now = this.now();
     const stateBefore = session.state;
+    if (dialogue) validateCallOutput(dialogue.response, template, stateBefore);
     const candidateStatus = dialogue ? inspectCandidate({
       eventCode: dialogue.response.event_code, opportunityId: null,
       sourceMessageId: `${dialogue.turnId}:${opening ? "character" : "user"}`, confidence: dialogue.response.confidence,
@@ -198,8 +202,10 @@ export class TrainingCore {
         response: copy(dialogue.response), candidateStatus, usedFallback: dialogue.usedFallback,
         failureReason: dialogue.failureReason, attempts: dialogue.attempts,
       });
-      if (opening) openStateOpportunities(session, template, now);
+      if (opening || template.callCenter?.continuousConversation) openStateOpportunities(session, template, now);
     }
+    // Caller receipt/message/opportunity and any guarded backend progression share one CAS.
+    if (dialogue || !["FREE_TEXT", "PROGRESS"].includes(action.kind)) progressConversation(session, template, now);
     session.lastActivityAt = now;
     if (session.status !== "ACTIVE") session.endedAt = now;
     if (session.status === "COMPLETED" || session.status === "FAILED") {

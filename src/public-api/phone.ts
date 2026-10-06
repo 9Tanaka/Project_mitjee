@@ -9,5 +9,9 @@ export const phoneDto = z.strictObject({
   availableInternalApps: z.array(z.strictObject({ id: z.enum(["MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]), label: z.string(), availability: z.enum(["FOUNDATION", "AVAILABLE"]) })),
   activeApp: z.enum(["CALL", "MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]).optional(),
   appData: z.partialRecord(z.enum(["MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]), z.strictObject({ title: z.string(), lines: z.array(z.string()) })).optional(),
+  continuousConversation: z.literal(true).optional(),
+  contextualDecision: z.strictObject({ available: z.literal(true), id: z.string(), label: z.string(), actionIds: z.array(z.string()).min(1) }).optional(),
+  hangUpActionId: z.string().optional(),
+  independentContactActionId: z.string().optional(),
 });
 export const openingRequest = z.strictObject({ expectedRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) });

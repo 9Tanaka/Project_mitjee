@@ -33,7 +33,9 @@
 .phone-compose button { justify-self: end; }
 .phone-app-switcher { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin: 24px 0 16px; }
 .phone-app-switcher button { border: 1px solid #ded7e8; padding: 14px 4px; border-radius: 12px; background: white; font-size: 10px; min-height: 46px; }
-.phone-call-controls { display: flex; align-items: center; justify-content: center; gap: 15px; padding-block: 10px 5px; }
+.phone-call-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; padding: 10px 12px 5px; }
+.phone-call-controls details { max-width: 100%; font-size: 12px; }
+.phone-call-controls details button { white-space: normal; margin-top: 8px; }
 .phone-exit { color: #7b647f; font-size: 11px; text-decoration: underline; }
 .phone-action-sheet { position: relative; margin: 18px -18px -18px; padding: 20px 18px; background: white; border-top: 1px solid #dcd1ec; border-radius: 22px 22px 0 0; box-shadow: 0 -10px 25px #3223400d; }
 .phone-sheet-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 18px; }

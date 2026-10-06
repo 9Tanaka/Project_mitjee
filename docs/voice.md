@@ -13,9 +13,12 @@ ScenarioDialogueOrchestrator → committed sanitized dialogue → TextToSpeechPr
 
 Speech ports are independent of Azure. `AzureSpeechProvider` is an outer server adapter using
 the official JavaScript SDK. Core, evaluation, EventValidator and persistence do not import it.
-Recognized speech remains free text; it cannot confirm a simulated critical action, move state,
-finalize a checkpoint, or assign an assessment. Only existing explicit backend-validated actions
-do that. NORMAL_CALL and SCAM_CALL share this transport; the other eight categories stay TEXT.
+Recognized speech remains free text; it cannot confirm a simulated critical action,
+finalize a checkpoint, or assign an assessment. In Call Center v6, validated committed caller
+signals/status may cause guarded authored conversational progression, identically to text;
+AI still cannot choose a state. Voice receipt replay survives progression without repeat
+STT/AI/TTS. See [continuous UX](call-center-continuous-ux.md). NORMAL_CALL and SCAM_CALL
+share this transport; the other eight categories stay TEXT.
 
 `POST /api/training/:sessionId/voice` accepts only `turnId`, `expectedRevision`, `mime` and
 `audioBase64`. Authentication, same-origin, owned ACTIVE Call Center binding, schema and limits

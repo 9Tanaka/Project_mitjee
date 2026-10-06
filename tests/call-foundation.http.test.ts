@@ -30,7 +30,9 @@ it("protected Answer returns connected/PENDING without invoking the provider; pr
   const opening = await h.request("opening", { expectedRevision: data.session.revision });
   expect(opening.status).toBe(200);
   const ready = (await opening.json()).data;
-  expect(ready.session.phone.openingStatus).toBe("READY");
+  expect(ready.session.phone.openingStatus).toBe("PENDING");
+  expect(ready.session.phone.state).toBe("IDENTITY_CLAIM");
+  expect(ready.session.phone.contextualDecision).toBeUndefined();
   expect(ready.session.messages.map((m: { role: string }) => m.role)).toEqual(["character"]);
   expect(JSON.stringify(data)).not.toMatch(/CC-02|SCAM_CALL|NORMAL_CALL|storyId|templateVersion|call-center-bank/);
 });

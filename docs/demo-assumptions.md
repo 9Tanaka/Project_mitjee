@@ -25,7 +25,7 @@ STATUS: MVP DECISIONS — NOT PROPOSAL REQUIREMENTS
 | Explicit critical action | FREE_TEXT/candidate ไม่มีอำนาจ; Backend ตรวจ SIMULATED_ACTION confirmation | Implemented |
 | Event Code names | reusable domain registry + State allowed events | Implemented; SMS ใช้ Critical Rules สองรายการ |
 | Acyclic progression | ไม่มี cycle ใน Template graph; ยังสนทนาซ้ำใน State เดิมได้ | Implemented |
-| Call Center v5 matched stories | PARCEL/BANK × NORMAL_CALL/SCAM_CALL; backend 50/50 condition and topic; three meaningful scam checkpoints / two normal checkpoints | Implemented; server-only story override for verification, immutable session pinning; see [Part 3](call-center-part3.md) |
+| Call Center v6 continuous matched stories | PARCEL/BANK × NORMAL_CALL/SCAM_CALL; backend 50/50 condition and topic; three meaningful scam checkpoints / two normal checkpoints; bounded semantic signal/status and three caller turns per conversational state | Implemented; server-only story override for verification, immutable session pinning; [continuous UX](call-center-continuous-ux.md); not attributed to Proposal |
 | Weakest skill tie (legacy) | เก็บ array, recommendation เดียวใช้ D → W → S; tolerance <1e-10 | Legacy implemented; categorical result has no numeric weakest skill |
 | Recommendation scope | Scenario คืน type/key/reason; Quiz Pre/Post เป็น module แยก | Metadata and Quiz Pre/Post implemented; lesson/Knowledge/Review content out of current scope |
 
@@ -85,7 +85,7 @@ FREE_TEXT เข้า Core ตรงต่างจาก Dialogue: ไม่�
 
 - Next.js 16.3.8 (security patch 2 October), React/React DOM 19.3.0 เป็น runtime dependencies สำหรับ Route Handlers และ Frontend ที่ implement แล้ว
 - Authentication Boundary ใช้ verified Auth.js Credentials session แล้ว; invalid/missing identity ยังคง default deny
-- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v5 behavior-derived full text/interactivity, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1–v4 สำหรับประวัติ
+- Playable catalog มีเก้าประเภท; SMS v4/DEFAULT, Call Center v6 continuous text/interactivity, อีกเจ็ดประเภท v1; เก็บ SMS v1–3 และ Call Center v1–v5 สำหรับประวัติ
 - Call Center semantic states, caller-turn metadata, per-session synthetic OTP, state-gated phone apps และ fresh explicit confirmation เป็น approved implementation choices ไม่ใช่ชื่อ State หรือสูตรใหม่จาก Proposal ดู [Part 2](call-center-part2.md)
 - Start request ใช้ startId UUID + expectedRevision=0; idempotent retry ภายใต้ owner/scenario เดิม
 - Public action/evidence IDs แยกจาก domain IDs; payload ไม่มี score, events หรือ target State

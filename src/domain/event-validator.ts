@@ -43,11 +43,17 @@ export function validateAction(action: ActionInput, session: TrainingSession, t:
     return plan;
   }
   if (action.kind === "CALL_INTERACTION") {
-    if (!callerTurnReady(session, t)) throw new DomainError("CALL_NOT_READY");
     const interaction = interactionFor(t, session.state, action.interactionId);
+    if (!callerTurnReady(session, t) && !(t.callCenter?.continuousConversation && interaction && ["HUNG_UP", "CALLED_OFFICIAL_CHANNEL"].includes(interaction.behavior))) throw new DomainError("CALL_NOT_READY");
     if (!t.callCenter?.fullStory || !interaction || !interactionAvailable(session, t, interaction)) throw new DomainError("INVALID_STATE");
     const o = t.opportunities.find(o => o.state === session.state);
     const open = session.opportunities.find(item => item.definitionId === o?.id && item.finalizedAt === null);
+    if (t.callCenter?.continuousConversation && ["HUNG_UP", "CALLED_OFFICIAL_CHANNEL"].includes(interaction.behavior)) {
+      const choice = o?.skill === "D" && o.choices.find(c => c.id === interaction.resolutionChoiceId);
+      return { ...plan, ...(open && choice ? { status: "ACCEPTED" as const, opportunityId: o!.id,
+        assessment: choice.assessment ?? null, eventCodes: choice.eventCodes, ruleId: `${o!.id}:${choice.id}` } : {}),
+        transitionId: interaction.transitionId! };
+    }
     const resolution = interaction.resolutionChoiceId && open && o && o.skill !== "W"
       ? validateAction(o.skill === "D" ? { kind: "DECISION", opportunityId: o.id, choiceId: interaction.resolutionChoiceId }
         : { kind: "SAFE_ACTION", opportunityId: o.id, actionId: interaction.resolutionChoiceId }, session, t) : plan;
@@ -55,6 +61,7 @@ export function validateAction(action: ActionInput, session: TrainingSession, t:
   }
   if (action.kind !== "QUIT_SESSION" && !callerTurnReady(session, t)) throw new DomainError("CALL_NOT_READY");
   if (t.callCenter?.fullStory && action.kind === "PROGRESS" && activePhoneApp(session, t) !== "CALL") throw new DomainError("INVALID_STATE");
+  if (action.kind === "PROGRESS" && t.callCenter?.continuousConversation && t.states.find(s => s.id === session.state)?.transitions.find(e => e.id === action.transitionId)?.internalOnly) throw new DomainError("BACKEND_PROGRESSION_ONLY");
   if (action.kind === "PROGRESS" || action.kind === "QUIT_SESSION") return plan;
   if (action.kind === "SIMULATED_ACTION") {
     const rule = validateCriticalAction(action, session, t)!;

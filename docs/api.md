@@ -12,6 +12,12 @@ Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม;
 
 ## Authentication and composition
 
+Call Center v6 preserves request contracts and adds optional safe phone projection fields:
+`continuousConversation`, `contextualDecision` (opaque id/label/actionIds), `hangUpActionId`
+and `independentContactActionId`. They are Backend-derived, not text-scanned by the browser.
+Internal semantic signals, story/variant and scoring rules are not exposed. See
+[continuous UX](call-center-continuous-ux.md) for state progression and receipt semantics.
+
 Client → Route Handler → RequestAuthenticator → strict DTO → Application Service
 → TrainingCore / ScenarioDialogueOrchestrator → TrainingRepository → Prisma → MySQL
 

@@ -82,7 +82,7 @@ flowchart LR
 | Next.js Server pages + interactive Client Components | Thai presentation, auth UX, public DTO fetch/mutations; no state/scoring/identity authority |
 | Next.js Route Handlers | HTTP adapter; authenticate, validate transport, invoke application service, map safe errors |
 | RequestAuthenticator | Auth.js verified session → minimal principal; Credentials + verified JWT/cookie; session resolver mock อยู่เฉพาะ tests |
-| Application service / catalog | เลือก current pinned templates รวม Call Center v5; derive command จาก opaque public action ID; project public response |
+| Application service / catalog | เลือก current pinned templates รวม Call Center v6; derive command จาก opaque public action ID; project public response |
 | Composition root | lazy singleton ต่อ worker, ประกอบ Prisma → Repository → Core/Dialogue → Service และมี close/dispose |
 | TrainingCore | start/resume, validate command, ประสาน Event/Opportunity/State/Result และ CAS commit |
 | Template Validator | ตรวจ schema/graph และ policy ตาม evaluationMode; D/W/S invariant สำหรับ legacy weighted; categorical อนุญาต early safe exit ตามกฎที่อนุมัติ |
@@ -97,6 +97,12 @@ flowchart LR
 | InMemory / Prisma adapters | คง ownership, identity, history และ atomic persistence semantics |
 
 ## Boundaries and data flow
+
+Call Center v6 adds [committed semantic gating and guarded auto-progression](call-center-continuous-ux.md).
+AI proposes a bounded signal/status, never a target edge or evaluation. Core validates the
+state allowlist, atomically commits the caller receipt, activates an authored opportunity
+once, and may traverse only a guarded internal authored edge. Text and sanitized STT share
+this path. Historical v1–v5 retain their existing semantics and configuration.
 
 HTTP request → RequestAuthenticator → strict Zod DTO → TrainingApplicationService
 → Core/Dialogue → repository → explicit public response projection

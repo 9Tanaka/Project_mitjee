@@ -3,16 +3,16 @@
 STATUS: NINE PUBLIC SCENARIOS; EIGHT TEXT-ONLY + CALL CENTER PHONE FOUNDATION WITH FOUR INTERNAL STORY IDENTITIES
 
 The nine types in Proposal v6 section 4.1.7.1 are available through the authenticated catalog.
-Call Center new sessions use [v3 phone foundation](call-center-foundation.md); SMS uses v4;
-the remaining seven templates retain v1. Historical SMS v1–3 and Call Center v1/v2 remain
+Call Center new sessions use [v6 continuous semantic-gated dialogue](call-center-continuous-ux.md); SMS uses v4;
+the remaining seven templates retain v1. Historical SMS v1–3 and Call Center v1–v5 remain
 available for old sessions. All new starts use categorical [Decision Evaluation](decision-evaluation.md).
 The unchanged eight text categories retain their authored warning evidence, safe exits and
-validated critical actions. The new Call Center foundation has shared identity/verification
-decisions only; full story evidence and critical requests are deferred to Part 2.
+validated critical actions. Call Center has four authored parcel/bank matched normal/scam
+stories, signal-gated contextual decisions, owned simulator verification and explicit critical confirmations.
 
 | Category | Template ID | Practised risk |
 |---|---|---|
-| Call Center | `call-center-scam` (stable public ID) | Parcel/bank × normal/scam foundation identities; not four full stories |
+| Call Center | `call-center-scam` (stable public ID) | Four parcel/bank × normal/scam stories; continuous text/voice conversation |
 | Investment | `investment-scam` | Guaranteed returns and a withdrawal fee |
 | Romance | `romance-scam` | Relationship pressure and an urgent money request |
 | E-commerce | `ecommerce-scam` | Off-platform payment to an unverified shop |

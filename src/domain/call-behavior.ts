@@ -2,6 +2,7 @@ import type { ScenarioTemplate } from "./schema.js";
 import type { TrainingAction, TrainingSession } from "./types.js";
 import type { CallBehavior, PhoneAppId } from "./phone-model.js";
 import { callerTurnReady } from "./call-center.js";
+import { phoneAppAllowed } from "./call-conversation.js";
 
 export function interactionFor(t: ScenarioTemplate, state: TrainingSession["state"], id: string) {
   return t.states.find(s => s.id === state)?.interactions?.find(i => i.id === id);
@@ -47,8 +48,10 @@ export function activePhoneApp(s: TrainingSession, t: ScenarioTemplate): PhoneAp
 }
 export function interactionAvailable(s: TrainingSession, t: ScenarioTemplate, i: NonNullable<ScenarioTemplate["states"][number]["interactions"]>[number]) {
   const state = t.states.find(state => state.id === s.state)!;
+  if (t.callCenter?.continuousConversation && ["HUNG_UP", "CALLED_OFFICIAL_CHANNEL"].includes(i.behavior)) return s.status === "ACTIVE";
   return s.status === "ACTIVE" && callerTurnReady(s, t) && i.app === activePhoneApp(s, t) &&
     (!i.navigationTarget || i.navigationTarget === "CALL" || !!state.internalApps?.includes(i.navigationTarget)) &&
+    (!i.navigationTarget || phoneAppAllowed(s, t, i.navigationTarget)) && phoneAppAllowed(s, t, i.app) &&
     (i.requiresBehaviors ?? []).every(code => hasBehavior(s, t, code));
 }
 export function freshConfirmation(s: TrainingSession, t: ScenarioTemplate, rule: ScenarioTemplate["criticalFailureRules"][number]) {

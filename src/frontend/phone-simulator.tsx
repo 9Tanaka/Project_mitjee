@@ -35,8 +35,10 @@ export function CallTranscript({ messages }: { messages: Session["messages"] }) 
 export function PhoneAppSwitcher({ apps, disabled, open }: { apps: Phone["availableInternalApps"]; disabled: boolean; open: (app: Phone["availableInternalApps"][number]) => void }) {
   return <nav className="phone-app-switcher" aria-label="แอปภายในโทรศัพท์">{apps.map(app => <button key={app.id} disabled={disabled} onClick={() => open(app)}>{app.label}</button>)}</nav>;
 }
-export function CallControls({ disabled, hasActions, showActions, quit }: { disabled: boolean; hasActions: boolean; showActions: () => void; quit: () => void }) {
+export function CallControls({ disabled, hasActions, showActions, quit, hangUp, verify }: { disabled: boolean; hasActions: boolean; showActions: () => void; quit: () => void; hangUp?: (() => void) | undefined; verify?: (() => void) | undefined }) {
   return <div className="phone-call-controls">{hasActions && <button className="button button-small" disabled={disabled} onClick={e => { e.currentTarget.focus(); showActions(); }}>ตัวเลือกขณะนี้</button>}
+    {hangUp && <button className="button button-secondary button-small" disabled={disabled} onClick={hangUp}>วางสาย</button>}
+    {verify && <details><summary>ตรวจสอบผ่านช่องทางอื่น</summary><button className="button button-secondary button-small" disabled={disabled} onClick={verify}>จบสายเพื่อติดต่อช่องทางที่มีอยู่เดิม</button></details>}
     <button className="phone-exit" disabled={disabled} onClick={quit}>ออกจากรอบฝึก</button></div>;
 }
 export function ContextualActionSheet({ session, blocked, submit, close }: { session: Session; blocked: boolean; submit: (id: string, payload: ActionPayload) => void; close: () => void }) {
@@ -47,8 +49,8 @@ export function ContextualActionSheet({ session, blocked, submit, close }: { ses
     return () => previous?.focus();
   }, []);
   return <section ref={ref} className="phone-action-sheet" role="dialog" aria-label="ตัวเลือกในขั้นตอนปัจจุบัน" onKeyDown={e => { if (e.key === "Escape" && !blocked) close(); }}>
-    <div className="phone-sheet-heading"><h3>{session.currentStatePublicLabel}</h3><button type="button" disabled={blocked} onClick={close} aria-label="ปิดตัวเลือก">×</button></div>
-    <div className="phone-sheet-content">{session.availableActions.map(a => <ActionControl key={a.id + session.revision} definition={a} disabled={blocked} submit={p => submit(a.id, p)} />)}</div>
+    <div className="phone-sheet-heading"><h3>{session.phone?.contextualDecision?.label ?? session.currentStatePublicLabel}</h3><button type="button" disabled={blocked} onClick={close} aria-label="ปิดตัวเลือก">×</button></div>
+    <div className="phone-sheet-content">{session.availableActions.filter(a => !session.phone?.continuousConversation || session.phone.contextualDecision?.actionIds.includes(a.id)).map(a => <ActionControl key={a.id + session.revision} definition={a} disabled={blocked} submit={p => submit(a.id, p)} />)}</div>
   </section>;
 }
 export function ActiveCallScreen({ session, blocked, text, setText, send, requestOpening, recovery, children }: {
@@ -56,8 +58,9 @@ export function ActiveCallScreen({ session, blocked, text, setText, send, reques
 }) {
   const pending = session.phone!.openingStatus === "PENDING";
   return <div className="phone-active"><p className="phone-kicker">{pending ? "กำลังเชื่อมต่อบทสนทนา" : "กำลังสนทนา"}</p><CallerIdentity label={session.phone!.callerLabel} />
+    <CallTranscript messages={session.messages} />
     {pending ? <div className="phone-pending" role="status"><p>เชื่อมต่อสายแล้ว กำลังรอบทพูดจากผู้โทร</p>{recovery && <button className="button button-small mt-4" disabled={blocked} onClick={requestOpening}>ลองรับบทพูดผู้โทรอีกครั้ง</button>}</div> : <>
-      <CallTranscript messages={session.messages} /><form className="phone-compose" onSubmit={send}><label htmlFor="phone-text">ตอบผู้โทรด้วยข้อความ</label>
+      <form className="phone-compose" onSubmit={send}><label htmlFor="phone-text">ตอบผู้โทรด้วยข้อความ</label>
         <textarea id="phone-text" rows={2} maxLength={8000} value={text} onChange={e => setText(e.target.value)} disabled={blocked} placeholder="พิมพ์สิ่งที่คุณต้องการพูด…" />
         <button className="button button-small" disabled={blocked || !text.trim()}>ส่งข้อความ</button></form>
     </>}{children}</div>;
@@ -73,12 +76,28 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
   const [quitting, setQuitting] = useState(false);
   const [voiceBusy, setVoiceBusy] = useState(false);
   const autoRequested = useRef<string | null>(null);
+  const presentedDecisions = useRef(new Set<string>());
   const path = "/api/training/" + encodeURIComponent(session.sessionId);
   const mutation = useMutation(replySchema, reply => {
     onSession(reply.session); setSheet(false); setInternalApp(null); setQuitting(false);
     if ("turn" in reply) setText("");
   }, reload);
   const phone = session.phone!;
+  const decisionId = phone.contextualDecision?.id;
+  useEffect(() => {
+    if (!phone.continuousConversation) return;
+    if (!decisionId) { setSheet(false); return; }
+    const key = `mitjee-decision-presented:${session.sessionId}:${decisionId}`;
+    if (presentedDecisions.current.has(key)) return;
+    presentedDecisions.current.add(key);
+    // Opaque presentation marker only; preserve Next's history fields. No identity/token storage.
+    try {
+      const prior: string[] = Array.isArray(history.state?.mitjeePresentedDecisions) ? history.state.mitjeePresentedDecisions : [];
+      if (prior.includes(key)) return;
+      history.replaceState({ ...history.state, mitjeePresentedDecisions: [...prior.slice(-9), key] }, "");
+    } catch { /* Backend receipts still prevent duplicate opportunities. */ }
+    setSheet(true);
+  }, [decisionId, phone.continuousConversation, session.sessionId]);
   useEffect(() => {
     if (connectedSession.current !== session.sessionId) { connectedSession.current = session.sessionId; connectedAt.current = null; setCallSeconds(0); }
     if (phone.callStatus !== "CONNECTED") return;
@@ -130,7 +149,7 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
         : phone.activeApp && phone.activeApp !== "CALL" ? <div className="phone-internal-app">
           <h2>{phone.appData?.[phone.activeApp]?.title}</h2>{phone.appData?.[phone.activeApp]?.lines.map((line, index) => <p className="mt-3" key={index}>{line}</p>)}
           <p className="field-hint mt-4">ข้อมูลและการกระทำทั้งหมดอยู่ในแบบฝึก ไม่มีการโทร ส่ง SMS หรือทำธุรกรรมจริง</p>
-          <div className="space-y-3 mt-5">{session.availableActions.map(a => <ActionControl key={a.id + session.revision} definition={a} disabled={blocked} submit={p => action(a.id, p)} />)}</div>
+          <div className="space-y-3 mt-5">{session.availableActions.filter(a => !phone.continuousConversation || (a.id !== phone.hangUpActionId && a.id !== phone.independentContactActionId)).map(a => <ActionControl key={a.id + session.revision} definition={a} disabled={blocked} submit={p => action(a.id, p)} />)}</div>
         </div>
         : internalApp && phone.availableInternalApps.some(a => a.id === internalApp.id) ? <div className="phone-internal-app"><button className="back-link" onClick={() => setInternalApp(null)}>← กลับสายสนทนา</button><h2>{internalApp.label}</h2><p>ไม่มีข้อมูลรายการในรอบฝึกนี้</p><p>หน้านี้ไม่ได้ยืนยันตัวตนหรือทำธุรกรรมจริง</p></div>
           : <ActiveCallScreen session={session} blocked={blocked} text={text} setText={setText} send={send}
@@ -143,12 +162,16 @@ export function PhoneSimulator({ session, onSession, reload }: { session: Sessio
               const navigation = session.availableActions.find(a => a.navigationTarget === app.id);
               if (navigation) action(navigation.id, {});
             }} />
-            <CallControls disabled={blocked} hasActions={session.availableActions.length > 0} showActions={() => setSheet(true)} quit={() => setQuitting(true)} />
+            {!phone.continuousConversation && <CallControls disabled={blocked} hasActions={session.availableActions.length > 0} showActions={() => setSheet(true)} quit={() => setQuitting(true)} />}
             {sheet && session.availableActions.length > 0 && <ContextualActionSheet key={session.revision} session={session} blocked={blocked} submit={action} close={() => setSheet(false)} />}
-            {quitting && <section className="phone-action-sheet" role="dialog" aria-label="ยืนยันออกจากรอบฝึก"><h3>ออกจากรอบฝึกนี้หรือไม่?</h3><p>รอบที่ออกก่อนจบไม่มีผลประเมินอย่างเป็นทางการ</p>
-              <button className="button button-secondary mt-4" disabled={blocked} onClick={() => setQuitting(false)}>ฝึกต่อ</button>
-              <button className="button mt-4" disabled={blocked} onClick={() => void mutation.run(new MutationAttempt(path + "/quit", { actionId: crypto.randomUUID(), expectedRevision: session.revision }))}>ยืนยันออกจากรอบฝึก</button></section>}
           </ActiveCallScreen>}
+      {phone.continuousConversation && phone.callStatus === "CONNECTED" && <CallControls disabled={blocked}
+        hasActions={!!phone.contextualDecision} showActions={() => setSheet(true)} quit={() => setQuitting(true)}
+        hangUp={phone.hangUpActionId ? () => action(phone.hangUpActionId!, {}) : undefined}
+        verify={phone.independentContactActionId ? () => action(phone.independentContactActionId!, {}) : undefined} />}
+      {quitting && <section className="phone-action-sheet" role="dialog" aria-label="ยืนยันออกจากรอบฝึก"><h3>ออกจากรอบฝึกนี้หรือไม่?</h3><p>รอบที่ออกก่อนจบไม่มีผลประเมินอย่างเป็นทางการ</p>
+        <button className="button button-secondary mt-4" disabled={blocked} onClick={() => setQuitting(false)}>ฝึกต่อ</button>
+        <button className="button mt-4" disabled={blocked} onClick={() => void mutation.run(new MutationAttempt(path + "/quit", { actionId: crypto.randomUUID(), expectedRevision: session.revision }))}>ยืนยันออกจากรอบฝึก</button></section>}
     </PhoneShell>
     <p className="phone-footnote">ข้อความและบทถอดเสียงไม่ใช่การยืนยันการกระทำ ระบบประเมินเฉพาะตัวเลือกที่คุณยืนยัน</p>
   </div>;

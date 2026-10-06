@@ -4,6 +4,11 @@ STATUS: IMPLEMENTED TECHNICAL DESIGN; ชื่อ State ใช้การจ�
 
 [กลับ README](../README.md) · [Scenario Engine](scenario-engine.md)
 
+Call Center v6 uses [guarded authored automatic conversational progression](call-center-continuous-ux.md).
+Committed validated AI signal/status may activate a contextual opportunity and propose an
+internal edge, but never finalize a required choice or evaluate it. Historical templates
+retain their rules. The generic SMS model below is unchanged.
+
 ## Demo State Model
 
 **Demo State Model derived from the scenario progression described in Proposal v4.**

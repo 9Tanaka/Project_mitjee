@@ -6,10 +6,11 @@ import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { VoiceApplicationService } from "../src/application/voice-service.js";
 import { pcmWav } from "./voice.helpers.js";
 import type { PublicActionPayload } from "../src/application/contracts.js";
+import { startPinnedStory } from "./call-foundation.helpers.js";
 async function harness(story: "CC-01" | "CC-02" = "CC-02") {
   const repo = new InMemoryTrainingRepository(), provider = new MockScenarioModelProvider(), user = { id: randomUUID() };
   const app = await createApplication(repo, provider, Date.now, undefined, () => story);
-  let session = (await app.start("call-center", user, { startId: randomUUID(), expectedRevision: 0 })).session;
+  let session = await startPinnedStory(repo, app, user, story);
   async function act(label: string, payload: PublicActionPayload = {}) {
     session = (await app.action(session.sessionId, user, { actionId: randomUUID(), expectedRevision: session.revision,
       actionDefinitionId: session.availableActions.find(a => a.label === label)!.id, payload })).session;

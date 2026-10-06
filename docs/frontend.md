@@ -2,9 +2,12 @@
 
 STATUS: IMPLEMENTED SCENARIO SIMULATION UI — nine public scenarios; Call Center supports text/voice. Backend remains authoritative.
 
-Current Call Center uses a dedicated [Phone Simulator v5](call-center-behavior-hardening.md):
+Current Call Center uses a dedicated [Phone Simulator v6](call-center-continuous-ux.md):
 incoming/answer/decline, automatic caller-first state turns, transcript, backend-gated
 internal apps, contextual action sheet, neutral fresh critical confirmation and reflection.
+New calls have no generic progression/question buttons. Strict state-validated committed
+semantic output activates a contextual decision; ordinary text/voice conversation remains
+menu-free. Persistent hangup/independent-contact intent and app navigation stay separate.
 There is no permanent generic checkpoint panel. Only backend-projected current actions
 appear; app viewing cannot itself cause Critical Failure. Historical v3 remains playable
 with its pinned foundation flow; v1/v2 retain the original generic UI and pinned rules.

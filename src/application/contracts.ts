@@ -35,6 +35,10 @@ export interface PublicTrainingSession {
     availableInternalApps: { id: "MESSAGES" | "BANK" | "PARCEL" | "CALLER_INFO"; label: string; availability: "FOUNDATION" | "AVAILABLE" }[];
     activeApp?: PhoneAppId;
     appData?: Partial<Record<Exclude<PhoneAppId, "CALL">, { title: string; lines: string[] }>>;
+    continuousConversation?: true;
+    contextualDecision?: { available: true; id: string; label: string; actionIds: string[] };
+    hangUpActionId?: string;
+    independentContactActionId?: string;
   };
 }
 export interface PublicTrainingResult {

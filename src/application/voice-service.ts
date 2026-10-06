@@ -27,6 +27,9 @@ export class VoiceApplicationService {
   }
   async bind(id: string, user: AuthenticatedPrincipal) {
     const session = await this.app.resume(id, user);
+    return this.validateBinding(session);
+  }
+  private validateBinding(session: Awaited<ReturnType<TrainingApplicationService["resume"]>>) {
     if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.phone && (session.phone.callStatus !== "CONNECTED" || session.phone.openingStatus !== "READY")) throw new DomainError("CALL_NOT_READY");
@@ -35,7 +38,8 @@ export class VoiceApplicationService {
   async send(id: string, user: AuthenticatedPrincipal, input: VoiceInput, signal?: AbortSignal,
     onCommitted?: (reply: TrainingMessageReply) => void): Promise<VoiceReply> {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(input.turnId) || !Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) throw new DomainError("INVALID_COMMAND");
-    const session = await this.bind(id, user);
+    const session = await this.app.resume(id, user);
+    if (session.scenario.category !== "CALL_CENTER") throw new SpeechError("VOICE_NOT_ALLOWED");
     // A committed turn is authoritative across reconnects: no repeat STT, AI or TTS.
     const previous = session.messages.find(m => m.turnId === input.turnId && m.role === "user");
     if (previous) {
@@ -43,6 +47,7 @@ export class VoiceApplicationService {
       onCommitted?.(dialogue);
       return { dialogue, audio: null, audioStatus: "REPLAY" };
     }
+    this.validateBinding(session);
     if (session.revision !== input.expectedRevision) throw new DomainError("REVISION_CONFLICT");
     validateWav(input.audio, input.mime);
     const key = JSON.stringify([user.id, id]);

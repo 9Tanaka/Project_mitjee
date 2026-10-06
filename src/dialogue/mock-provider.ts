@@ -28,6 +28,8 @@ export function normalMockResponse(context: ScenarioAIContext): AICharacterRespo
     character_message: context.currentUserMessage === null ? line : `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage?.text.slice(0, 160) ?? ""}`,
     observed_intent: "continue", candidate_event: "NONE", event_code: null, confidence: null,
     safety: { contains_real_pii: false, out_of_scope: false },
+    ...(context.callConversation ? { interaction_signal: context.callConversation.fallbackSignal,
+      conversation_status: context.currentState === "IDENTITY_CLAIM" && turnsHere < 2 ? "CONTINUE_STATE" as const : "STATE_COMPLETE" as const } : {}),
   };
 }
 

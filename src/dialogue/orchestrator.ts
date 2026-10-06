@@ -6,6 +6,7 @@ import { aiCharacterResponseSchema, ProviderRefusal } from "./contracts.js";
 import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAIContext, ScenarioModelProvider } from "./contracts.js";
 import { freezeData, sanitizeMessage } from "./sanitize.js";
 import { callerTurnId, callerTurnKey, callerStateTurn, callerTurnRequired, callerTurnReady } from "../domain/call-center.js";
+import { validateCallOutput } from "../domain/call-conversation.js";
 
 const messageRequestSchema = z.strictObject({
   sessionId: z.string().min(1), ownerId: z.string().min(1),
@@ -51,7 +52,7 @@ export class ScenarioDialogueOrchestrator {
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new DomainError("INVALID_PROVIDER_TIMEOUT");
   }
 
-  /** Only explicit commands, never model text/candidate interpretation, may advance Core. */
+  /** Explicit learner actions; bounded conversational progression uses separate authored guards. */
   performAction(command: SubmitCommand): ReturnType<TrainingCore["submit"]> {
     return this.core.submit(command);
   }
@@ -80,6 +81,7 @@ export class ScenarioDialogueOrchestrator {
         ...(template.callCenter ? { callStoryId: template.callCenter.storyId } : {}),
       },
       currentState: session.state,
+      ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
       characterRole: sanitizeMessage(template.characterRole),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage),
       forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
@@ -89,7 +91,7 @@ export class ScenarioDialogueOrchestrator {
       currentUserMessage: { id: `${request.turnId}:user`, role: "user", text, state: session.state },
     });
 
-    const generated = await this.generate(context, state.fallbackMessage, `${request.sessionId}:${request.turnId}`);
+    const generated = await this.generate(context, state.fallbackMessage, `${request.sessionId}:${request.turnId}`, template);
     // Candidate inspection, EventValidator and domain rules run inside this CAS commit.
     return this.core.commitDialogueTurn({ ...request, sanitizedUserMessage: text, ...generated });
   }
@@ -98,6 +100,10 @@ export class ScenarioDialogueOrchestrator {
     if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) throw new DomainError("INVALID_COMMAND");
     const { session, template } = await this.core.getSessionContext(input.sessionId, input.ownerId);
     if (!template.callCenter) throw new DomainError("INVALID_STATE");
+    if (template.callCenter.continuousConversation && input.expectedRevision !== session.revision) {
+      const replay = session.dialogueTurns.find(t => t.snapshotRevision === input.expectedRevision && (t.id === "caller-opening" || t.id.startsWith("caller-state-")));
+      if (replay) return { turn: copy(replay), duplicate: true };
+    }
     const prior = callerStateTurn(session);
     if (prior) {
       if (prior.inputKey !== callerTurnKey(session.state)) throw new DomainError("IDEMPOTENCY_CONFLICT");
@@ -113,14 +119,15 @@ export class ScenarioDialogueOrchestrator {
       scenario: { templateId: template.id, templateVersion: template.version, category: template.category,
         variant: template.variant, title: sanitizeMessage(template.title), callStoryId: template.callCenter.storyId },
       currentState: session.state, characterRole: sanitizeMessage(template.characterRole!),
+      ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
       recentSanitizedMessages: session.messages.slice(-12).map(m => ({ id: m.id, role: m.role, text: sanitizeMessage(m.text), state: m.state })), currentUserMessage: null, turnKind: kind,
     });
-    const generated = await this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`);
+    const generated = await this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`, template);
     return this.core.commitCharacterOpening({ ...input, kind, turnId, ...generated });
   }
 
-  private async generate(context: ScenarioAIContext, fallback: string, requestKey: string) {
+  private async generate(context: ScenarioAIContext, fallback: string, requestKey: string, template: import("../domain/schema.js").ScenarioTemplate) {
     let response: AICharacterResponse | null = null;
     let failureReason: ProviderFailure | null = null;
     let attempts = 0;
@@ -132,6 +139,7 @@ export class ScenarioDialogueOrchestrator {
         }), this.timeoutMs);
         const output = aiCharacterResponseSchema.safeParse(raw);
         if (!output.success) throw new AttemptFailure("INVALID_OUTPUT");
+        try { validateCallOutput(output.data, template, context.currentState); } catch { throw new AttemptFailure("INVALID_OUTPUT"); }
         if (output.data.safety.contains_real_pii || output.data.safety.out_of_scope) throw new AttemptFailure("SAFETY_BLOCKED");
         if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");
         response = { ...output.data, character_message: sanitizeMessage(output.data.character_message) };
@@ -146,12 +154,19 @@ export class ScenarioDialogueOrchestrator {
       }
     }
 
-    const usedFallback = response === null;
+    const policy = template.states.find(s => s.id === context.currentState)!.conversation;
+    const boundedRecovery = response && policy && policy.decisionSignals.length > 0 &&
+      !policy.decisionSignals.includes(response.interaction_signal!) &&
+      context.recentSanitizedMessages.filter(m => m.role === "character" && m.state === context.currentState).length + 1 >= policy.maxConversationalTurns;
+    const usedFallback = response === null || !!boundedRecovery;
+    if (boundedRecovery) response = null; // Authored signal must accompany authored words, never relabel model text.
     if (!response) {
       response = {
         character_message: sanitizeMessage(fallback), observed_intent: "unknown",
         candidate_event: "NONE", event_code: null, confidence: null,
         safety: { contains_real_pii: false, out_of_scope: false },
+        ...(context.callConversation ? { interaction_signal: context.callConversation.fallbackSignal,
+          conversation_status: template.states.find(s => s.id === context.currentState)!.conversation!.fallbackStatus } : {}),
       };
     }
     return { response, usedFallback, failureReason, attempts };

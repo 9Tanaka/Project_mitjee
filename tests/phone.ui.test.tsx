@@ -14,6 +14,7 @@ import { TrainingCore } from "../src/core.js";
 import { registeredTemplates } from "../src/application/catalog.js";
 import { publicError } from "../src/http/errors.js";
 import { answer, deferred } from "./openai.fixtures.js";
+import { startPinnedStory } from "./call-foundation.helpers.js";
 
 const user = { id: "phone-ui-user" };
 beforeEach(() => { vi.clearAllMocks(); });
@@ -22,7 +23,7 @@ async function harness(pending = false) {
   const repository = new InMemoryTrainingRepository();
   const provider = new MockScenarioModelProvider();
   const app = await createApplication(repository, provider, () => 1000, undefined, () => "CC-01");
-  const initial = (await app.start("call-center-scam", user, { startId: randomUUID(), expectedRevision: 0 })).session;
+  const initial = await startPinnedStory(repository, app, user, "CC-01", 5, () => 1000);
   const id = initial.sessionId;
   if (pending) {
     const core = await TrainingCore.create(registeredTemplates, repository, () => 1000);

@@ -3,7 +3,8 @@ import type { ScenarioTemplate } from "../domain/schema.js";
 import type { TrainingResult, TrainingSession } from "../domain/types.js";
 import type { PublicTrainingSession, PublicTrainingResult } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { availableActions, publicScenario } from "./catalog.js";
+import { availableActions, actionBindings, publicScenario } from "./catalog.js";
+import { phoneAppAllowed } from "../domain/call-conversation.js";
 import { callerTurnReady } from "../domain/call-center.js";
 import { activePhoneApp, actionBehavior } from "../domain/call-behavior.js";
 import type { CallBehavior } from "../domain/phone-model.js";
@@ -38,7 +39,7 @@ function projectPhone(s: TrainingSession, t: ScenarioTemplate): NonNullable<Publ
     openingStatus: incoming ? "NOT_STARTED" as const : ready ? "READY" as const : "PENDING" as const };
   if (t.callCenter?.fullStory) {
     const c = t.callCenter.content!;
-    const apps = callStatus === "CONNECTED" && ready ? t.states.find(state => state.id === s.state)!.internalApps!.filter(a => a !== "CALL") : [];
+    const apps = callStatus === "CONNECTED" && ready ? t.states.find(state => state.id === s.state)!.internalApps!.filter((a): a is Exclude<typeof a, "CALL"> => a !== "CALL" && phoneAppAllowed(s, t, a)) : [];
     const labels = { MESSAGES: "ข้อความ", BANK: "ธนาคารจำลอง", PARCEL: "พัสดุ", CALLER_INFO: "ข้อมูลผู้โทร" };
     const data: NonNullable<NonNullable<PublicTrainingSession["phone"]>["appData"]> = {};
     for (const app of apps) {
@@ -52,7 +53,17 @@ function projectPhone(s: TrainingSession, t: ScenarioTemplate): NonNullable<Publ
         data[app] = { title: "MITJEE Bank · ข้อความจำลอง", lines: [`รหัสยืนยันจำลองของคุณคือ ${otp}`, "ใช้สำหรับแบบฝึกนี้เท่านั้น ไม่มี SMS จริง"] };
       }
     }
-    return { ...base, activeApp: activePhoneApp(s, t), appData: data, availableInternalApps: apps.map(id => ({ id, label: labels[id], availability: "AVAILABLE" as const })) };
+    const actions = availableActions(s, t);
+    const decisionActions = actions.filter(a => a.input === "CHOICE" || a.input === "EVIDENCE");
+    const controls = t.callCenter.continuousConversation ? {
+      continuousConversation: true as const,
+      ...(decisionActions.length ? { contextualDecision: { available: true as const,
+        id: createHash("sha256").update(`${s.id}:${s.state}:${decisionActions.map(a => a.id).join(",")}`).digest("hex").slice(0, 24),
+        label: decisionActions[0]!.label, actionIds: decisionActions.map(a => a.id) } } : {}),
+      hangUpActionId: actionBindings(t).find(b => b.state === s.state && b.public.label === "วางสาย")?.public.id,
+      independentContactActionId: actions.find(a => a.label === "จบสายเพื่อติดต่อช่องทางที่มีอยู่เดิม")?.id,
+    } : {};
+    return { ...base, ...controls, activeApp: activePhoneApp(s, t), appData: data, availableInternalApps: apps.map(id => ({ id, label: labels[id], availability: "AVAILABLE" as const })) };
   }
   return { ...base,
     availableInternalApps: callStatus === "CONNECTED" && ready ? [
