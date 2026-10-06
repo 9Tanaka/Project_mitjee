@@ -138,6 +138,8 @@ export class ScenarioDialogueOrchestrator {
         if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");
         response = { ...output.data, character_message: sanitizeMessage(output.data.character_message) };
         if (!response.character_message) throw new AttemptFailure("INVALID_OUTPUT");
+        // This field describes terminal fallback failure, not a recovered attempt.
+        failureReason = null;
         break;
       } catch (error) {
         response = null;

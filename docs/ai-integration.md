@@ -1,6 +1,6 @@
 # AI / Dialogue Integration
 
-STATUS (2 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; GROQ LIVE NOT RUN; OPENAI LIVE PENDING CREDITS
+STATUS (6 October 2026): MOCK / OPENAI / GROQ ADAPTERS IMPLEMENTED; historical Groq live verified, latest v5 all-story check FAILED on INVALID_OUTPUT with safe fallback; OpenAI live pending credits. See [current verification](call-center-behavior-hardening.md).
 
 [กลับ README](../README.md) · [Security](security.md)
 
@@ -147,6 +147,14 @@ candidate ถูกตรวจแล้วได้ NO_EVENT / REJECTED / CLARI
 หลาย turn ใน State เดิมไม่ทำ Transition และไม่เพิ่มคะแนนเอง
 
 ## Timeout, retry and cancellation
+
+For new receipts, `failureReason` describes terminal failure only. A retry that
+eventually returns valid, sanitized, nonempty output records `usedFallback=false`,
+`failureReason=null`, and `attempts=2`. A fallback retains the terminal category.
+`attempts` records request attempts, not individual failure categories; no raw provider
+data or attempt history is persisted. Historical receipts are immutable: an old
+`usedFallback=false` / `failureReason=ERROR` receipt describes a recovered earlier
+attempt under the old semantics, not evidence of fallback.
 
 ค่า Demo default: timeout 20 วินาทีต่อ attempt, retry อีกหนึ่งครั้ง รวมไม่เกินสอง attempts
 แต่ละครั้งมี AbortController และ requestId รูปแบบ sessionId:turnId:attempt

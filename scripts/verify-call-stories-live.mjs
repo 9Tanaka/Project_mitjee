@@ -45,7 +45,7 @@ try {
     const after = await repo.get(s.sessionId, user.id);
     assert.equal(after.state, before.state); assert.equal(after.status, "ACTIVE"); assert.equal(after.result, null);
     assert.deepEqual(after.events, before.events); assert.deepEqual(after.opportunities, before.opportunities);
-    await act("คุณจะทำอะไรต่อ?", { choiceId: "o3" }); await act("ดำเนินบทสนทนาต่อ");
+    await act("ดำเนินบทสนทนาต่อ");
     assert.equal(s.phone.openingStatus, "PENDING"); assert.deepEqual(s.availableActions, []);
     await pace();
     s = (await app.opening(s.sessionId, user, { expectedRevision: s.revision })).session;

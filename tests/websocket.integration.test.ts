@@ -164,7 +164,10 @@ describe("actual loopback WebSocket with in-memory training and fake speech", ()
     oversized.client.send("x".repeat(MAX_VOICE_JSON_BYTES + 1));
     expect(await oversized.closed).toBe(1009);
     const blocked = h.connect(); await blocked.next("ready");
-    const serverSocket = [...h.calls.wss.clients][0]!;
+    // The oversized connection can remain in the server set until its close event
+    // finishes. Target the new OPEN connection, never the first historical entry.
+    const serverSocket = [...h.calls.wss.clients].find(socket => socket.readyState === WebSocket.OPEN)!;
+    expect(serverSocket).toBeDefined();
     Object.defineProperty(serverSocket, "bufferedAmount", { get: () => 6 * 1024 * 1024 + 1, configurable: true });
     blocked.send({ type: "resume" });
     expect(await blocked.closed).toBe(1006);

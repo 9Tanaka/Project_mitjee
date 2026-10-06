@@ -9,7 +9,7 @@ import { register } from "tsx/esm/api";
 register();
 const expect = baseExpect.configure({ timeout: 60000 });
 nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
-const origin = process.argv[2] ?? "https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app";
+const origin = process.argv.slice(2).find(value => !value.startsWith("--")) ?? "https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app";
 assert.equal(new URL(origin).origin, origin, "PREVIEW_ORIGIN_ONLY");
 assert.equal(new URL(origin).hostname, "mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app", "APPROVED_PREVIEW_ONLY");
 const report = { status: "FAILED", scope: "Real Preview browser/Auth.js/MySQL/Groq; no intercepted API", origin,
@@ -23,7 +23,12 @@ try {
   page.on("pageerror", () => report.browserErrorCount++);
   page.on("response", response => {
     const path = new URL(response.url()).pathname;
-    if (path.startsWith("/api/")) report.requests.push({ path: path.startsWith("/api/training/") ? path.replace(/\/api\/training\/[^/]+/, "/api/training/:session") : path, method: response.request().method(), status: response.status() });
+    if (path.startsWith("/api/")) {
+      const headers = response.headers(), category = headers["x-mitjee-failure-category"], failureStage = headers["x-mitjee-failure-stage"];
+      report.requests.push({ path: path.startsWith("/api/training/") ? path.replace(/\/api\/training\/[^/]+/, "/api/training/:session") : path, method: response.request().method(), status: response.status(),
+        ...(category && ["DATABASE_TRANSACTION", "DATABASE_CONNECTION", "DATABASE_UNIQUE", "DATABASE_FOREIGN_KEY", "TEMPLATE_IMMUTABILITY", "TEMPLATE_VALIDATION", "SCHEMA_VALIDATION", "SESSION_NOT_FOUND", "DOMAIN_FAILURE", "UNKNOWN_INTERNAL"].includes(category) ? { category } : {}),
+        ...(failureStage && ["AUTH", "INPUT", "INITIALIZATION", "APPLICATION", "OUTPUT"].includes(failureStage) ? { failureStage } : {}) });
+    }
   });
   const navigation = await page.goto("/register");
   assert.equal(new URL(page.url()).origin, origin, "PREVIEW_PROTECTION_REDIRECT"); assert.equal(navigation.status(), 200, "PREVIEW_ROUTE_UNAVAILABLE");
@@ -45,6 +50,26 @@ try {
   check = "verified-session";
   const auth = await context.request.get("/api/auth/session");
   const ownerId = (await auth.json()).user?.id; assert.ok(ownerId, "VERIFIED_SESSION_MISSING");
+  if (process.argv.includes("--start-only")) {
+    // Isolate start/replay on the real authenticated API; no catalog interception or mock auth.
+    report.scope = "Real Preview registration/Auth.js/start/replay; no AI request";
+    report.stages.push("LOGIN"); stage = "START_API_DIAGNOSTIC"; check = "authenticated-start-replay";
+    for (let i = 0; i < 2; i++) {
+      const input = { startId: randomUUID(), expectedRevision: 0 };
+      for (const expected of [201, 200]) {
+        const startedAt = Date.now();
+        const response = await context.request.post("/api/scenarios/call-center/start", { data: input, headers: { Origin: origin }, timeout: 60000 });
+        const headers = response.headers(), category = headers["x-mitjee-failure-category"];
+        report.requests.push({ path: "/api/scenarios/call-center/start", method: "POST", status: response.status(), ms: Date.now() - startedAt,
+          ...(category && ["DATABASE_TRANSACTION", "DATABASE_CONNECTION", "DATABASE_UNIQUE", "DATABASE_FOREIGN_KEY", "TEMPLATE_IMMUTABILITY", "TEMPLATE_VALIDATION", "SCHEMA_VALIDATION", "DOMAIN_FAILURE", "UNKNOWN_INTERNAL"].includes(category) ? { category } : {}) });
+        assert.equal(response.status(), expected, "START_HTTP_FAILURE");
+        const data = (await response.json()).data;
+        assert.equal(data.duplicate, expected === 200); assert.equal(data.session.phone.state, "INCOMING_CALL");
+        assert.deepEqual(data.session.messages, []);
+      }
+    }
+    report.stages.push(stage); report.status = "PASSED";
+  } else {
   check = "catalog-after-refresh";
   await page.reload(); await expect(page.getByRole("heading", { name: "ฝึกรับสาย Call Center", exact: true })).toBeVisible({ timeout: 60000 }); report.stages.push(stage);
   stage = "CATALOG_DETAIL_PREPARE";
@@ -84,6 +109,12 @@ try {
   const messageResponse = await message; assert.equal(messageResponse.status(), 200);
   const replied = (await messageResponse.json()).data;
   assert.ok(replied.turn.characterMessage.trim()); assert.equal(replied.session.phone.state, initial.phone.state);
+  // Opening/identity are not scored checkpoints in v5. Reach the first meaningful decision.
+  for (let i = 0; i < 2; i++) {
+    await page.getByRole("button", { name: "ตัวเลือกขณะนี้", exact: true }).click();
+    await page.getByRole("button", { name: "ดำเนินบทสนทนาต่อ", exact: true }).click();
+    await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
+  }
   await page.getByRole("button", { name: "ตัวเลือกขณะนี้", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "ตัวเลือกในขั้นตอนปัจจุบัน" })).toBeVisible();
   await page.screenshot({ path: "frontend-artifacts/part2-preview/contextual-actions.png", fullPage: true });
@@ -97,8 +128,8 @@ try {
   const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
   database = createDatabase(); const repo = new PrismaTrainingRepository(database);
   const saved = await repo.get(sessionId, ownerId);
-  assert.equal(saved.templateVersion, 4); assert.equal(saved.state, "END_SCENARIO"); assert.equal(saved.status, "COMPLETED");
-  assert.ok(saved.dialogueTurns.length >= 2 && saved.dialogueTurns.every(t => !t.usedFallback));
+  assert.equal(saved.templateVersion, 5); assert.equal(saved.state, "END_SCENARIO"); assert.equal(saved.status, "COMPLETED");
+  assert.ok(saved.dialogueTurns.length >= 4 && saved.dialogueTurns.every(t => !t.usedFallback && t.failureReason === null));
   assert.equal(saved.events.filter(e => e.critical).length, 0); assert.equal(saved.result.trainingScore, null);
   assert.equal(saved.actions.filter(a => a.kind === "CHARACTER_OPENING").length, 1);
   report.receipts = saved.dialogueTurns.map(t => ({ turnId: t.id, usedFallback: t.usedFallback, attempts: t.attempts, failureReason: t.failureReason, state: t.state }));
@@ -109,6 +140,7 @@ try {
   await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click(); await expect(page).toHaveURL(origin + "/login");
   assert.equal((await context.request.get(`/api/training/${sessionId}`)).status(), 401); report.stages.push(stage);
   assert.equal(report.browserErrorCount, 0); report.status = "PASSED";
+  }
 } catch (error) {
   report.failureStage = stage; report.failureCheck = check;
   report.failureCategory = error instanceof assert.AssertionError ? "VERIFICATION_ASSERTION" : stage === "OWNED_RECEIPT_EVIDENCE" ? "DATABASE_EVIDENCE_ERROR" : "BROWSER_OR_RUNTIME_FAILURE";

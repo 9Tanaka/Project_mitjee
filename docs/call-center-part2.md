@@ -1,5 +1,9 @@
 # Call Center Part 2 — complete text/interactivity
 
+Historical v4 implementation record. New sessions now use v5; see
+[behavior hardening and current verification](call-center-behavior-hardening.md).
+The v4 configuration and historical evidence below have not been rewritten.
+
 These are approved implementation decisions, not a rewrite of the historical Proposal.
 One public `call-center` entry remains among nine categories. Old `call-center-scam`
 detail/prepare URLs permanently redirect; the API also resolves the alias. Historical

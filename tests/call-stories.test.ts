@@ -17,8 +17,11 @@ const user = { id: "story-user" };
 async function harness(story: CallStoryId) {
   const repo = new InMemoryTrainingRepository(), provider = new MockScenarioModelProvider();
   const app = await createApplication(repo, provider, Date.now, undefined, () => story);
-  const session = (await app.start("call-center", user, { startId: randomUUID(), expectedRevision: 0 })).session;
   const core = await TrainingCore.create(registeredTemplates, repo);
+  const template = callCenterStoryTemplates.find(t => t.callCenter!.storyId === story)!;
+  const sessionId = randomUUID();
+  await core.start(sessionId, user.id, template.id, 4, template.variant);
+  const session = await app.resume(sessionId, user);
   async function action(s: PublicTrainingSession, label: string, payload: PublicActionPayload = {}) {
     const definition = s.availableActions.find(a => a.label === label);
     expect(definition, `${s.phone?.state}: ${label}`).toBeDefined();

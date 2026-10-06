@@ -71,14 +71,20 @@ export class PrismaTrainingRepository implements TrainingRepository {
   async publish(input: ScenarioTemplate): Promise<void> {
     const template = validateTemplate(copy(input));
     const key = { templateId: template.id, version: template.version, variant: template.variant };
+    // Immutable versions need a read/compare, not a locking upsert on every cold worker.
+    const published = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
+    if (published) {
+      if (canonical(published.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
+      return;
+    }
     try {
       await this.client.$transaction(async tx => {
-        await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
         const existing = await tx.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
         if (existing) {
           if (canonical(existing.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
           return;
         }
+        await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
         await tx.scenarioTemplateVersion.create({ data: { ...key, configuration: json(template) } });
       });
     } catch (error) {

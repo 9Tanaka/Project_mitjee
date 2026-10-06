@@ -185,10 +185,10 @@ describe("Mock Dialogue Integration acceptance", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("successful retry records the earlier failure but does not use fallback", async () => {
+  it("successful retry clears terminal failureReason and does not use fallback", async () => {
     const h = (await harness(new MockScenarioModelProvider([{ kind: "error" }, { kind: "normal" }])));
     const reply = await h.say("สวัสดี"); expect(reply.turn.attempts).toBe(2);
-    expect(reply.turn.usedFallback).toBe(false); expect(reply.turn.failureReason).toBe("ERROR");
+    expect(reply.turn.usedFallback).toBe(false); expect(reply.turn.failureReason).toBeNull();
   });
 
   it("many turns in the same State neither transition nor open/score opportunities", async () => {

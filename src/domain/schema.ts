@@ -73,6 +73,8 @@ export const scenarioTemplateSchema = z.strictObject({
       safeResolution: z.boolean(),
       earlySafeResolution: z.boolean().optional(),
       behavior: z.enum(CALL_BEHAVIORS).optional(),
+      requiresBehaviors: z.array(z.enum(CALL_BEHAVIORS)).optional(),
+      requiresChoices: z.array(z.strictObject({ opportunityId: id, choiceIds: z.array(id).min(1) })).optional(),
     })),
   })).min(2),
   opportunities: z.array(opportunitySchema).min(1),

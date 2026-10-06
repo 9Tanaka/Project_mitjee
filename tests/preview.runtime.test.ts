@@ -20,7 +20,7 @@ it("invalid variant fails without including supplied private data in error", () 
 });
 it("new Call Center copy is neutral while historical template versions remain registered", () => {
   const current = playableTemplates.find(t => t.category === "CALL_CENTER")!;
-  expect(current.version).toBe(4); expect(current.characterRole).not.toContain("ใช้ข้อความแทนเสียง");
+  expect(current.version).toBe(5); expect(current.characterRole).not.toContain("ใช้ข้อความแทนเสียง");
   expect(registeredTemplates.filter(t => t.id === "call-center-scam").map(t => [t.version,t.variant])).toEqual(
     expect.arrayContaining([[1,"SCAM_CALL"],[1,"NORMAL_CALL"],[2,"SCAM_CALL"],[2,"NORMAL_CALL"]]));
 });
@@ -57,6 +57,6 @@ it.each(["call-center-scam", "sms-phishing-demo"])("%s supports Groq text then a
     expect(action, label).toBeDefined();
     current = (await app.action(initial.sessionId, user, { actionId: randomUUID(), expectedRevision: current.revision, actionDefinitionId: action.id, payload })).session;
   }
-  expect(current.status).toBe("COMPLETED"); expect((await app.result(initial.sessionId,user)).outcome).toBe("PASSED");
+  expect(current.status).toBe("COMPLETED"); expect((await app.result(initial.sessionId,user)).outcome).toBe(scenarioId === "call-center-scam" ? "UNASSESSED" : "PASSED");
   expect((await app.start(scenarioId,user,start)).duplicate).toBe(true);
 });

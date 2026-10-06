@@ -3,6 +3,7 @@ import type { ScenarioTemplate } from "./schema.js";
 import { DomainError } from "./types.js";
 import type { ScenarioState, TrainingSession } from "./types.js";
 import { callerTurnReady } from "./call-center.js";
+import { finalizedChoice, hasBehavior } from "./call-behavior.js";
 
 type Edge = ScenarioTemplate["states"][number]["transitions"][number];
 
@@ -11,7 +12,9 @@ function guardSatisfied(session: TrainingSession, t: ScenarioTemplate, edge: Edg
   const requiredHere = edge.earlySafeResolution ? [] : t.opportunities.filter(o => o.state === session.state && o.required).map(o => o.id);
   const required = new Set([...requiredHere, ...edge.requiresFinalized]);
   return [...required].every(id => session.opportunities.some(o => o.definitionId === id && o.finalizedAt !== null))
-    && edge.requiresEvents.every(code => session.events.some(e => e.code === code));
+    && edge.requiresEvents.every(code => session.events.some(e => e.code === code))
+    && (edge.requiresBehaviors ?? []).every(code => hasBehavior(session, t, code))
+    && (edge.requiresChoices ?? []).every(guard => guard.choiceIds.includes(finalizedChoice(session, t, guard.opportunityId) ?? ""));
 }
 
 /** Read-only availability hint; advanceState repeats the authoritative guard. */

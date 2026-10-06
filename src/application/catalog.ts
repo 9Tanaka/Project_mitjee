@@ -11,19 +11,20 @@ import { normalCallFixture } from "../fixtures/normal-call.js";
 import { CALL_PUBLIC_ID, callCenterFoundationTemplates } from "../fixtures/call-center-foundation.js";
 import { callerTurnReady } from "../domain/call-center.js";
 import { callCenterStoryTemplates } from "../fixtures/call-center-stories.js";
+import { callCenterBehaviorTemplates } from "../fixtures/call-center-behavior-stories.js";
 import { activePhoneApp, freshConfirmation, hasBehavior, interactionAvailable } from "../domain/call-behavior.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
-// Published v1/v2 configurations remain unchanged for old sessions. New starts use v3.
+// Published v1/v2/v3/v4 remain unchanged. New Call Center starts use behavior-derived v5.
 const callScamV2: ScenarioTemplate = { ...structuredClone(additionalScamScenarios.find(t => t.category === "CALL_CENTER")!),
   version: 2, description: "ฝึกตรวจสอบและตอบสนองต่อสายจำลอง ผ่านข้อความหรือเสียง",
   characterRole: "ผู้ติดต่ออ้างเป็นเจ้าหน้าที่สถาบันการเงินสมมติ" };
 const callNormalV2: ScenarioTemplate = { ...structuredClone(normalCallFixture), version: 2 };
 export const playableTemplates: ScenarioTemplate[] = [playableTemplate, ...additionalScamScenarios.map(t => t.category === "CALL_CENTER"
-  ? { ...callCenterStoryTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
+  ? { ...callCenterBehaviorTemplates[0]!, id: CALL_PUBLIC_ID } : t)];
 export const registeredTemplates: ScenarioTemplate[] = [...playableTemplates.filter(t => !t.callCenter),
-  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates, ...callCenterStoryTemplates];
+  ...additionalScamScenarios.filter(t => t.category === "CALL_CENTER"), normalCallFixture, callNormalV2, callScamV2, ...callCenterFoundationTemplates, ...callCenterStoryTemplates, ...callCenterBehaviorTemplates];
 const labels: Record<string, string[]> = {
   d1: ["ตรวจสอบผู้ส่งจากช่องทางอื่น", "รอดูข้อมูลเพิ่มเติม", "เชื่อชื่อที่แสดงของผู้ส่ง"],
   d2: ["ปฏิเสธการให้ข้อมูล", "สอบถามผู้ส่งข้อความ", "ดำเนินการต่อจากข้อความ"],

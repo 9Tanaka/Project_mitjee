@@ -206,10 +206,10 @@ try {
   await allWidths("call-ending");
   await page.getByRole("button", { name: "ดูสรุปการฝึก", exact: true }).click();
   await page.getByRole("link", { name: "ดูผลการฝึก →", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible();
-  assert.equal((await app.result(callId, user)).outcome, "PASSED");
+  await expect(page.getByRole("heading", { name: "ยังประเมินไม่ได้", exact: true })).toBeVisible();
+  assert.equal((await app.result(callId, user)).outcome, "UNASSESSED");
   await allWidths("call-result");
-  evidence.checks.push("Call Center v4 incoming → automatic caller-first opening → transcript-only text/refresh → backend-owned contextual app → explicit hangup → categorical result/reflection; 375/768/1440; no voice/live-provider verification");
+  evidence.checks.push("Call Center v5 early hangup without a meaningful decision is UNASSESSED; automatic state turns, text/refresh and contextual apps; no live-provider verification");
   for (const story of ["CC-01", "CC-02", "CC-N01", "CC-N02"]) {
     selectedStory = story; const scam = !story.includes("N"), parcel = story.endsWith("01");
     await page.goto("/scenarios/call-center");
@@ -221,8 +221,10 @@ try {
     await page.getByRole("button", { name: "รับสาย", exact: true }).click();
     await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
     while ((await phoneRepository.get(storySessionId, user.id)).state !== "MAIN_REQUEST") {
-      await phoneAction(null, "ฟังข้อมูลต่อโดยยังไม่ให้ข้อมูลเพิ่มเติม");
-      await phoneAction("ดำเนินบทสนทนาต่อ");
+      const current = await app.resume(storySessionId, user);
+      if (current.availableActions.some(a => a.input === "CHOICE")) await phoneAction(null, "ฟังข้อมูลต่อโดยยังไม่ให้ข้อมูลเพิ่มเติม");
+      const next = (await app.resume(storySessionId, user)).availableActions.find(a => ["ดำเนินบทสนทนาต่อ", "ฟังคำขอถัดไป", "ฟังคำขอจากผู้โทร"].includes(a.label));
+      assert.ok(next, "BACKEND_NEXT_BRANCH_MISSING"); await phoneAction(next.label);
       await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
     }
     if (scam) {

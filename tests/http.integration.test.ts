@@ -328,13 +328,17 @@ describe("HTTP Route Handler integration", () => {
     expect(JSON.stringify(await r.json()).includes(marker)).toBe(false);
     expect(JSON.stringify(await h.raw(s)).includes(marker)).toBe(false);
   });
-  it("unexpected database errors are generic and not logged", async () => {
+  it("unexpected database errors log only a closed taxonomy, never raw SQL or secrets", async () => {
     const h = await harness(); const s = await h.begin();
-    const log = vi.spyOn(console, "error"); const marker = randomUUID();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {}); const marker = randomUUID();
     vi.spyOn(h.repository, "get").mockRejectedValue(new Error(`Prisma SQL ${marker}`));
     const r = await h.request("resume", s.sessionId); expect(r.status).toBe(500);
     expect(await r.json()).toEqual({ error: { code: "INTERNAL_ERROR", message: "Unable to process the request." } });
-    expect(log).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(log.mock.calls[0]![0])).toEqual({ event: "training_request_failed", endpoint: "resume", stage: "APPLICATION",
+      requestId: expect.any(String), category: "UNKNOWN_INTERNAL" });
+    expect(JSON.stringify(log.mock.calls)).not.toContain(marker);
+    expect(r.headers.get("X-MITJEE-Failure-Category")).toBe("UNKNOWN_INTERNAL");
   });
   it("central error mapping distinguishes conflicts, validation and state errors", () => {
     expect(publicError(new DomainError("UNKNOWN_EVIDENCE")).status).toBe(422);

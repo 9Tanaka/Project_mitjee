@@ -32,7 +32,11 @@ export class TrainingCore {
   static async create(templates: unknown[], repository: TrainingRepository, now: () => number = Date.now): Promise<TrainingCore> {
     const core = new TrainingCore(repository, now);
     const validated = templates.map(input => validateTemplate(copy(input)));
-    for (const template of validated) await repository.publish(template);
+    // Bounded concurrency avoids a serial cold-start round trip for every historical version.
+    // Per-version publication remains immutable; registration was never one bulk transaction.
+    for (let offset = 0; offset < validated.length; offset += 4) {
+      await Promise.all(validated.slice(offset, offset + 4).map(template => repository.publish(template)));
+    }
     return core;
   }
 

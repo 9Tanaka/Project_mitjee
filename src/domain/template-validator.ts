@@ -128,6 +128,17 @@ export function validateTemplate(input: unknown): ScenarioTemplate {
       requireRule(states.has(tr.target), `Unknown target ${tr.target}`);
       requireRule(tr.safeResolution === (tr.target === terminal), "Only safe-resolution transitions may target terminal state");
       for (const id of tr.requiresFinalized) requireRule(opportunities.has(id), `Unknown guard opportunity: ${id}`);
+      for (const guard of tr.requiresChoices ?? []) {
+        const o = opportunities.get(guard.opportunityId);
+        requireRule(o?.skill === "D" && guard.choiceIds.every(id => o.choices.some(c => c.id === id)), "Invalid decision branch guard");
+        requireRule(tr.requiresFinalized.includes(guard.opportunityId), "Decision branch requires finalized checkpoint");
+      }
+      if (t.callCenter?.fullStory && t.version >= 5 && tr.target === "INDEPENDENT_VERIFICATION") {
+        const checkBehavior = t.callCenter.topic === "PARCEL" ? "CHECKED_EXISTING_ORDER" : "CHECKED_TRANSACTION";
+        requireRule(tr.requiresEvents.includes("VERIFY_SOURCE") && tr.requiresBehaviors?.includes(checkBehavior) &&
+          tr.requiresChoices?.some(g => opportunities.get(g.opportunityId)?.state === s.id && g.choiceIds.length === 1 && g.choiceIds[0] === "checked"),
+          "Independent verification requires explicit completed evidence check, not callback intent");
+      }
     }
   }
 

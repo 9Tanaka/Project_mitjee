@@ -102,7 +102,8 @@ it("actions appear only in an explicitly opened contextual sheet and future step
   expect(screen.queryByText("เลือกวิธีจัดการสาย")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "ตัวเลือกขณะนี้" }));
   const sheet = await screen.findByRole("dialog", { name: "ตัวเลือกในขั้นตอนปัจจุบัน" });
-  expect(sheet.textContent).toContain("คุณจะทำอะไรต่อ?"); expect(sheet.textContent).not.toContain("เปิดข้อความ");
+  expect(sheet.textContent).not.toContain("คุณจะทำอะไรต่อ?"); expect(sheet.textContent).not.toContain("เปิดข้อความ");
+  expect(sheet.textContent).toContain("ดำเนินบทสนทนาต่อ");
   fireEvent.keyDown(sheet, { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "ตัวเลือกขณะนี้" }));
@@ -146,5 +147,5 @@ it("full contextual phone journey reaches call ending then the actual result lin
   fireEvent.click(screen.getByRole("button", { name: "ดูสรุปการฝึก" }));
   const link = await screen.findByRole("link", { name: /ดูผลการฝึก/ });
   expect(link.getAttribute("href")).toBe(`/training/${h.id}/result`);
-  expect(await h.app.result(h.id, user)).toMatchObject({ outcome: "PASSED", trainingScore: null });
+  expect(await h.app.result(h.id, user)).toMatchObject({ outcome: "UNASSESSED", trainingScore: null, decisionSummary: { encountered: 0 } });
 });

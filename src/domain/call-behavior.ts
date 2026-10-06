@@ -22,6 +22,18 @@ export function actionBehavior(a: TrainingAction, t: ScenarioTemplate): CallBeha
   return null;
 }
 export function hasBehavior(s: TrainingSession, t: ScenarioTemplate, code: CallBehavior) { return s.actions.some(a => actionBehavior(a, t) === code); }
+/** Resolve the actual finalized command, not inferred text or a model observation. */
+export function finalizedChoice(s: TrainingSession, t: ScenarioTemplate, opportunityId: string): string | null {
+  const opportunity = s.opportunities.find(o => o.definitionId === opportunityId && o.finalizedAt !== null);
+  const action = s.actions.find(a => a.id === opportunity?.finalizedByActionId);
+  if (!action) return null;
+  try {
+    const input = JSON.parse(action.fingerprint);
+    if (action.kind === "DECISION") return input.choiceId;
+    if (action.kind === "CALL_INTERACTION") return interactionFor(t, action.state, input.interactionId)?.resolutionChoiceId ?? null;
+  } catch { /* A malformed/historical fingerprint cannot satisfy a new behavior guard. */ }
+  return null;
+}
 export function activePhoneApp(s: TrainingSession, t: ScenarioTemplate): PhoneAppId {
   for (const a of [...s.actions].reverse()) {
     if (a.state !== s.state) continue;
