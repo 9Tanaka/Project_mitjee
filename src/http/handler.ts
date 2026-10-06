@@ -6,6 +6,7 @@ import * as dto from "./dto.js";
 import * as mapping from "./mapping.js";
 import { randomUUID } from "node:crypto";
 import { trainingFailureCategory } from "../server/training-diagnostics.js";
+import { transactionFailureContext } from "../persistence/transaction-diagnostics.js";
 
 export const MAX_BODY_BYTES = 64 * 1024; // Includes JSON escapes for an 8,000-code-unit message.
 export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "opening" | "action" | "quit" | "result";
@@ -67,6 +68,12 @@ export function route(endpoint: Endpoint) {
         // Closed, non-sensitive categories allow reproduction when log access is unavailable.
         failureHeaders["X-MITJEE-Failure-Category"] = category;
         failureHeaders["X-MITJEE-Failure-Stage"] = stage;
+        const transaction = transactionFailureContext(error);
+        if (category === "DATABASE_TRANSACTION" && transaction) {
+          failureHeaders["X-MITJEE-Transaction-Operation"] = transaction.operation;
+          failureHeaders["X-MITJEE-Transaction-Duration-Ms"] = String(transaction.durationMs);
+          failureHeaders["X-MITJEE-Transaction-Budget-Ms"] = String(transaction.budgetMs);
+        }
       }
       return Response.json(dto.errorEnvelope.parse(mapped.body), { status: mapped.status, headers: failureHeaders });
     }

@@ -5,17 +5,26 @@ import { InMemoryTrainingRepository } from "../src/domain/repository.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { VoiceApplicationService } from "../src/application/voice-service.js";
 import { pcmWav } from "./voice.helpers.js";
+import type { PublicActionPayload } from "../src/application/contracts.js";
 async function harness(story: "CC-01" | "CC-02" = "CC-02") {
   const repo = new InMemoryTrainingRepository(), provider = new MockScenarioModelProvider(), user = { id: randomUUID() };
   const app = await createApplication(repo, provider, Date.now, undefined, () => story);
   let session = (await app.start("call-center", user, { startId: randomUUID(), expectedRevision: 0 })).session;
-  async function act(label: string) {
+  async function act(label: string, payload: PublicActionPayload = {}) {
     session = (await app.action(session.sessionId, user, { actionId: randomUUID(), expectedRevision: session.revision,
-      actionDefinitionId: session.availableActions.find(a => a.label === label)!.id, payload: {} })).session;
+      actionDefinitionId: session.availableActions.find(a => a.label === label)!.id, payload })).session;
   }
   await act("รับสาย"); session = (await app.opening(session.sessionId, user, { expectedRevision: session.revision })).session;
   const stt = { transcribe: vi.fn().mockResolvedValue("รหัสคือ 482193") }, tts = { synthesize: vi.fn().mockResolvedValue(pcmWav()) };
-  return { repo, provider, app, user, stt, tts, act, session: () => session, voice: new VoiceApplicationService(app, stt, tts) };
+  async function toMain() {
+    for (const next of ["ดำเนินบทสนทนาต่อ", "ดำเนินบทสนทนาต่อ", "ฟังคำขอถัดไป", "ฟังคำขอจากผู้โทร"]) {
+      const decision = session.availableActions.find(a => a.input === "CHOICE");
+      if (decision) await act(decision.label, { choiceId: decision.options.find(o => o.label === "ฟังข้อมูลต่อโดยยังไม่ให้ข้อมูลเพิ่มเติม")!.id });
+      await act(next); session = (await app.opening(session.sessionId, user, { expectedRevision: session.revision })).session;
+    }
+    expect(session.phone!.state).toBe("MAIN_REQUEST");
+  }
+  return { repo, provider, app, user, stt, tts, act, toMain, session: () => session, voice: new VoiceApplicationService(app, stt, tts) };
 }
 it("opening and state beat are eligible for TTS; replay never generates AI or mutates session", async () => {
   const h = await harness(), id = h.session().sessionId;
@@ -52,7 +61,8 @@ it("presentation speech shares bounded admission with voice; overlapping replay 
   await expect(saturated.speak(id, h.user, "caller-opening")).rejects.toThrow("VOICE_BUSY");
 });
 it.each(["CC-01", "CC-02"] as const)("%s voice OTP/transfer agreement is sanitized free text and cannot score or fail", async story => {
-  const h = await harness(story), s = h.session(), before = await h.repo.get(s.sessionId, h.user.id);
+  const h = await harness(story); await h.toMain();
+  const s = h.session(), before = await h.repo.get(s.sessionId, h.user.id);
   h.stt.transcribe.mockResolvedValue(story === "CC-02" ? "รหัสคือ 482193" : "ตกลง ผมจะโอน");
   const input = { turnId: randomUUID(), expectedRevision: s.revision, audio: pcmWav(), mime: "audio/wav" };
   const reply = await h.voice.send(s.sessionId, h.user, input);

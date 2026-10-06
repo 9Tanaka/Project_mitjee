@@ -7,6 +7,7 @@ import { DomainError } from "../domain/types.js";
 import type { TrainingSession } from "../domain/types.js";
 import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-contract.js";
 import { copy } from "../domain/copy.js";
+import { rememberTransactionFailure } from "./transaction-diagnostics.js";
 
 const include = {
   template: { select: { configuration: true } },
@@ -81,9 +82,11 @@ export class PrismaTrainingRepository implements TrainingRepository {
     try { return await this.client.$transaction(run, { maxWait: 5_000, ...options }); }
     catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === "P2028") {
+        const context = { operation, durationMs: Math.max(0, Date.now() - startedAt), budgetMs: options.timeout };
+        rememberTransactionFailure(error, context);
         // Do not serialize error/meta/SQL/IDs. Logging must not replace the original failure.
         try { console.error(JSON.stringify({ event: "training_transaction_failed", operation,
-          category: "DATABASE_TRANSACTION", durationMs: Math.max(0, Date.now() - startedAt), budgetMs: options.timeout })); } catch {}
+          category: "DATABASE_TRANSACTION", durationMs: context.durationMs, budgetMs: context.budgetMs })); } catch {}
       }
       throw error;
     }

@@ -24,6 +24,7 @@ import { DomainError } from "../src/domain/types.js";
 import { sessionDto, resultDto, messageDto, mutationDto } from "../src/http/dto.js";
 import { createPrismaClient } from "../src/persistence/prisma-client.js";
 import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.js";
+import { rememberTransactionFailure } from "../src/persistence/transaction-diagnostics.js";
 
 // Only tests can bind an identity to a Request instance. No credential or owner header shortcut.
 class TestRequestAuthenticator implements RequestAuthenticator {
@@ -35,6 +36,29 @@ const handlers = { scenarios, scenario, start, resume, message, action, quit, re
 type Operation = keyof typeof handlers;
 type PublicSession = z.infer<typeof sessionDto>;
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+it("database failure headers expose only repository-recorded operation/timing, never raw error details", async () => {
+  const h = await harness(), session = await h.begin();
+  const error = Object.assign(new Error("PRIVATE_SQL_PASSWORD"), { code: "P2028", meta: { error: "PRIVATE_META" } });
+  rememberTransactionFailure(error, { operation: "SAVE", durationMs: 10_125, budgetMs: 10_000 });
+  vi.spyOn(h.repository, "get").mockRejectedValue(error);
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const response = await h.request("resume", session.sessionId);
+  expect(response.status).toBe(500);
+  expect(response.headers.get("X-MITJEE-Transaction-Operation")).toBe("SAVE");
+  expect(response.headers.get("X-MITJEE-Transaction-Duration-Ms")).toBe("10125");
+  expect(response.headers.get("X-MITJEE-Transaction-Budget-Ms")).toBe("10000");
+  expect(JSON.stringify({ body: await response.json(), headers: [...response.headers], logs: log.mock.calls })).not.toContain("PRIVATE");
+});
+it("unrecorded database failures cannot inject operation diagnostics into HTTP headers", async () => {
+  const h = await harness(), session = await h.begin();
+  vi.spyOn(h.repository, "get").mockRejectedValue({ code: "P2028", operation: "PRIVATE", durationMs: "PRIVATE" });
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const response = await h.request("resume", session.sessionId);
+  expect(response.status).toBe(500);
+  expect(response.headers.get("X-MITJEE-Transaction-Operation")).toBeNull();
+  expect(response.headers.get("X-MITJEE-Transaction-Duration-Ms")).toBeNull();
+});
 
 async function harness(provider: ScenarioModelProvider = new MockScenarioModelProvider(), repository: TrainingRepository = new InMemoryTrainingRepository()) {
   let now = 1000;

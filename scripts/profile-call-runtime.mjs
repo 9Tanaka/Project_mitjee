@@ -8,8 +8,10 @@ register(); nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} 
 const { createDatabase } = await import("../src/server/database.ts");
 const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
 const { createApplication } = await import("../src/application/composition.ts");
+const dialogue = process.argv.includes("--dialogue");
+const { MockScenarioModelProvider } = await import("../src/dialogue/mock-provider.ts");
 const categories = ["publish", "getTemplate", "get", "create", "save"];
-const report = { status: "FAILED", scope: "Real runtime MySQL; synthetic owned sessions retained; no AI/auth benchmark", workers: [] };
+const report = { status: "FAILED", scope: "Real runtime MySQL; synthetic owned sessions retained; no live AI/auth benchmark", workers: [] };
 for (let worker = 0; worker < 2; worker++) {
   const db = createDatabase(), spans = [], repo = new PrismaTrainingRepository(db);
   const measured = Object.fromEntries(categories.map(category => [category, async (...args) => {
@@ -22,7 +24,8 @@ for (let worker = 0; worker < 2; worker++) {
   }
   try {
     const connection = await measure("connection_and_probe", () => db.$queryRawUnsafe("SELECT 1"));
-    const init = await measure("application_initialization", () => createApplication(measured, { async generateCharacterResponse() { throw new Error("NO_PROVIDER_CALL_ALLOWED"); } }, Date.now, undefined, () => "CC-01"));
+    const provider = dialogue ? new MockScenarioModelProvider() : { async generateCharacterResponse() { throw new Error("NO_PROVIDER_CALL_ALLOWED"); } };
+    const init = await measure("application_initialization", () => createApplication(measured, provider, Date.now, undefined, () => "CC-01"));
     const app = init.value, user = { id: `profile-${randomUUID()}` }, samples = [];
     for (let i = 0; i < 3; i++) {
       const input = { startId: randomUUID(), expectedRevision: 0 };
@@ -31,6 +34,16 @@ for (let worker = 0; worker < 2; worker++) {
       const resume = await measure("resume", () => app.resume(fresh.value.session.sessionId, user));
       if (!replay.value.duplicate || fresh.value.session.sessionId !== replay.value.session.sessionId) throw new Error("PROFILE_INVARIANT_FAILED");
       samples.push(fresh.timing, replay.timing, resume.timing);
+      if (dialogue) {
+        let session = fresh.value.session;
+        for (const label of ["รับสาย", "ดำเนินบทสนทนาต่อ"]) {
+          const action = await measure("dialogue_action", () => app.action(session.sessionId, user, { actionId: randomUUID(), expectedRevision: session.revision,
+            actionDefinitionId: session.availableActions.find(a => a.label === label).id, payload: {} }));
+          session = action.value.session; samples.push(action.timing);
+          const opening = await measure("mock_dialogue_opening", () => app.opening(session.sessionId, user, { expectedRevision: session.revision }));
+          session = opening.value.session; samples.push(opening.timing);
+        }
+      }
     }
     report.workers.push({ worker, connection: connection.timing, initialization: init.timing, samples });
   } catch { report.workers.push({ worker, category: "RUNTIME_PROFILE_FAILED" }); process.exitCode = 1; }
@@ -38,6 +51,6 @@ for (let worker = 0; worker < 2; worker++) {
 }
 report.status = process.exitCode ? "FAILED" : "PASSED";
 await mkdir("frontend-artifacts", { recursive: true });
-const label = process.argv.includes("--after") ? "after" : "before";
+const label = dialogue ? "dialogue" : process.argv.includes("--after") ? "after" : "before";
 await writeFile(`frontend-artifacts/call-performance-${label}.json`, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report));

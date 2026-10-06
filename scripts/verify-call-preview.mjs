@@ -34,9 +34,13 @@ try {
     const path = new URL(response.url()).pathname;
     if (path.startsWith("/api/")) {
       const headers = response.headers(), category = headers["x-mitjee-failure-category"], failureStage = headers["x-mitjee-failure-stage"], requestId = headers["x-mitjee-request-id"];
+      const operation = headers["x-mitjee-transaction-operation"], duration = headers["x-mitjee-transaction-duration-ms"], budget = headers["x-mitjee-transaction-budget-ms"];
       report.requests.push({ path: path.startsWith("/api/training/") ? path.replace(/\/api\/training\/[^/]+/, "/api/training/:session") : path, method: response.request().method(), status: response.status(),
         ...(category && ["DATABASE_TRANSACTION", "DATABASE_CONNECTION", "DATABASE_UNIQUE", "DATABASE_FOREIGN_KEY", "TEMPLATE_IMMUTABILITY", "TEMPLATE_VALIDATION", "SCHEMA_VALIDATION", "SESSION_NOT_FOUND", "DOMAIN_FAILURE", "UNKNOWN_INTERNAL"].includes(category) ? { category } : {}),
         ...(requestId && /^[a-zA-Z0-9_-]{1,100}$/.test(requestId) ? { requestId } : {}),
+        ...(category === "DATABASE_TRANSACTION" && ["GET", "SAVE", "CREATE", "PUBLISH"].includes(operation) ? { transactionOperation: operation,
+          ...(/^\d{1,9}$/.test(duration ?? "") ? { transactionDurationMs: Number(duration) } : {}),
+          ...(/^\d{1,9}$/.test(budget ?? "") ? { transactionBudgetMs: Number(budget) } : {}) } : {}),
         ...(failureStage && ["AUTH", "INPUT", "INITIALIZATION", "APPLICATION", "OUTPUT"].includes(failureStage) ? { failureStage } : {}) });
     }
   });
@@ -120,6 +124,22 @@ try {
   const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
   database = createDatabase(); repository = new PrismaTrainingRepository(database);
   const beforeText = await repository.get(sessionId, ownerId);
+  if (process.argv.includes("--speech-unavailable")) {
+    // Verify real protected HTTP presentation/fallback, not a fake speech route or live Azure claim.
+    check = "real-http-speech-unavailable-and-replay";
+    const speech = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/speech") && r.request().method() === "POST");
+    await page.getByRole("checkbox", { name: "เปิดเสียงผู้โทร", exact: true }).check();
+    const speechResponse = await speech; assert.equal(speechResponse.status(), 200);
+    assert.equal((await speechResponse.json()).data.audioStatus, "UNAVAILABLE");
+    await expect(page.getByText(/ไม่สามารถเล่นเสียงได้ในขณะนี้/)).toBeVisible();
+    const replay = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/speech") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "เล่นเสียงผู้โทรอีกครั้ง", exact: true }).click();
+    assert.equal((await replay).status(), 200);
+    assert.deepEqual(await repository.get(sessionId, ownerId), beforeText);
+    await expect(page.getByLabel("ตอบผู้โทรด้วยข้อความ")).toBeEnabled();
+    await page.getByRole("checkbox", { name: "เปิดเสียงผู้โทร", exact: true }).uncheck();
+    report.voicePresentation = { realHttpFallback: true, unavailable: true, replayNoCommit: true, textEnabled: true, liveAzure: "NOT_RUN" };
+  }
   assert.deepEqual(initial.messages.map(m => m.role), ["character"]); report.stages.push(stage);
   stage = "LIVE_TEXT_AND_CONTEXTUAL_ACTIONS";
   check = "live-message-and-contextual-exit";

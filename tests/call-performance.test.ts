@@ -5,6 +5,7 @@ import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.js";
 import type { PrismaClient } from "../src/generated/prisma/client.js";
 import { smsPhishingFixture } from "../src/fixtures/sms-phishing.js";
+import { transactionFailureContext } from "../src/persistence/transaction-diagnostics.js";
 afterEach(() => vi.restoreAllMocks());
 it("fresh call start avoids rereading the newly-created aggregate; resume reads once", async () => {
   const repo = new InMemoryTrainingRepository(), app = await createApplication(repo, new MockScenarioModelProvider());
@@ -48,6 +49,9 @@ it("transaction diagnostics contain only operation/category/timing; original err
   await expect(repo.get("private-id", "private-owner")).rejects.toBe(error);
   expect(JSON.parse(log.mock.calls[0]![0])).toEqual({ event: "training_transaction_failed", operation: "GET", category: "DATABASE_TRANSACTION", durationMs: expect.any(Number), budgetMs: 15_000 });
   expect(JSON.stringify(log.mock.calls)).not.toContain("PRIVATE");
+  expect(transactionFailureContext(error)).toEqual({ operation: "GET", durationMs: expect.any(Number), budgetMs: 15_000 });
+  expect(transactionFailureContext({ code: "P2028", operation: "PRIVATE" })).toBeUndefined();
+  expect(transactionFailureContext(null)).toBeUndefined();
   log.mockImplementation(() => { throw new Error("LOGGER_FAILED"); });
   await expect(repo.get("private-id", "private-owner")).rejects.toBe(error);
 });
