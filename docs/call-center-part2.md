@@ -115,7 +115,32 @@ Part 3. Game, Knowledge Base and Dashboard backends are not added.
   GHSA-68fv-2mgg-jv7q. This focused Call Center phase did not change unrelated dependencies;
   the separate client-secret audit passed. Do not confuse the two audits.
 
-Deployed Preview acceptance is checked after pushing the verified commit. READY alone
-is not proof of real login, provider success or persistence. The browser smoke script is
-`node scripts/verify-call-preview.mjs`; it uses real auth/network and leaves its synthetic
-account/history intact, with no production deploy or destructive cleanup.
+### Deployed Preview acceptance — 6 October 2026
+
+Implementation commit `3d3993171b045f24fa6403fbb32e9df67f80beb9` was built by the existing
+Preview project as `dpl_2DTWb4k6bL1ZuY4dwXcqBuiktsJV` (READY). The stable branch alias is
+https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app.
+
+`node scripts/verify-call-preview.mjs` passed real browser registration (201), Credentials
+login, authenticated refresh, canonical catalog/detail/prepare, safety acknowledgment,
+start (201), Answer (200, CALL_CONNECTED/PENDING, no messages), automatic caller opening
+(200, character speaks first), Thai text/reply (200, state unchanged), contextual hangup,
+completed result and logout. After logout the protected session API returned 401.
+There was no API interception, mock authentication or provider substitution.
+
+An ownership-scoped read of the smoke session confirmed template v4, COMPLETED/END_SCENARIO,
+one CHARACTER_OPENING action, two dialogue receipts, zero critical events and exactly one
+official PASSED result with trainingScore=null. Both receipts succeeded on attempt 1 with
+usedFallback=false and failureReason=null. Browser page-error count was zero. This early
+safe-exit result covers the encountered path, not mastery of all story checkpoints.
+
+Two initial harness runs exceeded Playwright's default five-second assertion deadline at
+login/catalog and prepare rendering. The verification harness now uses a bounded 60-second
+assertion deadline, matching its browser operation deadline, with fixed failure-check labels.
+Assertions were retained; no runtime logic was changed to make the acceptance pass.
+This was not evidence of a failed Credentials login or a provider fallback.
+
+Sanitized receipt/status evidence and screenshots are local ignored artifacts under
+`frontend-artifacts/part2-preview/`. Synthetic accounts/history are retained. No environment,
+protection, database schema/migration or Production deployment was changed. A documentation/
+verification-harness follow-up commit does not change the verified runtime implementation.

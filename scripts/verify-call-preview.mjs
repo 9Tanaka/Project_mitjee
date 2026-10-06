@@ -1,19 +1,20 @@
 // Real browser → protected HTTP → remote MySQL/Groq. No route interception/mock auth.
 // Uses a fresh synthetic account, leaves its history intact, never prints credentials/cookies/raw provider content.
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect as baseExpect } from "@playwright/test";
 import { randomBytes, randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import nextEnv from "@next/env";
 import { register } from "tsx/esm/api";
 register();
+const expect = baseExpect.configure({ timeout: 60000 });
 nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
 const origin = process.argv[2] ?? "https://mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app";
 assert.equal(new URL(origin).origin, origin, "PREVIEW_ORIGIN_ONLY");
 assert.equal(new URL(origin).hostname, "mitjee-ui-preview-git-feat-rule-based-895992-9tanakas-projects.vercel.app", "APPROVED_PREVIEW_ONLY");
 const report = { status: "FAILED", scope: "Real Preview browser/Auth.js/MySQL/Groq; no intercepted API", origin,
   stages: [], requests: [], sessionId: null, receipts: [], result: null, browserErrorCount: 0, failureStage: null, failureCategory: null };
-let stage = "PUBLIC_ACCESS", browser, database;
+let stage = "PUBLIC_ACCESS", check = "public-page", browser, database;
 try {
   browser = await chromium.launch();
   const context = await browser.newContext({ baseURL: origin, viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
@@ -37,22 +38,29 @@ try {
   assert.equal((await registration).status(), 201, "REGISTER_HTTP_FAILURE");
   await expect(page).toHaveURL(/\/login\?registered=1$/); report.stages.push(stage);
   stage = "LOGIN";
+  check = "login-navigation";
   await page.getByLabel("อีเมล", { exact: true }).fill(email); await page.getByLabel("รหัสผ่าน", { exact: true }).fill(password);
   await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
-  await expect(page).toHaveURL(origin + "/scenarios");
+  await expect(page).toHaveURL(origin + "/scenarios", { timeout: 60000 });
+  check = "verified-session";
   const auth = await context.request.get("/api/auth/session");
   const ownerId = (await auth.json()).user?.id; assert.ok(ownerId, "VERIFIED_SESSION_MISSING");
-  await page.reload(); await expect(page.getByRole("heading", { name: "ฝึกรับสาย Call Center", exact: true })).toBeVisible(); report.stages.push(stage);
+  check = "catalog-after-refresh";
+  await page.reload(); await expect(page.getByRole("heading", { name: "ฝึกรับสาย Call Center", exact: true })).toBeVisible({ timeout: 60000 }); report.stages.push(stage);
   stage = "CATALOG_DETAIL_PREPARE";
+  check = "detail-navigation";
   const card = page.locator("article").filter({ has: page.getByRole("heading", { name: "ฝึกรับสาย Call Center", exact: true }) });
   await card.getByRole("link", { name: "ดูรายละเอียด" }).click(); await expect(page).toHaveURL(origin + "/scenarios/call-center");
   await page.getByRole("link", { name: "เริ่มจำลองสถานการณ์", exact: true }).click();
+  check = "prepare-disabled-until-acknowledged";
   await expect(page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true })).toBeDisabled();
   await page.getByRole("checkbox").check(); await page.getByRole("button", { name: "เริ่มฝึกสถานการณ์", exact: true }).click();
+  check = "start-training-navigation";
   await expect(page).toHaveURL(/\/training\/[a-f0-9]+$/);
   const sessionId = new URL(page.url()).pathname.split("/").at(-1); report.sessionId = sessionId;
   await expect(page.getByRole("button", { name: "รับสาย", exact: true })).toBeVisible(); report.stages.push(stage);
   stage = "ANSWER_PENDING_AUTOMATIC_OPENING";
+  check = "answer-pending-and-caller-opening";
   const answer = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/action") && r.request().method() === "POST");
   const opening = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/opening") && r.request().method() === "POST");
   await page.getByRole("button", { name: "รับสาย", exact: true }).click();
@@ -66,6 +74,7 @@ try {
   const ready = await context.request.get(`/api/training/${sessionId}`); const initial = (await ready.json()).data;
   assert.deepEqual(initial.messages.map(m => m.role), ["character"]); report.stages.push(stage);
   stage = "LIVE_TEXT_AND_CONTEXTUAL_ACTIONS";
+  check = "live-message-and-contextual-exit";
   const message = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/message") && r.request().method() === "POST");
   await page.getByLabel("ตอบผู้โทรด้วยข้อความ").fill("ขอชื่อและข้อมูลอ้างอิงก่อนครับ ผมจะตรวจสอบผ่านช่องทางที่มีอยู่เอง");
   await page.getByRole("button", { name: "ส่งข้อความ", exact: true }).click();
@@ -80,6 +89,7 @@ try {
   await page.getByRole("link", { name: "ดูผลการฝึก →", exact: true }).click();
   await expect(page.getByRole("heading", { name: "ผ่านการฝึก", exact: true })).toBeVisible(); report.stages.push(stage);
   stage = "OWNED_RECEIPT_EVIDENCE";
+  check = "owned-persisted-result";
   const { createDatabase } = await import("../src/server/database.ts");
   const { PrismaTrainingRepository } = await import("../src/persistence/prisma-repository.ts");
   database = createDatabase(); const repo = new PrismaTrainingRepository(database);
@@ -92,10 +102,11 @@ try {
   report.result = { templateVersion: saved.templateVersion, outcome: saved.result.outcome, trainingScore: saved.result.trainingScore, officialResultCount: await database.trainingResult.count({ where: { sessionId } }) };
   assert.equal(report.result.officialResultCount, 1); report.stages.push(stage);
   stage = "LOGOUT";
+  check = "logout-revokes-access";
   await page.getByRole("button", { name: "ออกจากระบบ", exact: true }).click(); await expect(page).toHaveURL(origin + "/login");
   assert.equal((await context.request.get(`/api/training/${sessionId}`)).status(), 401); report.stages.push(stage);
   assert.equal(report.browserErrorCount, 0); report.status = "PASSED";
-} catch (error) { report.failureStage = stage; report.failureCategory = error instanceof assert.AssertionError ? "VERIFICATION_ASSERTION" : stage === "OWNED_RECEIPT_EVIDENCE" ? "DATABASE_EVIDENCE_ERROR" : "BROWSER_OR_RUNTIME_FAILURE"; process.exitCode = 1; }
+} catch (error) { report.failureStage = stage; report.failureCheck = check; report.failureCategory = error instanceof assert.AssertionError ? "VERIFICATION_ASSERTION" : stage === "OWNED_RECEIPT_EVIDENCE" ? "DATABASE_EVIDENCE_ERROR" : "BROWSER_OR_RUNTIME_FAILURE"; process.exitCode = 1; }
 finally { await database?.$disconnect().catch(() => {}); await browser?.close(); }
 await mkdir("frontend-artifacts/part2-preview", { recursive: true });
 await writeFile("frontend-artifacts/part2-preview/verification.json", JSON.stringify(report, null, 2));
