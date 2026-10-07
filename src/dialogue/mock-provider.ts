@@ -1,5 +1,5 @@
 import { copy } from "../domain/copy.js";
-import type { ScenarioState } from "../domain/types.js";
+import type { LEGACY_STATES } from "../domain/constants.js";
 import { ProviderRefusal } from "./contracts.js";
 import type { AICharacterResponse, ProviderOptions, ScenarioAIContext, ScenarioModelProvider } from "./contracts.js";
 
@@ -11,7 +11,7 @@ export type MockBehavior =
   | { kind: "invalid"; output: unknown }
   | { kind: "response"; response: AICharacterResponse };
 
-const lines: Record<ScenarioState, readonly [string, string]> = {
+const lines: Record<typeof LEGACY_STATES[number], readonly [string, string]> = {
   contact: ["สวัสดี มี SMS เกี่ยวกับพัสดุสมมติส่งถึงคุณ", "คุณสามารถพิจารณาผู้ส่งก่อนตัดสินใจในแบบฝึกนี้"],
   build_trust: ["ข้อความจำลองแสดงชื่อบริการพัสดุและลิงก์ parcel-check.example", "หลักฐานในข้อความยังคงเดิม กรุณาพิจารณาสิ่งที่คุณเห็นว่าน่าสงสัย"],
   create_pressure: ["มีข้อความจำลองเพิ่มเติมอ้างว่าต้องดำเนินการภายในห้านาที", "นี่เป็นแรงกดดันที่เกิดขึ้นภายในสถานการณ์สมมติเท่านั้น"],
@@ -22,11 +22,14 @@ const lines: Record<ScenarioState, readonly [string, string]> = {
 
 export function normalMockResponse(context: ScenarioAIContext): AICharacterResponse {
   const turnsHere = context.recentSanitizedMessages.filter(m => m.role === "character" && m.state === context.currentState).length;
-  const line = lines[context.currentState][turnsHere % 2]!;
+  const line = context.scenario.category === "SMS_PHISHING" && context.currentState in lines ? lines[context.currentState as keyof typeof lines][turnsHere % 2]!
+    : context.allowedBehaviors[turnsHere % Math.max(context.allowedBehaviors.length, 1)] ?? `ข้อความจำลองของ ${context.scenario.title}`;
   return {
-    character_message: `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage.text.slice(0, 160)}`,
+    character_message: context.currentUserMessage === null ? line : `${line}\nรับข้อความของคุณแล้ว: ${context.currentUserMessage?.text.slice(0, 160) ?? ""}`,
     observed_intent: "continue", candidate_event: "NONE", event_code: null, confidence: null,
     safety: { contains_real_pii: false, out_of_scope: false },
+    ...(context.callConversation ? { interaction_signal: context.callConversation.fallbackSignal,
+      conversation_status: context.currentState === "IDENTITY_CLAIM" && turnsHere < 2 ? "CONTINUE_STATE" as const : "STATE_COMPLETE" as const } : {}),
   };
 }
 

@@ -1,22 +1,33 @@
 import { z } from "zod";
 import { EVENT_CODES } from "../domain/constants.js";
 import type { ScenarioCategory, ScenarioState, ValidationStatus } from "../domain/types.js";
+import type { CALL_STORIES } from "../domain/constants.js";
+import { callSignalSchema, conversationStatusSchema } from "../domain/call-signals.js";
 
 export const aiCharacterResponseSchema = z.strictObject({
   character_message: z.string().trim().min(1).max(8000),
   observed_intent: z.enum([
     "continue", "verify_source", "refuse", "share_sensitive_data",
     "follow_suspicious_link", "transfer_money", "end_contact", "unknown",
+    "asked_caller_identity", "asked_for_reference", "requested_clarification",
   ]),
   candidate_event: z.enum(["NONE", "WARNING_SIGN", "SAFE_ACTION", "DECISION", "POSSIBLE_CRITICAL_FAILURE"]),
   event_code: z.enum(EVENT_CODES).nullable(),
   confidence: z.number().finite().nullable(), // Metadata only. No acceptance threshold.
   safety: z.strictObject({ contains_real_pii: z.boolean(), out_of_scope: z.boolean() }),
+  interaction_signal: callSignalSchema.optional(),
+  conversation_status: conversationStatusSchema.optional(),
 }).refine(r => (r.candidate_event === "NONE") === (r.event_code === null), {
   message: "NONE requires null event_code; a candidate requires an event_code",
 });
 
 export type AICharacterResponse = z.infer<typeof aiCharacterResponseSchema>;
+export const callCharacterResponseSchema = aiCharacterResponseSchema.safeExtend({
+  interaction_signal: callSignalSchema, conversation_status: conversationStatusSchema,
+});
+export function responseSchemaFor(context: ScenarioAIContext) {
+  return context.callConversation ? callCharacterResponseSchema : aiCharacterResponseSchema;
+}
 
 export interface SanitizedMessage {
   readonly id: string;
@@ -33,13 +44,19 @@ export interface ScenarioAIContext {
     readonly category: ScenarioCategory;
     readonly variant: "DEFAULT" | "NORMAL_CALL" | "SCAM_CALL";
     readonly title: string;
+    readonly callStoryId?: typeof CALL_STORIES[number];
   };
   readonly currentState: ScenarioState;
   readonly characterRole: string;
   readonly allowedBehaviors: readonly string[];
   readonly forbiddenBehaviors: readonly string[];
   readonly recentSanitizedMessages: readonly SanitizedMessage[];
-  readonly currentUserMessage: SanitizedMessage;
+  readonly currentUserMessage: SanitizedMessage | null;
+  readonly turnKind?: "USER_MESSAGE" | "CHARACTER_OPENING" | "CHARACTER_STATE_TURN";
+  readonly callConversation?: {
+    readonly allowedSignals: readonly z.infer<typeof callSignalSchema>[];
+    readonly fallbackSignal: z.infer<typeof callSignalSchema>;
+  };
 }
 
 export interface ScenarioModelProvider {
@@ -86,6 +103,7 @@ export interface CommitDialogueTurn {
   failureReason: ProviderFailure | null;
   attempts: number;
 }
+export type CommitCharacterOpening = Omit<CommitDialogueTurn, "sanitizedUserMessage"> & { kind: "CHARACTER_OPENING" | "CHARACTER_STATE_TURN" };
 
 export interface DialogueReply {
   turn: DialogueTurn;

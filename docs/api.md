@@ -8,9 +8,15 @@ HTTP phase baseline: c54726b7b71e685a11e77eeae37d6ba1d2d80426.
 Architecture/Auth boundary baseline: d7eb841cd8d00782fd32d110c6f643bbb3be09d8.
 Core, Dialogue และ Persistence semantics คงเดิม
 Next.js Route Handlers ใช้ Node runtime และ request/response ปกติ; Frontend เรียก API จริงแล้ว
-Server เลือก Mock/OpenAI adapter โดย contract เดิม; ไม่มี streaming และยังไม่ verify OpenAI network จริง
+Server เลือก Mock/OpenAI/Groq adapter โดย contract เดิม; ไม่มี token streaming การลอง OpenAI Luna ครั้งก่อนติด `429 credit_balance_exhausted` ส่วน Groq ผ่านการตรวจจริงครบสี่เรื่อง Call Center v5 แล้ว ดู [ผลล่าสุดและขอบเขต](call-center-part3.md)
 
 ## Authentication and composition
+
+Call Center v6 preserves request contracts and adds optional safe phone projection fields:
+`continuousConversation`, `contextualDecision` (opaque id/label/actionIds), `hangUpActionId`
+and `independentContactActionId`. They are Backend-derived, not text-scanned by the browser.
+Internal semantic signals, story/variant and scoring rules are not exposed. See
+[continuous UX](call-center-continuous-ux.md) for state progression and receipt semantics.
 
 Client → Route Handler → RequestAuthenticator → strict DTO → Application Service
 → TrainingCore / ScenarioDialogueOrchestrator → TrainingRepository → Prisma → MySQL
@@ -65,12 +71,19 @@ GET/POST /api/auth/[...nextauth]: official Auth.js Credentials/CSRF/session/sign
 | POST /api/scenarios/:scenarioId/start | startId (UUID), expectedRevision: 0 → 201; retry → 200 |
 | GET /api/training/:sessionId | Public Session พร้อม revision |
 | POST /api/training/:sessionId/message | turnId, expectedRevision, text → Session + public Turn + duplicate |
+| POST /api/training/:sessionId/opening | expectedRevision → Session + public caller Turn + duplicate; new Call Center only |
 | POST /api/training/:sessionId/action | actionId, expectedRevision, actionDefinitionId, payload → Session + duplicate |
 | POST /api/training/:sessionId/quit | actionId, expectedRevision → Session + duplicate |
 | GET /api/training/:sessionId/result | Official Public Result หรือ 404 RESULT_NOT_FOUND |
 
 Success envelope คือ { "data": ... }; error คือ { "error": { "code": "...", "message": "..." } }
 Session response มี sessionId, scenario, status, currentStatePublicLabel, revision, messages และ availableActions
+Call Center v3 adds optional `phone`: semantic state, call status, neutral callerLabel,
+openingStatus and availableInternalApps. No story ID, variant or private override is exposed.
+Answer commits the explicit transition first and then a separate atomic opening commit.
+A pending opening can be resumed through the protected opening endpoint; GET never calls AI.
+The opening has no user message. Required actions remain gated; text is rejected before
+answer/opening and after hangup. See [Call Center foundation](call-center-foundation.md).
 Mutation response ใช้ { session, duplicate }; message เพิ่ม { turn: { turnId, committedRevision, characterMessage } }
 revision ปัจจุบันอยู่ที่ session.revision; committedRevision เป็น revision ของ receipt เดิมเมื่อ replay
 ทุก response ของ handlers ใช้ Cache-Control: no-store และ X-Content-Type-Options: nosniff
@@ -90,7 +103,7 @@ POST ที่ส่ง Origin ต่างจาก request origin ถูก re
 ## Public scenario and action projection
 
 Scenario มี id/category/title/description/learningObjectives/communicationMode=TEXT เท่านั้น
-Backend กำหนด SMS / Phishing version 2, DEFAULT เป็น playable policy; client เลือก version/variant เองไม่ได้
+Backend เลือก template ที่เผยแพร่แล้วจาก catalog เก้าประเภท; SMS / Phishing ใช้ version 4 และอีกแปดประเภทใช้ version 1; client เลือก version/variant เองไม่ได้
 Catalog เพิ่ม label/description สำหรับ presentation เพราะ published Template เดิมไม่มีข้อความตัวเลือก D/S
 ไม่เพิ่ม score, Event, State guard หรือกฎใหม่ใน catalog
 
@@ -106,11 +119,12 @@ public definition มี id, label, input, options เท่านั้น; IDs
 
 ตัวอย่าง initial action: actionDefinitionId=a01, payload={choiceId:"o1"}; ต้องใช้ actionId ใหม่และ revision ที่อ่านมา
 NONE เป็นคำขอไปต่อ ไม่รับ target State; Core ยังบังคับ checkpoints/event guards
-progress control อาจแสดงก่อน checkpoint ครบ แล้ว Core ตอบ 422 INVALID_STATE เมื่อยังไปต่อไม่ได้
+อีกแปด scenario ที่ใช้ publicActionBindings ซ่อน progress จน checkpoints/event guards ครบ
+SMS ที่ใช้ catalog bindings เดิมอาจแสดง progress ก่อนครบ; Core ยังคงตอบ 422 INVALID_STATE และห้ามข้าม checkpoint
 ไม่มี endpoint สำหรับ direct transition/scoring/Event CRUD/Opportunity CRUD/Result creation
 ไม่คืน scores ก่อนตอบ, answer flags, event codes, rule IDs, target State, hidden opportunities/transitions,
 prompts, fallback configuration, candidate confidence หรือ provider error metadata
-Terminal result คืน D/W/S normalized, Training Score, Outcome, weakestSkills และ recommendation type/key/reason เท่านั้น
+ผลที่ template กำหนด `evaluationMode=DECISION_RULES_V1` คืน categorical Outcome และ decisionSummary; SMS v4 และอีกแปดประเภท v1 มี feedback ของจุดที่พบจริงและรหัสอ้างอิงกฎแบบ opaque; SMS v3 มีจำนวนสรุปแต่ไม่มี feedback รายจุด ทั้งหมดมี D/W/S และ trainingScore เป็น null ส่วน historical SMS v1/v2 ยังคงคืนคะแนนเดิมโดยไม่มี evaluationMode ใน public response เลข version เพียงอย่างเดียวไม่กำหนด semantics
 ไม่มี internal event/rule mapping หรือเฉลยของ Session ที่ยังเล่นอยู่
 
 ## Revision, retry and lifecycle
@@ -149,7 +163,7 @@ concurrent duplicates อาจเรียก Provider หลายครั้
 
 Known action/transition/lifecycle errors map ตามหมวด; unexpected errors ใช้ข้อความคงที่
 ไม่ echo Zod issues, raw input, SQL, Prisma errors, stack trace หรือ provider raw output
-Mock/OpenAI failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
+Mock/OpenAI/Groq failure ที่ fallback สำเร็จเป็น HTTP 200 ตาม Dialogue contract ไม่ใช่ 503
 Invalid server provider configuration เป็น generic 500; public response ไม่มี model ID, usage,
 request context/ID, raw output/refusal/error หรือ provider configuration
 HTTP layer ไม่มี raw request/response/error logging
@@ -168,8 +182,9 @@ tests เรียก exported Route Handlers ด้วย Web Request/Response 
 เพิ่มเติมเปิด Next server จริงบน loopback ตรวจ 8 endpoints ได้ 401/no-store ตาม default-deny policy
 ไม่ได้อ้างว่าทดสอบ authenticated traffic ผ่าน deployed identity provider แล้ว
 
-Credentials login และ Frontend ทำแล้ว; OpenAI adapter ทำแล้วแต่ network NOT VERIFIED
-Voice, WebSocket, streaming, production moderation/rate limits และ distributed deployment ยัง Planned
+Credentials login, Frontend และ Mock/OpenAI/Groq adapters ทำแล้ว รวมถึง [Voice endpoints](voice.md), [authenticated WebSocket และ HTTP fallback](websocket.md)
+Live Azure/Groq และ dedicated MySQL/browser E2E ยัง NOT RUN; OpenAI Luna ครั้งก่อนติดข้อจำกัดเครดิต ดู [ผล verification](realtime-verification.md) ไม่ใช่การยืนยัน production readiness
+Continuous audio/token streaming, production moderation และ distributed deployment/rate-limit coordination ยัง Planned; ขีดจำกัด request/session ที่ทำแล้วเป็น demo controls
 Public messages คืน sanitized history ทั้ง Session; pagination และ response-size budget ยังไม่ได้กำหนด
 local sanitizer เป็น Demo control เท่านั้น ไม่ใช่ production-grade PII detector
 
@@ -179,6 +194,10 @@ Evidence: [routes](../src/app/api/scenarios/route.ts), [DTOs](../src/http/dto.ts
 [HTTP tests](../tests/http.integration.test.ts), [lifecycle tests](../tests/http.runtime.test.ts)
 
 Framework reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers)
+
+## Quiz API — 26 September 2026
+
+Five authenticated Quiz routes are implemented alongside the eight Training routes. They support publication/history, start, resume/result, save and submit. See [Quiz HTTP contract](quiz.md#http-and-storage) for strict requests, idempotency, CAS and frozen result behavior. Quiz scoring never changes Scenario decision outcomes.
 
 ## Application / HTTP contract ownership
 
@@ -198,3 +217,14 @@ Success replaces the session snapshot. Uncertain retries retain the full origina
 ID/revision/payload; 409 refreshes current data and asks the user to decide again.
 401 routes to login; raw backend errors are never displayed.
 No API path or payload extension was needed for this phase. See [Frontend](frontend.md).
+
+## Call Center Part 3 presentation speech
+
+`POST /api/training/:sessionId/speech` is a new presentation-only endpoint alongside the
+unchanged `/voice` contract. Strict body: `{ turnId }`; output: audioBase64 (nullable),
+audioMime (`audio/wav`) and audioStatus (`READY` / `UNAVAILABLE`). Verified Auth.js owner,
+same-origin, bounded JSON, rate/admission limits and owned committed character turn are
+required. Arbitrary synthesis text/URLs/provider configuration are rejected. No dialogue
+generation, training action, score or critical event is submitted by this endpoint.
+TTS failure returns unavailable audio with committed transcript preserved. No audio is
+persisted. See [Voice](voice.md) for retries, transient WAV limits and live-Azure status.

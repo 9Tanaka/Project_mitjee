@@ -1,18 +1,23 @@
 import type { ScenarioTemplate } from "./schema.js";
 import { DomainError } from "./types.js";
 import type { SessionOpportunity, TrainingSession } from "./types.js";
+import { callerTurnReady } from "./call-center.js";
+import { committedSignal } from "./call-conversation.js";
 
 export function openStateOpportunities(session: TrainingSession, template: ScenarioTemplate, now: number): void {
+  if (!callerTurnReady(session, template)) return;
   for (const definition of template.opportunities.filter(o => o.state === session.state)) {
+    if (definition.activation === "CALLER_SIGNAL" && !committedSignal(session, template, template.states.find(s => s.id === session.state)!.conversation!.decisionSignals)) continue;
     if (session.opportunities.some(o => o.definitionId === definition.id)) continue;
-    const maximum = definition.skill === "W"
+    const maximum = template.evaluationMode === "DECISION_RULES_V1" ? 0 : definition.skill === "W"
       ? definition.evidence.filter(e => e.warningSignId !== null).length
-      : definition.maxScore;
+      : definition.maxScore!;
     session.opportunities.push({
       definitionId: definition.id, state: session.state, skill: definition.skill,
       eligibleMaximum: maximum, earned: 0, openedAt: now,
       finalizedAt: null, finalizedByActionId: null,
       correctWarningSignIds: [], incorrectEvidenceIds: [],
+      ...(template.evaluationMode === "DECISION_RULES_V1" ? { assessment: null } : {}),
     });
   }
 }

@@ -2,10 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ adapter: vi.fn(), client: vi.fn() }));
 vi.mock("@prisma/adapter-mariadb", () => ({ PrismaMariaDb: class { constructor(options: unknown) { mocks.adapter(options); } } }));
 vi.mock("../src/generated/prisma/client.js", () => ({ PrismaClient: class { constructor(options: unknown) { mocks.client(options); } } }));
-import { createPrismaClient } from "../src/persistence/prisma-client.js";
+import { createPrismaClient, DATABASE_ACQUIRE_TIMEOUT_MS, DATABASE_CONNECT_TIMEOUT_MS } from "../src/persistence/prisma-client.js";
 
 beforeEach(() => vi.clearAllMocks());
 describe("persistence connection security configuration", () => {
+  it("allows a bounded remote handshake instead of inheriting the driver's 1s timeout", () => {
+    createPrismaClient("mysql://db.example.test/mitjee_test", { tlsCa: "test-ca" });
+    expect(mocks.adapter).toHaveBeenCalledWith(expect.objectContaining({
+      connectTimeout: 10_000, acquireTimeout: 15_000,
+      ssl: { ca: "test-ca", rejectUnauthorized: true }, allowPublicKeyRetrieval: false,
+    }));
+    expect(DATABASE_ACQUIRE_TIMEOUT_MS).toBeGreaterThan(DATABASE_CONNECT_TIMEOUT_MS);
+  });
   it.each(["127.0.0.1", "localhost", "[::1]"])("passes a pinned public key only on loopback %s", host => {
     createPrismaClient(`mysql://${host}/mitjee_test`, { loopbackRsaPublicKey: "/trusted/server-public.pem" });
     expect(mocks.adapter).toHaveBeenCalledWith(expect.objectContaining({

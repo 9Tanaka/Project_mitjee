@@ -7,8 +7,10 @@ import { DomainError } from "../domain/types.js";
 import type { TrainingSession } from "../domain/types.js";
 import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-contract.js";
 import { copy } from "../domain/copy.js";
+import { rememberTransactionFailure } from "./transaction-diagnostics.js";
 
 const include = {
+  template: { select: { configuration: true } },
   actions: { orderBy: { revision: "asc" } },
   opportunities: { orderBy: { position: "asc" } },
   events: { orderBy: { position: "asc" } },
@@ -27,6 +29,10 @@ function header(s: TrainingSession) {
     startedAt: new Date(s.startedAt), lastActivityAt: new Date(s.lastActivityAt), endedAt: date(s.endedAt) };
 }
 function decode(row: AggregateRow): TrainingSession {
+  // Versions are local to each scenario, not evaluation-mode identifiers. Read the
+  // pinned immutable configuration so even an unanswered categorical checkpoint
+  // retains assessment:null, while legacy snapshots keep their original shape.
+  const decisionRules = validateTemplate(row.template.configuration).evaluationMode === "DECISION_RULES_V1";
   // Enum/JSON casts are confined to the persistence boundary. Only Core writes these columns.
   return {
     id: row.id, ownerId: row.ownerId, templateId: row.templateId, templateVersion: row.templateVersion,
@@ -37,7 +43,8 @@ function decode(row: AggregateRow): TrainingSession {
     opportunities: row.opportunities.map(o => ({ definitionId: o.definitionId, skill: o.skill, state: o.state,
       eligibleMaximum: o.eligibleMaximum, earned: o.earned, openedAt: o.openedAt.getTime(),
       finalizedAt: o.finalizedAt?.getTime() ?? null, finalizedByActionId: o.finalizedByActionId,
-      correctWarningSignIds: o.correctWarningSignIds, incorrectEvidenceIds: o.incorrectEvidenceIds })),
+      correctWarningSignIds: o.correctWarningSignIds, incorrectEvidenceIds: o.incorrectEvidenceIds,
+      ...(o.assessment !== null || decisionRules ? { assessment: o.assessment } : {}) })),
     events: row.events.map(e => ({ id: e.id, sessionId: e.sessionId, actionId: e.actionId, opportunityId: e.opportunityId,
       code: e.code, state: e.state, ruleId: e.ruleId, authority: e.authority, critical: e.critical, at: e.at.getTime() })),
     messages: row.messages.map(m => ({ id: m.id, turnId: m.turnId, role: m.role, text: m.text, state: m.state, at: m.at.getTime() })),
@@ -47,7 +54,10 @@ function decode(row: AggregateRow): TrainingSession {
     result: row.result ? { sessionId: row.result.sessionId, templateId: row.result.templateId, templateVersion: row.result.templateVersion,
       scores: row.result.scores, trainingScore: row.result.trainingScore, outcome: row.result.outcome,
       criticalEventIds: row.result.criticalEventIds, weakestSkills: row.result.weakestSkills,
-      recommendation: row.result.recommendation, calculatedAt: row.result.calculatedAt.getTime() } : null,
+      recommendation: row.result.recommendation, calculatedAt: row.result.calculatedAt.getTime(),
+      ...(row.result.evaluationMode === "DECISION_RULES_V1" ? {
+        evaluationMode: "DECISION_RULES_V1", decisionSummary: row.result.decisionSummary,
+      } : {}) } : null,
   } as TrainingSession;
 }
 
@@ -57,25 +67,56 @@ export interface PrismaRepositoryOptions {
 }
 
 export class PrismaTrainingRepository implements TrainingRepository {
+  // Cache validated immutable configurations only; callers always receive detached copies.
+  private readonly templates = new Map<string, ScenarioTemplate>();
+  private templateKey(id: string, version: number, variant: ScenarioVariant) { return JSON.stringify([id, version, variant]); }
+  private remember(t: ScenarioTemplate) {
+    if (this.templates.size >= 128) this.templates.delete(this.templates.keys().next().value!);
+    this.templates.set(this.templateKey(t.id, t.version, t.variant), copy(t));
+  }
   constructor(private readonly client: PrismaClient, private readonly options: PrismaRepositoryOptions = {}) {}
+
+  private async transaction<T>(operation: "PUBLISH" | "CREATE" | "GET" | "SAVE", run: (tx: Transaction) => Promise<T>,
+    options: { isolationLevel?: Prisma.TransactionIsolationLevel; timeout: number }): Promise<T> {
+    const startedAt = Date.now();
+    try { return await this.client.$transaction(run, { maxWait: 5_000, ...options }); }
+    catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2028") {
+        const context = { operation, durationMs: Math.max(0, Date.now() - startedAt), budgetMs: options.timeout };
+        rememberTransactionFailure(error, context);
+        // Do not serialize error/meta/SQL/IDs. Logging must not replace the original failure.
+        try { console.error(JSON.stringify({ event: "training_transaction_failed", operation,
+          category: "DATABASE_TRANSACTION", durationMs: context.durationMs, budgetMs: context.budgetMs })); } catch {}
+      }
+      throw error;
+    }
+  }
 
   async publish(input: ScenarioTemplate): Promise<void> {
     const template = validateTemplate(copy(input));
     const key = { templateId: template.id, version: template.version, variant: template.variant };
+    // Immutable versions need a read/compare, not a locking upsert on every cold worker.
+    const published = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
+    if (published) {
+      if (canonical(published.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
+      this.remember(template);
+      return;
+    }
     try {
-      await this.client.$transaction(async tx => {
-        await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
+      await this.transaction("PUBLISH", async tx => {
         const existing = await tx.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
         if (existing) {
           if (canonical(existing.configuration) !== canonical(template)) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
           return;
         }
+        await tx.scenario.upsert({ where: { id: template.id }, create: { id: template.id, category: template.category }, update: {} });
         await tx.scenarioTemplateVersion.create({ data: { ...key, configuration: json(template) } });
-      });
+      }, { timeout: 10_000 });
+      this.remember(template);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         const existing = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: key } });
-        if (existing && canonical(existing.configuration) === canonical(template)) return;
+        if (existing && canonical(existing.configuration) === canonical(template)) { this.remember(template); return; }
         if (existing) throw new DomainError("PUBLISHED_TEMPLATE_IMMUTABLE");
       }
       throw error;
@@ -83,20 +124,25 @@ export class PrismaTrainingRepository implements TrainingRepository {
   }
 
   async getTemplate(id: string, version: number, variant: ScenarioVariant): Promise<ScenarioTemplate> {
+    const cached = this.templates.get(this.templateKey(id, version, variant));
+    if (cached) return copy(cached);
     const row = await this.client.scenarioTemplateVersion.findUnique({ where: { templateId_version_variant: { templateId: id, version, variant } } });
     if (!row) throw new DomainError("TEMPLATE_NOT_FOUND");
-    return validateTemplate(row.configuration);
+    const template = validateTemplate(row.configuration);
+    if (template.id !== id || template.version !== version || template.variant !== variant) throw new DomainError("INVALID_TEMPLATE");
+    this.remember(template);
+    return copy(template);
   }
 
   async create(session: TrainingSession): Promise<void> {
     const snapshot = copy(session); assertSanitized(snapshot);
     await this.getTemplate(snapshot.templateId, snapshot.templateVersion, snapshot.variant);
     try {
-      await this.client.$transaction(async tx => {
+      await this.transaction("CREATE", async tx => {
         await tx.trainingSession.create({ data: header(snapshot) });
         await this.writeChildren(tx, snapshot);
         await this.options.beforeCommit?.();
-      });
+      }, { timeout: 10_000 });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new DomainError("SESSION_ALREADY_EXISTS");
       throw error;
@@ -105,34 +151,35 @@ export class PrismaTrainingRepository implements TrainingRepository {
 
   async get(id: string, ownerId: string): Promise<TrainingSession> {
     // include may execute multiple SELECTs; repeatable read gives one coherent snapshot.
-    return this.client.$transaction(async tx => {
+    return this.transaction("GET", async tx => {
       const row = await tx.trainingSession.findFirst({ where: { id, ownerId }, include });
       if (!row) throw new DomainError("SESSION_NOT_FOUND");
       return decode(row);
-    }, { isolationLevel: "RepeatableRead" });
+    }, { isolationLevel: "RepeatableRead", timeout: 15_000 });
   }
 
   async save(session: TrainingSession, expectedRevision: number): Promise<void> {
     const snapshot = copy(session); assertSanitized(snapshot);
     if (snapshot.revision !== expectedRevision + 1) throw new DomainError("REVISION_CONFLICT");
     try {
-      await this.client.$transaction(async tx => {
+      await this.transaction("SAVE", async tx => {
         // This conditional UPDATE is the linearization point and locks the session row.
         // Everything following it rolls back together, including the revision increment.
         const changed = await tx.trainingSession.updateMany({
           where: { id: snapshot.id, revision: expectedRevision },
-          data: { revision: { increment: 1 } },
+          // Mutable header and revision share the same CAS/row lock. Identity/history
+          // validation and child writes still occur before COMMIT; any failure rolls
+          // this entire header change back. No second header UPDATE round trip.
+          data: { revision: { increment: 1 }, status: snapshot.status, state: snapshot.state,
+            lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt) },
         });
         if (changed.count !== 1) throw new DomainError("REVISION_CONFLICT");
         const row = await tx.trainingSession.findUniqueOrThrow({ where: { id: snapshot.id }, include });
         const current = decode(row); current.revision = expectedRevision;
         assertUpdate(current, snapshot, expectedRevision);
-        await tx.trainingSession.update({ where: { id: snapshot.id }, data: {
-          status: snapshot.status, state: snapshot.state, lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt),
-        } });
         await this.writeChildren(tx, snapshot, current);
         await this.options.beforeCommit?.();
-      }, { isolationLevel: "ReadCommitted", timeout: 10_000 });
+      }, { isolationLevel: "ReadCommitted", timeout: 15_000 });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") throw new DomainError("REVISION_CONFLICT");
       throw error;
@@ -149,7 +196,8 @@ export class PrismaTrainingRepository implements TrainingRepository {
       if (before && canonical(before) === canonical(o)) continue;
       const data = { sessionId: s.id, definitionId: o.definitionId, position, skill: o.skill, state: o.state,
         eligibleMaximum: o.eligibleMaximum, earned: o.earned, openedAt: new Date(o.openedAt), finalizedAt: date(o.finalizedAt),
-        finalizedByActionId: o.finalizedByActionId, correctWarningSignIds: json(o.correctWarningSignIds), incorrectEvidenceIds: json(o.incorrectEvidenceIds) };
+        finalizedByActionId: o.finalizedByActionId, correctWarningSignIds: json(o.correctWarningSignIds), incorrectEvidenceIds: json(o.incorrectEvidenceIds),
+        assessment: o.assessment ?? null };
       if (before) await tx.sessionOpportunity.update({ where: { sessionId_definitionId: { sessionId: s.id, definitionId: o.definitionId } }, data });
       else await tx.sessionOpportunity.create({ data });
     }
@@ -163,15 +211,20 @@ export class PrismaTrainingRepository implements TrainingRepository {
         state: t.state, templateVersion: t.templateVersion, snapshotRevision: t.snapshotRevision, committedRevision: t.committedRevision,
         response: json(t.response), candidateStatus: t.candidateStatus, usedFallback: t.usedFallback, failureReason: t.failureReason, attempts: t.attempts } });
     }
-    for (const [position, m] of s.messages.entries()) {
-      if (position < (previous?.messages.length ?? 0)) continue;
-      await tx.trainingMessage.create({ data: { sessionId: s.id, position, id: m.id, turnId: m.turnId, role: m.role, text: m.text, state: m.state, at: new Date(m.at) } });
+    const newMessages = s.messages.slice(previous?.messages.length ?? 0);
+    if (newMessages.length) {
+      // One bounded Core commit adds at most a user/character pair. Keep unique/FK
+      // failures fatal (no skipDuplicates), after the matching receipt is created.
+      await tx.trainingMessage.createMany({ data: newMessages.map((m, offset) => ({ sessionId: s.id,
+        position: (previous?.messages.length ?? 0) + offset, id: m.id, turnId: m.turnId,
+        role: m.role, text: m.text, state: m.state, at: new Date(m.at) })) });
     }
     if (s.result && !previous?.result) {
       const r = s.result;
       await tx.trainingResult.create({ data: { sessionId: s.id, templateId: r.templateId, templateVersion: r.templateVersion,
         scores: json(r.scores), trainingScore: r.trainingScore, outcome: r.outcome, criticalEventIds: json(r.criticalEventIds),
-        weakestSkills: json(r.weakestSkills), recommendation: json(r.recommendation), calculatedAt: new Date(r.calculatedAt) } });
+        weakestSkills: json(r.weakestSkills), recommendation: json(r.recommendation), calculatedAt: new Date(r.calculatedAt),
+        evaluationMode: r.evaluationMode ?? "LEGACY_WEIGHTED_V1", decisionSummary: r.decisionSummary ? json(r.decisionSummary) : Prisma.DbNull } });
     }
   }
 }

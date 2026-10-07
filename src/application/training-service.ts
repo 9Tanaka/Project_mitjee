@@ -1,18 +1,25 @@
-import { createHash } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import type { TrainingCore } from "../core.js";
 import type { ScenarioDialogueOrchestrator } from "../dialogue/orchestrator.js";
 import { DomainError } from "../domain/types.js";
 import type { AuthenticatedPrincipal, SubmitActionInput, SendMessageInput, QuitTrainingInput, StartTrainingInput } from "./contracts.js";
 import { ApplicationError } from "./errors.js";
-import { actionBindings, playableTemplate, publicScenario } from "./catalog.js";
+import { actionBindings, playableTemplates, registeredTemplates, publicScenario } from "./catalog.js";
 import { projectResult, projectSession } from "./projections.js";
+import { CALL_STORIES } from "../domain/constants.js";
+import { callStoryRegistry, type CallStoryId } from "../fixtures/call-center-foundation.js";
 
+export type CallVariantSelector = () => "NORMAL_CALL" | "SCAM_CALL";
 export class TrainingApplicationService {
-  constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator) {}
-  listScenarios() { return [publicScenario(playableTemplate)]; }
+  constructor(private readonly core: TrainingCore, private readonly dialogue: ScenarioDialogueOrchestrator,
+    private readonly selectCallVariant: CallVariantSelector = () => randomInt(2) === 0 ? "NORMAL_CALL" : "SCAM_CALL",
+    private readonly selectCallStory?: () => CallStoryId) {}
+  listScenarios() { return playableTemplates.map(publicScenario); }
   scenario(id: string) {
-    if (id !== playableTemplate.id) throw new ApplicationError("SCENARIO_NOT_FOUND");
-    return publicScenario(playableTemplate);
+    if (id === "call-center-scam") id = "call-center"; // Public compatibility alias, not a persisted template rename.
+    const template = playableTemplates.find(t => t.id === id);
+    if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
+    return publicScenario(template);
   }
   private async snapshot(id: string, user: AuthenticatedPrincipal) {
     const session = await this.core.resume(id, user.id);
@@ -20,11 +27,35 @@ export class TrainingApplicationService {
     return session;
   }
   async start(scenarioId: string, user: AuthenticatedPrincipal, input: StartTrainingInput) {
-    this.scenario(scenarioId);
+    const publicScenario = this.scenario(scenarioId);
+    scenarioId = publicScenario.id;
+    if (publicScenario.category === "CALL_CENTER") {
+      const legacyId = createHash("sha256").update(JSON.stringify([user.id, "call-center-scam", input.startId])).digest("hex");
+      try { return { session: await this.resume(legacyId, user), duplicate: true }; }
+      catch (error) { if (!(error instanceof DomainError) || error.code !== "SESSION_NOT_FOUND") throw error; }
+    }
     // Backend identity, version and variant. Repeated startId is stable for this owner/scenario.
     const id = createHash("sha256").update(JSON.stringify([user.id, scenarioId, input.startId])).digest("hex");
+    try { return { session: await this.resume(id, user), duplicate: true }; }
+    catch (error) { if (!(error instanceof DomainError) || error.code !== "SESSION_NOT_FOUND") throw error; }
+    const base = playableTemplates.find(t => t.id === scenarioId)!;
+    let template;
+    if (base.category === "CALL_CENTER") {
+      let storyId = this.selectCallStory?.();
+      if (!storyId) {
+        const variant = this.selectCallVariant();
+        const eligible = CALL_STORIES.filter(story => callStoryRegistry[story].variant === variant);
+        storyId = eligible[randomInt(eligible.length)]!;
+      }
+      if (!(CALL_STORIES as readonly string[]).includes(storyId)) throw new ApplicationError("INVALID_STATE");
+      template = registeredTemplates.find(t => t.version === base.version && t.callCenter?.storyId === storyId);
+    } else template = registeredTemplates.find(t => t.id === scenarioId && t.version === base.version && t.variant === base.variant);
+    if (!template) throw new ApplicationError("SCENARIO_NOT_FOUND");
     let duplicate = false;
-    try { await this.core.start(id, user.id, playableTemplate.id, playableTemplate.version, playableTemplate.variant); }
+    try {
+      const created = await this.core.start(id, user.id, template.id, template.version, template.variant);
+      return { session: projectSession(created, template), duplicate: false };
+    }
     catch (error) {
       if (!(error instanceof DomainError) || error.code !== "SESSION_ALREADY_EXISTS") throw error;
       duplicate = true;
@@ -32,18 +63,29 @@ export class TrainingApplicationService {
     return { session: await this.resume(id, user), duplicate };
   }
   async resume(id: string, user: AuthenticatedPrincipal) {
-    const s = await this.snapshot(id, user);
-    return projectSession(s, await this.core.getSessionTemplate(id, user.id));
+    const { session, template } = await this.core.getSessionContext(id, user.id);
+    if (session.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
+    return projectSession(session, template);
   }
   async action(id: string, user: AuthenticatedPrincipal, input: SubmitActionInput) {
-    await this.snapshot(id, user);
-    const t = await this.core.getSessionTemplate(id, user.id);
+    const { session: snapshot, template: t } = await this.core.getSessionContext(id, user.id);
+    if (snapshot.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
     // Resolve against the pinned version, not just currently visible actions, so old retries still replay.
     const binding = actionBindings(t).find(b => b.public.id === input.actionDefinitionId);
     if (!binding) throw new ApplicationError("INVALID_ACTION");
+    if (!snapshot.actions.some(a => a.id === input.actionId)) {
+      if (snapshot.revision !== input.expectedRevision) throw new DomainError("REVISION_CONFLICT");
+      if (binding.state !== snapshot.state) throw new ApplicationError("INVALID_STATE");
+    }
     const reply = await this.core.submit({ sessionId: id, ownerId: user.id, actionId: input.actionId,
       expectedRevision: input.expectedRevision, action: binding.toDomain(input.payload) });
     return { session: projectSession(reply.session, t), duplicate: reply.duplicate };
+  }
+  async opening(id: string, user: AuthenticatedPrincipal, input: { expectedRevision: number }) {
+    await this.snapshot(id, user);
+    const reply = await this.dialogue.openCall({ sessionId: id, ownerId: user.id, expectedRevision: input.expectedRevision });
+    return { session: await this.resume(id, user), duplicate: reply.duplicate,
+      turn: { turnId: reply.turn.id, committedRevision: reply.turn.committedRevision, characterMessage: reply.turn.response.character_message } };
   }
   async message(id: string, user: AuthenticatedPrincipal, input: SendMessageInput) {
     await this.snapshot(id, user);
@@ -62,5 +104,9 @@ export class TrainingApplicationService {
     const reply = await this.core.submit({ ...input, sessionId: id, ownerId: user.id, action: { kind: "QUIT_SESSION" } });
     return { session: projectSession(reply.session, await this.core.getSessionTemplate(id, user.id)), duplicate: reply.duplicate };
   }
-  async result(id: string, user: AuthenticatedPrincipal) { return projectResult(await this.snapshot(id, user)); }
+  async result(id: string, user: AuthenticatedPrincipal) {
+    const { session, template } = await this.core.getSessionContext(id, user.id);
+    if (session.status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
+    return projectResult(session, template);
+  }
 }

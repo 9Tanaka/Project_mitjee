@@ -185,10 +185,10 @@ describe("Mock Dialogue Integration acceptance", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("successful retry records the earlier failure but does not use fallback", async () => {
+  it("successful retry clears terminal failureReason and does not use fallback", async () => {
     const h = (await harness(new MockScenarioModelProvider([{ kind: "error" }, { kind: "normal" }])));
     const reply = await h.say("สวัสดี"); expect(reply.turn.attempts).toBe(2);
-    expect(reply.turn.usedFallback).toBe(false); expect(reply.turn.failureReason).toBe("ERROR");
+    expect(reply.turn.usedFallback).toBe(false); expect(reply.turn.failureReason).toBeNull();
   });
 
   it("many turns in the same State neither transition nor open/score opportunities", async () => {
@@ -218,7 +218,7 @@ describe("provider boundary and sanitized context", () => {
     expect(context.characterRole).toBe(smsPhishingDialogueFixture.characterRole);
     expect(context.allowedBehaviors).toEqual(smsPhishingDialogueFixture.states[0]!.allowedBehaviors);
     expect(context.forbiddenBehaviors).toEqual(smsPhishingDialogueFixture.states[0]!.forbiddenBehaviors);
-    expect(context.recentSanitizedMessages).toHaveLength(2); expect(context.currentUserMessage.text).toBe("ขอสนทนาต่อ");
+    expect(context.recentSanitizedMessages).toHaveLength(2); expect(context.currentUserMessage?.text).toBe("ขอสนทนาต่อ");
     for (const secret of ["learner@example.com", "081-234-5678", "847193", "Secret123", "bank.invalid"]) {
       expect(JSON.stringify(spy.mock.calls)).not.toContain(secret);
       expect(JSON.stringify((await h.current()))).not.toContain(secret);

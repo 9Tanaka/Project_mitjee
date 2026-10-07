@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { phoneDto } from "./phone.js";
+export { openingRequest } from "./phone.js";
 
 export const publicId = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
 export const revision = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -23,12 +25,14 @@ export type QuitRequest = z.infer<typeof quitRequest>;
 
 export const scenarioDto = z.strictObject({
   id: publicId, category: z.string(), title: z.string(), description: z.string(),
-  learningObjectives: z.array(z.string()), communicationMode: z.literal("TEXT"),
+  learningObjectives: z.array(z.string()), communicationMode: z.enum(["TEXT", "TEXT_VOICE"]),
 });
 const optionDto = z.strictObject({ id: publicId, label: z.string() });
 export const publicActionDto = z.strictObject({
   id: publicId, label: z.string(), input: z.enum(["CHOICE", "EVIDENCE", "CONFIRM", "NONE"]),
   options: z.array(optionDto),
+  app: z.enum(["CALL", "MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]).optional(),
+  navigationTarget: z.enum(["CALL", "MESSAGES", "BANK", "PARCEL", "CALLER_INFO"]).optional(),
 });
 export const sessionDto = z.strictObject({
   sessionId: publicId, scenario: scenarioDto,
@@ -36,6 +40,7 @@ export const sessionDto = z.strictObject({
   currentStatePublicLabel: z.string(), revision,
   messages: z.array(z.strictObject({ turnId: publicId, role: z.enum(["user", "character"]), text: z.string().max(8000) })),
   availableActions: z.array(publicActionDto),
+  phone: phoneDto.optional(),
 });
 export const mutationDto = z.strictObject({ session: sessionDto, duplicate: z.boolean() });
 export const messageDto = z.strictObject({
@@ -45,10 +50,18 @@ export const messageDto = z.strictObject({
 const score = z.number().finite().min(0).max(100).nullable();
 export const resultDto = z.strictObject({
   sessionId: publicId, revision, D: score, W: score, S: score, trainingScore: score,
-  outcome: z.enum(["PASSED", "NOT_PASSED", "CRITICAL_FAILURE"]),
+  outcome: z.enum(["PASSED", "NOT_PASSED", "CRITICAL_FAILURE", "NEEDS_PRACTICE", "UNASSESSED"]),
   weakestSkills: z.array(z.enum(["D", "W", "S"])),
+  evaluationMode: z.enum(["LEGACY_WEIGHTED_V1", "DECISION_RULES_V1"]).optional(),
+  callReflection: z.strictObject({ note: z.string(), good: z.array(z.string()), review: z.array(z.string()),
+    behaviorTimeline: z.array(z.strictObject({ elapsedSeconds: z.number().int().nonnegative(), label: z.string() })),
+    qualitativeInsights: z.array(z.strictObject({ label: z.string(), authority: z.literal("NON_AUTHORITATIVE") })) }).optional(),
+  decisionSummary: z.strictObject({ encountered: z.number().int().nonnegative(), safe: z.number().int().nonnegative(), review: z.number().int().nonnegative(), unassessed: z.number().int().nonnegative(), critical: z.number().int().nonnegative().optional(),
+    checkpoints: z.array(z.strictObject({ ruleRef: z.string().regex(/^R-[a-f0-9]{16}$/), label: z.string().min(1),
+      assessment: z.enum(["SAFE", "REVIEW", "UNASSESSED", "CRITICAL"]), explanation: z.string().min(1) })).optional(),
+  }).nullable().optional(),
   recommendation: z.strictObject({
-    recommendationType: z.enum(["DECISION_PRACTICE", "WARNING_SIGN_LESSON", "WARNING_SIGN_QUIZ", "SAFE_ACTION_CONTENT", "CRITICAL_FAILURE_REVIEW"]),
+    recommendationType: z.enum(["DECISION_PRACTICE", "WARNING_SIGN_LESSON", "WARNING_SIGN_QUIZ", "SAFE_ACTION_CONTENT", "CRITICAL_FAILURE_REVIEW", "PATH_REFLECTION"]),
     recommendationKey: z.string(), reason: z.string(),
   }),
 });

@@ -1,6 +1,11 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../generated/prisma/client.js";
 
+// The driver's 1s default can expire during a remote TLS/MySQL handshake.
+// Keep both waits finite; pool acquisition must outlast an individual connection.
+export const DATABASE_CONNECT_TIMEOUT_MS = 10_000;
+export const DATABASE_ACQUIRE_TIMEOUT_MS = 15_000;
+
 /** Composition-root helper, never imported by Core. No client is opened on module import. */
 export function createPrismaClient(databaseUrl: string, options: {
   tlsCa?: string;
@@ -21,6 +26,7 @@ export function createPrismaClient(databaseUrl: string, options: {
     host: url.hostname === "[::1]" ? "::1" : url.hostname, port: Number(url.port || 3306),
     user: decodeURIComponent(url.username), password: decodeURIComponent(url.password),
     database: decodeURIComponent(url.pathname.slice(1)), connectionLimit: 8,
+    connectTimeout: DATABASE_CONNECT_TIMEOUT_MS, acquireTimeout: DATABASE_ACQUIRE_TIMEOUT_MS,
     // Domain timestamps are UTC milliseconds, independent of server timezone.
     timezone: "Z", ...(options.tlsCa ? { ssl: { ca: options.tlsCa, rejectUnauthorized: true } } : {}),
     ...(options.loopbackRsaPublicKey ? { cachingRsaPublicKey: options.loopbackRsaPublicKey } : {}),

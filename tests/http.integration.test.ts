@@ -24,6 +24,7 @@ import { DomainError } from "../src/domain/types.js";
 import { sessionDto, resultDto, messageDto, mutationDto } from "../src/http/dto.js";
 import { createPrismaClient } from "../src/persistence/prisma-client.js";
 import { PrismaTrainingRepository } from "../src/persistence/prisma-repository.js";
+import { rememberTransactionFailure } from "../src/persistence/transaction-diagnostics.js";
 
 // Only tests can bind an identity to a Request instance. No credential or owner header shortcut.
 class TestRequestAuthenticator implements RequestAuthenticator {
@@ -35,6 +36,29 @@ const handlers = { scenarios, scenario, start, resume, message, action, quit, re
 type Operation = keyof typeof handlers;
 type PublicSession = z.infer<typeof sessionDto>;
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+it("database failure headers expose only repository-recorded operation/timing, never raw error details", async () => {
+  const h = await harness(), session = await h.begin();
+  const error = Object.assign(new Error("PRIVATE_SQL_PASSWORD"), { code: "P2028", meta: { error: "PRIVATE_META" } });
+  rememberTransactionFailure(error, { operation: "SAVE", durationMs: 10_125, budgetMs: 10_000 });
+  vi.spyOn(h.repository, "get").mockRejectedValue(error);
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const response = await h.request("resume", session.sessionId);
+  expect(response.status).toBe(500);
+  expect(response.headers.get("X-MITJEE-Transaction-Operation")).toBe("SAVE");
+  expect(response.headers.get("X-MITJEE-Transaction-Duration-Ms")).toBe("10125");
+  expect(response.headers.get("X-MITJEE-Transaction-Budget-Ms")).toBe("10000");
+  expect(JSON.stringify({ body: await response.json(), headers: [...response.headers], logs: log.mock.calls })).not.toContain("PRIVATE");
+});
+it("unrecorded database failures cannot inject operation diagnostics into HTTP headers", async () => {
+  const h = await harness(), session = await h.begin();
+  vi.spyOn(h.repository, "get").mockRejectedValue({ code: "P2028", operation: "PRIVATE", durationMs: "PRIVATE" });
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const response = await h.request("resume", session.sessionId);
+  expect(response.status).toBe(500);
+  expect(response.headers.get("X-MITJEE-Transaction-Operation")).toBeNull();
+  expect(response.headers.get("X-MITJEE-Transaction-Duration-Ms")).toBeNull();
+});
 
 async function harness(provider: ScenarioModelProvider = new MockScenarioModelProvider(), repository: TrainingRepository = new InMemoryTrainingRepository()) {
   let now = 1000;
@@ -82,7 +106,7 @@ async function harness(provider: ScenarioModelProvider = new MockScenarioModelPr
     setTime: (time: number) => { now = time; } };
 }
 const safeSteps: [string, unknown][] = [
-  ["a01", { choiceId: "o1" }], ["a02", {}], ["a03", { selectedEvidenceIds: ["o1", "o2", "o3"] }],
+  ["a01", { choiceId: "o1" }], ["a02", {}], ["a03", { selectedEvidenceIds: ["o1", "o2"] }],
   ["a04", {}], ["a05", { choiceId: "o1" }], ["a06", {}], ["a07", { choiceId: "o1" }],
   ["a08", { choiceId: "o1" }], ["a09", {}],
 ];
@@ -117,13 +141,38 @@ describe("HTTP Route Handler integration", () => {
     expect(replies.map(r => r.status).sort()).toEqual([200, 201]);
     const [first, second] = await Promise.all(replies.map(async r => mutationDto.parse((await r.json()).data)));
     expect(first!.session.sessionId).toBe(second!.session.sessionId);
-    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(2);
+    const stored = await h.raw(first!.session); expect(stored.ownerId).toBe("user-a"); expect(stored.templateVersion).toBe(4);
     expect(first!.session.revision).toBe(0);
     const other = await h.begin("user-b", input.startId); expect(other.sessionId).not.toBe(first!.session.sessionId);
+  });
+  it("lists nine playable categories and starts another scenario through the same authenticated API", async () => {
+    const h = await harness();
+    const catalog = (await (await h.request("scenarios")).json()).data as { id: string; category: string }[];
+    expect(catalog).toHaveLength(9);
+    expect(new Set(catalog.map(item => item.category)).size).toBe(9);
+    const response = await h.request("start", "investment-scam", { startId: randomUUID(), expectedRevision: 0 });
+    expect(response.status).toBe(201);
+    const started = mutationDto.parse((await response.json()).data).session;
+    expect(started.scenario.id).toBe("investment-scam");
+    const stop = started.availableActions.find(action => action.label === "ยุติการติดต่ออย่างปลอดภัย");
+    expect(stop).toBeDefined();
+    const completed = await h.step(started, stop!.id);
+    expect(completed.status).toBe("COMPLETED");
+    const result = resultDto.parse((await (await h.request("result", completed.sessionId)).json()).data);
+    expect(result.outcome).toBe("PASSED");
+    expect(result.decisionSummary?.encountered).toBe(0);
   });
   it.each(["ownerId", "score", "targetState", "version", "variant"])("rejects spoofed start field %s", async field => {
     const h = await harness();
     expect((await h.request("start", "sms-phishing-demo", { startId: randomUUID(), expectedRevision: 0, [field]: "injected" })).status).toBe(400);
+  });
+  it.each(["variant", "callType", "seed", "probability"])("rejects browser Call Center selector field %s before creating a session", async field => {
+    const h = await harness();
+    const create = vi.spyOn(h.repository, "create");
+    const response = await h.request("start", "call-center-scam", { startId: randomUUID(), expectedRevision: 0, [field]: "NORMAL_CALL" });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe("INVALID_REQUEST");
+    expect(create).not.toHaveBeenCalled();
   });
   it.each(["resume", "message", "action", "quit", "result"] as const)("owner isolation for %s uses identical 404 for missing/foreign resources", async op => {
     const h = await harness(); const s = await h.begin("user-b"); const before = await h.raw(s, "user-b");
@@ -133,7 +182,7 @@ describe("HTTP Route Handler integration", () => {
     expect(foreign.status).toBe(404); expect(await foreign.json()).toEqual(await missing.json());
     expect(await h.raw(s, "user-b")).toEqual(before);
   });
-  it("resumes and completes a multi-turn safe path with public D/W/S and one result", async () => {
+  it("resumes and completes a multi-turn safe path with categorical result", async () => {
     const h = await harness(); let s = await h.begin();
     expect(sessionDto.parse((await (await h.request("resume", s.sessionId)).json()).data)).toEqual(s);
     expect((await h.request("result", s.sessionId)).status).toBe(404);
@@ -144,9 +193,17 @@ describe("HTTP Route Handler integration", () => {
     }
     expect(s.status).toBe("COMPLETED"); expect(s.availableActions).toEqual([]);
     const r = resultDto.parse((await (await h.request("result", s.sessionId)).json()).data);
-    expect([r.D, r.W, r.S, r.trainingScore]).toEqual([100, 100, 100, 100]); assertPublic(r);
+    expect(r.evaluationMode).toBe("DECISION_RULES_V1");
+    expect(r.outcome).toBe("PASSED");
+    expect(r.decisionSummary).toMatchObject({ encountered: 5, safe: 5, review: 0, unassessed: 0 });
+    expect(r.decisionSummary?.checkpoints).toHaveLength(5);
+    expect(r.decisionSummary?.checkpoints?.[0]?.ruleRef).toMatch(/^R-[a-f0-9]{16}$/);
+    expect(JSON.stringify(r)).not.toContain('"ruleId"');
+    expect(JSON.stringify(r)).not.toContain('"checkpointId"');
+    expect(JSON.stringify(r)).not.toContain("d1:trust-display-name");
+    expect([r.D, r.W, r.S, r.trainingScore]).toEqual([null, null, null, null]); assertPublic(r);
     const raw = await h.raw(s); expect(raw.opportunities.some(o => o.definitionId === "w-extra")).toBe(false);
-    expect(raw.opportunities.find(o => o.definitionId === "w1")!.incorrectEvidenceIds).toEqual(["logo"]);
+    expect(raw.opportunities.find(o => o.definitionId === "w1")!.incorrectEvidenceIds).toEqual([]);
     expect((await h.act(s, "a01", { choiceId: "o1" })).status).toBe(422);
     expect((await h.say(s)).status).toBe(422);
   });
@@ -207,14 +264,15 @@ describe("HTTP Route Handler integration", () => {
     const retry = await h.act(s, "a09", {}, "finish-once"); expect(retry.status).toBe(200);
     expect((await retry.json()).data.duplicate).toBe(true); expect(await h.raw(s)).toEqual(before);
   });
-  it("risky choices can complete below threshold without critical failure", async () => {
+  it("risky choices request further practice without critical failure", async () => {
     const h = await harness(); let s = await h.begin();
     for (const [id, p] of safeSteps) {
       const payload = id === "a03" ? { selectedEvidenceIds: [] } : "choiceId" in (p as object) ? { choiceId: "o3" } : p;
       s = await h.step(s, id, payload);
     }
     const r = resultDto.parse((await (await h.request("result", s.sessionId)).json()).data);
-    expect(r.outcome).toBe("NOT_PASSED"); expect(r.trainingScore).toBe(0);
+    expect(r.outcome).toBe("NEEDS_PRACTICE"); expect(r.trainingScore).toBeNull();
+    expect(r.decisionSummary?.review).toBeGreaterThan(0);
   });
   it("two requests at one revision have one winner and no partial loser", async () => {
     const h = await harness(); const s = await h.begin();
@@ -294,13 +352,17 @@ describe("HTTP Route Handler integration", () => {
     expect(JSON.stringify(await r.json()).includes(marker)).toBe(false);
     expect(JSON.stringify(await h.raw(s)).includes(marker)).toBe(false);
   });
-  it("unexpected database errors are generic and not logged", async () => {
+  it("unexpected database errors log only a closed taxonomy, never raw SQL or secrets", async () => {
     const h = await harness(); const s = await h.begin();
-    const log = vi.spyOn(console, "error"); const marker = randomUUID();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {}); const marker = randomUUID();
     vi.spyOn(h.repository, "get").mockRejectedValue(new Error(`Prisma SQL ${marker}`));
     const r = await h.request("resume", s.sessionId); expect(r.status).toBe(500);
     expect(await r.json()).toEqual({ error: { code: "INTERNAL_ERROR", message: "Unable to process the request." } });
-    expect(log).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(log.mock.calls[0]![0])).toEqual({ event: "training_request_failed", endpoint: "resume", stage: "APPLICATION",
+      requestId: expect.any(String), category: "UNKNOWN_INTERNAL" });
+    expect(JSON.stringify(log.mock.calls)).not.toContain(marker);
+    expect(r.headers.get("X-MITJEE-Failure-Category")).toBe("UNKNOWN_INTERNAL");
   });
   it("central error mapping distinguishes conflicts, validation and state errors", () => {
     expect(publicError(new DomainError("UNKNOWN_EVIDENCE")).status).toBe(422);

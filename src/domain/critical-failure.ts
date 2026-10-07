@@ -3,6 +3,8 @@ import type { ScenarioTemplate, CriticalFailureRule } from "./schema.js";
 import { requireOpenOpportunity } from "./session-opportunity.js";
 import { DomainError } from "./types.js";
 import type { TrainingSession } from "./types.js";
+import { activePhoneApp, freshConfirmation } from "./call-behavior.js";
+import { callerTurnReady } from "./call-center.js";
 
 /** Free text/candidates cannot enter this validation route. No keyword/confidence rules. */
 export function validateCriticalAction(
@@ -12,6 +14,7 @@ export function validateCriticalAction(
   if (!action.confirmed) throw new DomainError("EXPLICIT_CONFIRMATION_REQUIRED");
   const rule = template.criticalFailureRules.find(r => r.id === action.ruleId);
   if (!rule || rule.state !== session.state) throw new DomainError("CRITICAL_ACTION_NOT_ALLOWED");
+  if (!callerTurnReady(session, template) || (rule.app && activePhoneApp(session, template) !== rule.app) || !freshConfirmation(session, template, rule)) throw new DomainError("EXPLICIT_CONFIRMATION_REQUIRED");
   const state = template.states.find(s => s.id === session.state)!;
   if (!state.allowedEventCodes.includes(rule.eventCode)) throw new DomainError("EVENT_NOT_ALLOWED");
   requireOpenOpportunity(session, rule.opportunityId);

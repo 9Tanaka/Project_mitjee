@@ -9,7 +9,7 @@ const router = { push: mocks.push, replace: mocks.replace, refresh: mocks.refres
 vi.mock("next-auth/react", () => ({ useSession: () => ({ status: mocks.status }), signIn: mocks.signIn, signOut: mocks.signOut, SessionProvider: ({ children }: { children: ReactNode }) => children }));
 vi.mock("next/link.js", () => ({ default: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a> }));
 import { AuthForm, AuthGate, AuthNavigation } from "../src/frontend/auth.js";
-import { ScenarioList } from "../src/frontend/scenarios.js";
+import { ScenarioList, ScenarioStart } from "../src/frontend/scenarios.js";
 import { Training } from "../src/frontend/training.js";
 import { Result } from "../src/frontend/result.js";
 import { ActionControl } from "../src/frontend/actions.js";
@@ -22,6 +22,10 @@ const reply = (data: unknown, status = 200) => Response.json({ data }, { status 
 const failure = (code: string, status: number) => Response.json({ error: { code, message: "PRIVATE_DETAILS" } }, { status });
 const password = () => randomUUID();
 const fetcher = vi.fn();
+it.each([['TEXT', 'ฝึกผ่านข้อความ'], ['TEXT_VOICE', 'ฝึกผ่านข้อความหรือเสียง']])("catalog shows %s communication badge", async (communicationMode, label) => {
+  fetcher.mockResolvedValue(reply([{ ...scenario, communicationMode }]));
+  render(<ScenarioList />); expect(await screen.findByText(label, { selector: 'span' })).toBeTruthy();
+});
 beforeEach(() => {
   vi.clearAllMocks(); mocks.status = "unauthenticated"; mocks.signIn.mockResolvedValue({ ok: true }); mocks.signOut.mockResolvedValue({ url: "/login" });
   vi.stubGlobal("fetch", fetcher); fetcher.mockReset();
@@ -75,18 +79,29 @@ it("successful login uses official Credentials client and redirects", async () =
 it("logout uses supported signOut without owner/token controls", async () => {
   mocks.status = "authenticated"; render(<AuthNavigation />);
   fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
-  await waitFor(() => expect(mocks.signOut).toHaveBeenCalledWith({ redirect: false, redirectTo: "/login" }));
-  expect(mocks.replace).toHaveBeenCalledWith("/login");
+  await waitFor(() => expect(mocks.signOut).toHaveBeenCalledWith({ redirect: true, redirectTo: "/login" }));
+  expect(mocks.replace).not.toHaveBeenCalled(); expect(mocks.refresh).not.toHaveBeenCalled();
+});
+it("failed logout keeps the authenticated UI and reports retry without manual navigation", async () => {
+  mocks.status = "authenticated"; mocks.signOut.mockRejectedValue(new Error("PRIVATE_AUTH_FAILURE"));
+  render(<AuthNavigation />); fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง");
+  expect(screen.getByRole("button", { name: "ออกจากระบบ" })).toBeTruthy();
+  expect(mocks.replace).not.toHaveBeenCalled(); expect(mocks.refresh).not.toHaveBeenCalled();
+  expect(document.body.textContent).not.toContain("PRIVATE_AUTH_FAILURE");
 });
 it.each(["unauthenticated", "loading"])("gate hides protected content while %s", status => {
   mocks.status = status; render(<AuthGate><p>private training content</p></AuthGate>);
   expect(screen.queryByText("private training content")).toBeNull();
   if (status === "unauthenticated") expect(mocks.replace).toHaveBeenCalledWith("/login");
 });
-it("scenario catalog renders only API data; double-click start produces one request", async () => {
+it("scenario preparation renders API data; acknowledgement and double-click start produce one request", async () => {
   let finish!: (value: Response) => void;
-  fetcher.mockResolvedValueOnce(reply([scenario])).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
-  render(<ScenarioList />); const start = await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ });
+  fetcher.mockResolvedValueOnce(reply(scenario)).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+  render(<ScenarioStart scenarioId={scenario.id} />); const start = await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ });
+  expect((start as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(start); expect(fetcher).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("checkbox"));
   expect(screen.getByText("สถานการณ์จาก API")).toBeTruthy();
   fireEvent.click(start); fireEvent.click(start);
   expect(fetcher).toHaveBeenCalledTimes(2);
@@ -95,8 +110,8 @@ it("scenario catalog renders only API data; double-click start produces one requ
   expect(mocks.push).toHaveBeenCalledWith("/training/public-session");
 });
 it("start network retry reuses exact request ID/body", async () => {
-  fetcher.mockResolvedValueOnce(reply([scenario])).mockRejectedValueOnce(new Error("lost")).mockResolvedValueOnce(reply({ session: snapshot(), duplicate: true }));
-  render(<ScenarioList />); fireEvent.click(await screen.findByRole("button", { name: /เริ่มฝึกสถานการณ์/ }));
+  fetcher.mockResolvedValueOnce(reply(scenario)).mockRejectedValueOnce(new Error("lost")).mockResolvedValueOnce(reply({ session: snapshot(), duplicate: true }));
+  render(<ScenarioStart scenarioId={scenario.id} />); await screen.findByRole("checkbox"); fireEvent.click(screen.getByRole("checkbox")); fireEvent.click(screen.getByRole("button", { name: /เริ่มฝึกสถานการณ์/ }));
   fireEvent.click(await screen.findByRole("button", { name: "ลองอีกครั้ง" }));
   await waitFor(() => expect(mocks.push).toHaveBeenCalled());
   expect(fetcher.mock.calls[1]![1].body).toBe(fetcher.mock.calls[2]![1].body);
@@ -174,7 +189,20 @@ it("result renders server outcome/nullable scores without deriving pass or weake
   fetcher.mockResolvedValue(reply({ sessionId: "public-session", revision: 9, D: 1, W: null, S: 2, trainingScore: null, outcome: "PASSED", weakestSkills: ["S"], recommendation: { recommendationType: "DECISION_PRACTICE", recommendationKey: "public-key", reason: "คำแนะนำจากระบบ" } }));
   render(<Result sessionId="public-session" />); await screen.findByText("ผ่านการฝึก"); await screen.findByText("คำแนะนำจากระบบ");
   expect(screen.getByText("ยังไม่มีคะแนนรวม")).toBeTruthy(); expect(screen.queryByText("ยังไม่ผ่านเกณฑ์")).toBeNull();
+  expect(document.body.textContent).toContain("คุณผ่านเกณฑ์ในรอบฝึกนี้");
   expect(document.body.textContent).not.toContain("ownerId"); expect(document.body.textContent).not.toContain("EventCode");
+});
+it("decision result shows path scope and no legacy score", async () => {
+  fetcher.mockResolvedValue(reply({ sessionId: "public-session", revision: 1, D: null, W: null, S: null,
+    trainingScore: null, outcome: "PASSED", weakestSkills: [], evaluationMode: "DECISION_RULES_V1",
+    decisionSummary: { encountered: 1, safe: 1, review: 0, unassessed: 0, critical: 0, checkpoints: [{ ruleRef: "R-0123456789abcdef", label: "ตรวจที่มา", assessment: "SAFE", explanation: "ตรวจสอบผ่านช่องทางอื่น" }] },
+    recommendation: { recommendationType: "PATH_REFLECTION", recommendationKey: "encountered-path", reason: "ลองฝึกเส้นทางอื่น" } }));
+  render(<Result sessionId="public-session" />); await screen.findByText("ผ่านการฝึก");
+  expect(document.body.textContent).toContain("คุณผ่านเส้นทางที่พบในรอบนี้");
+  expect(document.body.textContent).toContain("ไม่ได้หมายถึงเชี่ยวชาญทุกประเภท");
+  expect(document.body.textContent).toContain("ตรวจสอบผ่านช่องทางอื่น");
+  expect(document.body.textContent).toContain("R-0123456789abcdef");
+  expect(document.body.textContent).not.toContain("คะแนนรวม");
 });
 it("unknown/missing session gives safe error instead of hidden fields", async () => {
   fetcher.mockResolvedValue(failure("SESSION_NOT_FOUND", 404)); render(<Training sessionId="public-session" />);

@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { AICharacterResponse, ScenarioAIContext } from "../src/dialogue/contracts.js";
+import type { AICharacterResponse, SanitizedMessage, ScenarioAIContext } from "../src/dialogue/contracts.js";
 import type { ResponsesClient } from "../src/providers/openai-scenario-provider.js";
 export const answer = (overrides: Partial<AICharacterResponse> = {}): AICharacterResponse => ({
   character_message: "ข้อความสมมติสำหรับฝึกพิจารณาสถานการณ์", observed_intent: "continue",
@@ -13,7 +13,7 @@ export const envelope = (output: unknown = answer()) => ({
 });
 export const refusal = () => ({ status: "completed", output: [{ type: "message", role: "assistant", status: "completed",
   content: [{ type: "refusal", refusal: "RAW_REFUSAL_MUST_NOT_ESCAPE" }] }] });
-export const context = (): ScenarioAIContext => ({
+export const context = (): ScenarioAIContext & { currentUserMessage: SanitizedMessage } => ({
   scenario: { templateId: "test-template", templateVersion: 2, category: "SMS_PHISHING", variant: "DEFAULT", title: "สถานการณ์สมมติ" },
   currentState: "contact", characterRole: "ตัวละครสมมติ",
   allowedBehaviors: ["แสดงข้อความสมมติ"], forbiddenBehaviors: ["ห้ามขอข้อมูลจริง"],

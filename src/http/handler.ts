@@ -4,9 +4,12 @@ import { getRuntime } from "../server/runtime.js";
 import { ApiError, publicError } from "./errors.js";
 import * as dto from "./dto.js";
 import * as mapping from "./mapping.js";
+import { randomUUID } from "node:crypto";
+import { trainingFailureCategory } from "../server/training-diagnostics.js";
+import { transactionFailureContext } from "../persistence/transaction-diagnostics.js";
 
 export const MAX_BODY_BYTES = 64 * 1024; // Includes JSON escapes for an 8,000-code-unit message.
-export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "action" | "quit" | "result";
+export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "opening" | "action" | "quit" | "result";
 function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input);
   if (!result.success) throw new ApiError("INVALID_REQUEST");
@@ -18,6 +21,8 @@ function success(schema: z.ZodType, data: unknown, status = 200) {
 }
 export function route(endpoint: Endpoint) {
   return async (request: Request, context: { params: Promise<Record<string, string>> }): Promise<Response> => {
+    const requestId = randomUUID();
+    let stage = "AUTH";
     try {
       const runtime = getRuntime();
       const user = await runtime.authenticator.authenticate(request);
@@ -26,31 +31,51 @@ export function route(endpoint: Endpoint) {
       parse(dto.emptyQuery, Object.fromEntries(url.searchParams));
       if (request.method === "POST" && request.headers.has("origin") && request.headers.get("origin") !== url.origin) throw new ApiError("INVALID_ORIGIN");
       const params = await context.params;
+      stage = "INPUT";
       const scenarioId = ["scenario", "start"].includes(endpoint) ? parse(dto.scenarioParams, params).scenarioId : "";
-      const sessionId = ["resume", "message", "action", "quit", "result"].includes(endpoint) ? parse(dto.sessionParams, params).sessionId : "";
+      const sessionId = ["resume", "message", "opening", "action", "quit", "result"].includes(endpoint) ? parse(dto.sessionParams, params).sessionId : "";
       // Validate before constructing database dependencies. No raw body/error logging.
-      const input = ["start", "message", "action", "quit"].includes(endpoint) ? await readJson(request, MAX_BODY_BYTES) : undefined;
+      const input = ["start", "message", "opening", "action", "quit"].includes(endpoint) ? await readJson(request, MAX_BODY_BYTES) : undefined;
       const start = endpoint === "start" ? parse(dto.startRequest, input) : undefined;
       const message = endpoint === "message" ? parse(dto.messageRequest, input) : undefined;
       const action = endpoint === "action" ? parse(dto.actionRequest, input) : undefined;
       const quit = endpoint === "quit" ? parse(dto.quitRequest, input) : undefined;
+      const opening = endpoint === "opening" ? parse(dto.openingRequest, input) : undefined;
+      stage = "INITIALIZATION";
       const app = await runtime.application();
+      stage = "APPLICATION";
       switch (endpoint) {
         case "scenarios": return success(z.array(dto.scenarioDto), app.listScenarios().map(mapping.toScenarioDto));
         case "scenario": return success(dto.scenarioDto, mapping.toScenarioDto(app.scenario(scenarioId)));
         case "start": {
           const reply = await app.start(scenarioId, user, mapping.toStartInput(start!));
+          stage = "OUTPUT";
           return success(dto.mutationDto, mapping.toMutationDto(reply), reply.duplicate ? 200 : 201);
         }
         case "resume": return success(dto.sessionDto, mapping.toSessionDto(await app.resume(sessionId, user)));
         case "message": return success(dto.messageDto, mapping.toMessageDto(await app.message(sessionId, user, mapping.toMessageInput(message!))));
+        case "opening": return success(dto.messageDto, mapping.toMessageDto(await app.opening(sessionId, user, { expectedRevision: opening!.expectedRevision })));
         case "action": return success(dto.mutationDto, mapping.toMutationDto(await app.action(sessionId, user, mapping.toActionInput(action!))));
         case "quit": return success(dto.mutationDto, mapping.toMutationDto(await app.quit(sessionId, user, mapping.toQuitInput(quit!))));
         case "result": return success(dto.resultDto, mapping.toResultDto(await app.result(sessionId, user)));
       }
     } catch (error) {
       const mapped = publicError(error);
-      return Response.json(dto.errorEnvelope.parse(mapped.body), { status: mapped.status, headers });
+      const failureHeaders: Record<string, string> = { ...headers, "X-MITJEE-Request-Id": requestId };
+      if (mapped.status >= 500) {
+        const category = trainingFailureCategory(error);
+        console.error(JSON.stringify({ event: "training_request_failed", endpoint, stage, requestId, category }));
+        // Closed, non-sensitive categories allow reproduction when log access is unavailable.
+        failureHeaders["X-MITJEE-Failure-Category"] = category;
+        failureHeaders["X-MITJEE-Failure-Stage"] = stage;
+        const transaction = transactionFailureContext(error);
+        if (category === "DATABASE_TRANSACTION" && transaction) {
+          failureHeaders["X-MITJEE-Transaction-Operation"] = transaction.operation;
+          failureHeaders["X-MITJEE-Transaction-Duration-Ms"] = String(transaction.durationMs);
+          failureHeaders["X-MITJEE-Transaction-Budget-Ms"] = String(transaction.budgetMs);
+        }
+      }
+      return Response.json(dto.errorEnvelope.parse(mapped.body), { status: mapped.status, headers: failureHeaders });
     }
   };
 }
