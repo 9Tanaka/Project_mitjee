@@ -7,6 +7,7 @@ import * as mapping from "./mapping.js";
 import { randomUUID } from "node:crypto";
 import { trainingFailureCategory } from "../server/training-diagnostics.js";
 import { transactionFailureContext } from "../persistence/transaction-diagnostics.js";
+import { identifyLatency, latencyRequestId, measureLatency, observeHttpLatency } from "../observability/latency.js";
 
 export const MAX_BODY_BYTES = 64 * 1024; // Includes JSON escapes for an 8,000-code-unit message.
 export type Endpoint = "scenarios" | "scenario" | "start" | "resume" | "message" | "opening" | "action" | "quit" | "result";
@@ -20,13 +21,16 @@ function success(schema: z.ZodType, data: unknown, status = 200) {
   return Response.json(dto.successEnvelope(schema).parse({ data }), { status, headers });
 }
 export function route(endpoint: Endpoint) {
-  return async (request: Request, context: { params: Promise<Record<string, string>> }): Promise<Response> => {
-    const requestId = randomUUID();
+  return async (request: Request, context: { params: Promise<Record<string, string>> }): Promise<Response> => observeHttpLatency(endpoint, async () => {
+    const requestId = latencyRequestId() ?? randomUUID();
     let stage = "AUTH";
     try {
       const runtime = getRuntime();
-      const user = await runtime.authenticator.authenticate(request);
-      if (!user || !z.string().min(1).max(120).safeParse(user.id).success) throw new ApiError("UNAUTHENTICATED");
+      const user = await measureLatency("auth", async () => {
+        const authenticated = await runtime.authenticator.authenticate(request);
+        if (!authenticated || !z.string().min(1).max(120).safeParse(authenticated.id).success) throw new ApiError("UNAUTHENTICATED");
+        return authenticated;
+      });
       const url = new URL(request.url);
       parse(dto.emptyQuery, Object.fromEntries(url.searchParams));
       if (request.method === "POST" && request.headers.has("origin") && request.headers.get("origin") !== url.origin) throw new ApiError("INVALID_ORIGIN");
@@ -41,6 +45,7 @@ export function route(endpoint: Endpoint) {
       const action = endpoint === "action" ? parse(dto.actionRequest, input) : undefined;
       const quit = endpoint === "quit" ? parse(dto.quitRequest, input) : undefined;
       const opening = endpoint === "opening" ? parse(dto.openingRequest, input) : undefined;
+      if (sessionId) identifyLatency(sessionId, message?.turnId);
       stage = "INITIALIZATION";
       const app = await runtime.application();
       stage = "APPLICATION";
@@ -77,5 +82,5 @@ export function route(endpoint: Endpoint) {
       }
       return Response.json(dto.errorEnvelope.parse(mapped.body), { status: mapped.status, headers: failureHeaders });
     }
-  };
+  });
 }

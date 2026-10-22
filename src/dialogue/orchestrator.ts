@@ -7,6 +7,7 @@ import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAICon
 import { freezeData, sanitizeMessage } from "./sanitize.js";
 import { callerTurnId, callerTurnKey, callerStateTurn, callerTurnRequired, callerTurnReady } from "../domain/call-center.js";
 import { validateCallOutput } from "../domain/call-conversation.js";
+import { beginLatencySpan, identifyLatency, latencyFlags, measureLatency, measureLatencySync } from "../observability/latency.js";
 
 const messageRequestSchema = z.strictObject({
   sessionId: z.string().min(1), ownerId: z.string().min(1),
@@ -61,20 +62,23 @@ export class ScenarioDialogueOrchestrator {
     const parsed = messageRequestSchema.safeParse(input);
     if (!parsed.success) throw new DomainError("INVALID_MESSAGE_REQUEST");
     const request = parsed.data;
+    identifyLatency(request.sessionId, request.turnId);
     const text = sanitizeMessage(request.text);
     if (!text) throw new DomainError("EMPTY_SANITIZED_MESSAGE");
     const { session, template } = await this.core.getSessionContext(request.sessionId, request.ownerId);
     const prior = session.dialogueTurns.find(t => t.id === request.turnId);
     if (prior) {
       if (prior.inputKey !== JSON.stringify({ sanitizedText: text })) throw new DomainError("IDEMPOTENCY_CONFLICT");
+      latencyFlags({ duplicate: true });
       return { turn: copy(prior), duplicate: true };
     }
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== request.expectedRevision) throw new DomainError("REVISION_CONFLICT");
     if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerTurnReady(session, template))) throw new DomainError("CALL_NOT_READY");
     if (!template.characterRole) throw new DomainError("DIALOGUE_ROLE_NOT_CONFIGURED");
+    const characterRole = template.characterRole;
     const state = template.states.find(s => s.id === session.state)!;
-    const context: ScenarioAIContext = freezeData({
+    const context: ScenarioAIContext = measureLatencySync("context", () => freezeData({
       scenario: {
         templateId: template.id, templateVersion: template.version,
         category: template.category, variant: template.variant, title: sanitizeMessage(template.title),
@@ -82,31 +86,33 @@ export class ScenarioDialogueOrchestrator {
       },
       currentState: session.state,
       ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
-      characterRole: sanitizeMessage(template.characterRole),
+      characterRole: sanitizeMessage(characterRole),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage),
       forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
       recentSanitizedMessages: session.messages.slice(-12).map(m => ({
         id: m.id, role: m.role, text: sanitizeMessage(m.text).slice(0, 2000), state: m.state,
       })),
       currentUserMessage: { id: `${request.turnId}:user`, role: "user", text, state: session.state },
-    });
+    }));
 
-    const generated = await this.generate(context, state.fallbackMessage, `${request.sessionId}:${request.turnId}`, template);
+    const generated = await measureLatency("ai", () => this.generate(context, state.fallbackMessage, `${request.sessionId}:${request.turnId}`, template));
     // Candidate inspection, EventValidator and domain rules run inside this CAS commit.
-    return this.core.commitDialogueTurn({ ...request, sanitizedUserMessage: text, ...generated });
+    return measureLatency("commit", () => this.core.commitDialogueTurn({ ...request, sanitizedUserMessage: text, ...generated }));
   }
 
   async openCall(input: { sessionId: string; ownerId: string; expectedRevision: number }): Promise<DialogueReply> {
     if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) throw new DomainError("INVALID_COMMAND");
     const { session, template } = await this.core.getSessionContext(input.sessionId, input.ownerId);
     if (!template.callCenter) throw new DomainError("INVALID_STATE");
+    const callStoryId = template.callCenter.storyId;
     if (template.callCenter.continuousConversation && input.expectedRevision !== session.revision) {
       const replay = session.dialogueTurns.find(t => t.snapshotRevision === input.expectedRevision && (t.id === "caller-opening" || t.id.startsWith("caller-state-")));
-      if (replay) return { turn: copy(replay), duplicate: true };
+      if (replay) { identifyLatency(input.sessionId, replay.id); latencyFlags({ duplicate: true }); return { turn: copy(replay), duplicate: true }; }
     }
     const prior = callerStateTurn(session);
     if (prior) {
       if (prior.inputKey !== callerTurnKey(session.state)) throw new DomainError("IDEMPOTENCY_CONFLICT");
+      identifyLatency(input.sessionId, prior.id); latencyFlags({ duplicate: true });
       return { turn: copy(prior), duplicate: true };
     }
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
@@ -115,16 +121,17 @@ export class ScenarioDialogueOrchestrator {
     const state = template.states.find(s => s.id === session.state)!;
     const kind = session.state === "CALL_CONNECTED" ? "CHARACTER_OPENING" : "CHARACTER_STATE_TURN";
     const turnId = callerTurnId(session.state);
-    const context: ScenarioAIContext = freezeData({
+    identifyLatency(input.sessionId, turnId);
+    const context: ScenarioAIContext = measureLatencySync("context", () => freezeData({
       scenario: { templateId: template.id, templateVersion: template.version, category: template.category,
-        variant: template.variant, title: sanitizeMessage(template.title), callStoryId: template.callCenter.storyId },
+        variant: template.variant, title: sanitizeMessage(template.title), callStoryId },
       currentState: session.state, characterRole: sanitizeMessage(template.characterRole!),
       ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
       recentSanitizedMessages: session.messages.slice(-12).map(m => ({ id: m.id, role: m.role, text: sanitizeMessage(m.text), state: m.state })), currentUserMessage: null, turnKind: kind,
-    });
-    const generated = await this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`, template);
-    return this.core.commitCharacterOpening({ ...input, kind, turnId, ...generated });
+    }));
+    const generated = await measureLatency("ai", () => this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`, template));
+    return measureLatency("commit", () => this.core.commitCharacterOpening({ ...input, kind, turnId, ...generated }));
   }
 
   private async generate(context: ScenarioAIContext, fallback: string, requestKey: string, template: import("../domain/schema.js").ScenarioTemplate) {
@@ -133,19 +140,26 @@ export class ScenarioDialogueOrchestrator {
     let attempts = 0;
     for (let attempt = 0; attempt < 2; attempt++) { // Initial attempt + one retry (Demo assumption).
       attempts++;
+      const retryComplete = attempt > 0 ? beginLatencySpan("retry", attempt + 1) : undefined;
+      let attemptSucceeded = false;
       try {
-        const raw: unknown = await withDeadline(signal => this.provider.generateCharacterResponse(context, {
+        const raw: unknown = await measureLatency("llm", () => withDeadline(signal => this.provider.generateCharacterResponse(context, {
           signal, requestId: `${requestKey}:${attempt + 1}`,
-        }), this.timeoutMs);
-        const output = aiCharacterResponseSchema.safeParse(raw);
-        if (!output.success) throw new AttemptFailure("INVALID_OUTPUT");
-        try { validateCallOutput(output.data, template, context.currentState); } catch { throw new AttemptFailure("INVALID_OUTPUT"); }
-        if (output.data.safety.contains_real_pii || output.data.safety.out_of_scope) throw new AttemptFailure("SAFETY_BLOCKED");
-        if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");
-        response = { ...output.data, character_message: sanitizeMessage(output.data.character_message) };
-        if (!response.character_message) throw new AttemptFailure("INVALID_OUTPUT");
+        }), this.timeoutMs), attempt + 1);
+        const validationComplete = beginLatencySpan("validation", attempt + 1);
+        try {
+          const output = aiCharacterResponseSchema.safeParse(raw);
+          if (!output.success) throw new AttemptFailure("INVALID_OUTPUT");
+          try { validateCallOutput(output.data, template, context.currentState); } catch { throw new AttemptFailure("INVALID_OUTPUT"); }
+          if (output.data.safety.contains_real_pii || output.data.safety.out_of_scope) throw new AttemptFailure("SAFETY_BLOCKED");
+          if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");
+          response = { ...output.data, character_message: sanitizeMessage(output.data.character_message) };
+          if (!response.character_message) throw new AttemptFailure("INVALID_OUTPUT");
+          validationComplete();
+        } catch (error) { validationComplete("failure"); throw error; }
         // This field describes terminal fallback failure, not a recovered attempt.
         failureReason = null;
+        attemptSucceeded = true;
         break;
       } catch (error) {
         response = null;
@@ -153,7 +167,7 @@ export class ScenarioDialogueOrchestrator {
         const invalidCallOutput = context.callConversation && error instanceof Error && "category" in error && error.category === "INVALID_OUTPUT";
         failureReason = error instanceof AttemptFailure ? error.reason : error instanceof ProviderRefusal ? "REFUSAL" : invalidCallOutput ? "INVALID_OUTPUT" : "ERROR";
         if (failureReason === "SAFETY_BLOCKED") break; // Do not retry a known unsafe response.
-      }
+      } finally { retryComplete?.(attemptSucceeded ? "success" : "failure"); }
     }
 
     const policy = template.states.find(s => s.id === context.currentState)!.conversation;
@@ -161,6 +175,7 @@ export class ScenarioDialogueOrchestrator {
       !policy.decisionSignals.includes(response.interaction_signal!) &&
       context.recentSanitizedMessages.filter(m => m.role === "character" && m.state === context.currentState).length + 1 >= policy.maxConversationalTurns;
     const usedFallback = response === null || !!boundedRecovery;
+    latencyFlags({ fallback: usedFallback });
     if (boundedRecovery) response = null; // Authored signal must accompany authored words, never relabel model text.
     if (!response) {
       response = {

@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "id": "6e5c9f1f-2f75-4dcd-8b2f-984b7fb4d747",
+    "mode": "live",
+    "status": "COMPLETED",
+    "startedAt": "2026-10-22T10:55:12.949Z",
+    "completedAt": "2026-10-22T11:00:52.694Z",
+    "reportedBaseCommit": "fc5af44c2773851179b8a3599d370c3a178b1cb2",
+    "workingTreeDisclosure": "Phase 1 instrumentation and benchmark changes were uncommitted during collection; the reported commit is HEAD only and does not identify the complete measured source snapshot.",
+    "blockers": []
+  },
+  "methodology": {
+    "scenario": {
+      "story": "CC-01",
+      "templateVersion": 6,
+      "initialMeasuredState": "IDENTITY_CLAIM",
+      "measuredUserTurnsPerSession": 1,
+      "freshRetainedSyntheticSessionPerSample": true
+    },
+    "concurrency": 1,
+    "warmupsPerCohort": 2,
+    "measuredSamplesPerCohort": 10,
+    "liveDialogueCallsIncludingWarmups": 24,
+    "liveSuccessfulDialogueCallCap": 24,
+    "percentile": "nearest-rank; p95 exploratory at n=10",
+    "traceTransport": "service",
+    "authentication": null,
+    "sqlReads": null,
+    "sqlWrites": null,
+    "setup": "Mock caller openings and one received-call action per fresh session ran outside measured traces."
+  },
+  "runtime": {
+    "database": "MySQL runtime",
+    "persistenceScope": "training_repository",
+    "scenarioProvider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "speechProvider": "azure",
+    "serviceAuthentication": null
+  },
+  "initialization": {
+    "durationMs": 3380,
+    "scope": "application setup plus MySQL template publication/connection"
+  },
+  "inputAudioFixture": {
+    "description": "Single Azure-generated synthetic WAV; outside trace",
+    "bytes": 102044,
+    "generationMs": 935
+  },
+  "setupCounts": {
+    "mockActions": 24,
+    "mockOpenings": 48,
+    "retainedSyntheticSessions": 24
+  },
+  "cohorts": {
+    "text": {
+      "warmupSamples": 2,
+      "warmupOutcomes": {
+        "provider_success": 2,
+        "fallback": 0,
+        "committed_audio_unavailable": 0,
+        "operation_failure": 0,
+        "cancelled": 0,
+        "replay": 0
+      },
+      "measuredSamples": 10,
+      "outcomes": {
+        "provider_success": 10,
+        "fallback": 0,
+        "committed_audio_unavailable": 0,
+        "operation_failure": 0,
+        "cancelled": 0,
+        "replay": 0
+      },
+      "successfulDialogueCalls": 10,
+      "llmFallbacks": 0,
+      "committedTtsUnavailable": 0,
+      "attempts": 10,
+      "retryCount": 0,
+      "latencyMs": {
+        "total": { "samples": 10, "min": 3752.0658, "p50": 4171.7609, "p95NearestRank": 4908.7364, "max": 4908.7364 },
+        "stages": {
+          "auth": null,
+          "db_preflight": { "samples": 10, "min": 360.4657, "p50": 377.6371, "p95NearestRank": 400.9514, "max": 400.9514 },
+          "context": { "samples": 10, "min": 0.0942, "p50": 0.146, "p95NearestRank": 0.6862, "max": 0.6862 },
+          "llm": { "samples": 10, "min": 1346.0152, "p50": 1847.3487, "p95NearestRank": 2553.2179, "max": 2553.2179 },
+          "validation": { "samples": 10, "min": 0.0481, "p50": 0.0618, "p95NearestRank": 0.8855, "max": 0.8855 },
+          "retry": null,
+          "ai": { "samples": 10, "min": 1346.0914, "p50": 1848.364, "p95NearestRank": 2553.3152, "max": 2553.3152 },
+          "commit": { "samples": 10, "min": 1191.9315, "p50": 1246.0754, "p95NearestRank": 1300.5812, "max": 1300.5812 },
+          "durable_save": { "samples": 10, "min": 806.2846, "p50": 856.646, "p95NearestRank": 896.6001, "max": 896.6001 },
+          "stt": null,
+          "tts": null
+        }
+      },
+      "repositoryLogicalOperations": {
+        "reads": 70,
+        "writes": 10,
+        "get": { "attempts": 40, "succeeded": 40, "failed": 0 },
+        "getTemplate": { "attempts": 30, "succeeded": 30, "failed": 0 },
+        "create": { "attempts": 0, "succeeded": 0, "failed": 0 },
+        "save": { "attempts": 10, "succeeded": 10, "failed": 0 },
+        "publish": { "attempts": 0, "succeeded": 0, "failed": 0 }
+      }
+    },
+    "voice": {
+      "warmupSamples": 2,
+      "warmupOutcomes": {
+        "provider_success": 2,
+        "fallback": 0,
+        "committed_audio_unavailable": 0,
+        "operation_failure": 0,
+        "cancelled": 0,
+        "replay": 0
+      },
+      "measuredSamples": 10,
+      "outcomes": {
+        "provider_success": 10,
+        "fallback": 0,
+        "committed_audio_unavailable": 0,
+        "operation_failure": 0,
+        "cancelled": 0,
+        "replay": 0
+      },
+      "successfulDialogueCalls": 10,
+      "llmFallbacks": 0,
+      "committedTtsUnavailable": 0,
+      "audioStatusCounts": { "READY": 10, "UNAVAILABLE": 0, "REPLAY": 0, "unknown": 0 },
+      "attempts": 10,
+      "retryCount": 0,
+      "latencyMs": {
+        "total": { "samples": 10, "min": 5959.2194, "p50": 7213.9114, "p95NearestRank": 9492.1583, "max": 9492.1583 },
+        "stages": {
+          "auth": null,
+          "db_preflight": { "samples": 10, "min": 757.5302, "p50": 768.954, "p95NearestRank": 784.3668, "max": 784.3668 },
+          "context": { "samples": 10, "min": 0.0793, "p50": 0.0946, "p95NearestRank": 0.162, "max": 0.162 },
+          "llm": { "samples": 10, "min": 1450.7463, "p50": 2214.2145, "p95NearestRank": 2996.0075, "max": 2996.0075 },
+          "validation": { "samples": 10, "min": 0.0443, "p50": 0.068, "p95NearestRank": 0.3278, "max": 0.3278 },
+          "retry": null,
+          "ai": { "samples": 10, "min": 1450.9292, "p50": 2214.3224, "p95NearestRank": 2996.1225, "max": 2996.1225 },
+          "commit": { "samples": 10, "min": 1228.2015, "p50": 1253.5954, "p95NearestRank": 1331.5771, "max": 1331.5771 },
+          "durable_save": { "samples": 10, "min": 855.709, "p50": 873.0952, "p95NearestRank": 945.8379, "max": 945.8379 },
+          "stt": { "samples": 10, "min": 1364.7116, "p50": 1389.6432, "p95NearestRank": 1409.4869, "max": 1409.4869 },
+          "tts": { "samples": 10, "min": 374.7117, "p50": 655.9729, "p95NearestRank": 2914.1622, "max": 2914.1622 }
+        }
+      },
+      "repositoryLogicalOperations": {
+        "reads": 90,
+        "writes": 10,
+        "get": { "attempts": 50, "succeeded": 50, "failed": 0 },
+        "getTemplate": { "attempts": 40, "succeeded": 40, "failed": 0 },
+        "create": { "attempts": 0, "succeeded": 0, "failed": 0 },
+        "save": { "attempts": 10, "succeeded": 10, "failed": 0 },
+        "publish": { "attempts": 0, "succeeded": 0, "failed": 0 }
+      }
+    }
+  },
+  "separateSyntheticHarnessRun": {
+    "runId": "172773b2-fc23-4b36-88f9-6734f0cd73fa",
+    "startedAt": "2026-10-22T10:54:36.554Z",
+    "completedAt": "2026-10-22T10:54:52.989Z",
+    "status": "COMPLETED",
+    "runtime": "in-memory repository with deterministic mock AI, STT, and TTS",
+    "warmupsPerCohort": 2,
+    "measuredSamplesPerCohort": 30,
+    "textMockSuccesses": 30,
+    "voiceMockSuccesses": 30,
+    "blockers": [],
+    "percentilesCombinedWithLiveRun": false
+  },
+  "verification": {
+    "solFocusedRegression": { "files": 9, "passed": 168, "skipped": 1, "failed": 0, "status": "PASS" },
+    "benchmarkHelperTestsAtCollection": { "passed": 4, "failed": 0, "status": "PASS" },
+    "fullVitest": { "status": "PASS", "filesPassed": 55, "filesSkipped": 4, "testsPassed": 897, "testsSkipped": 49 },
+    "typecheck": "PASS",
+    "productionBuild": "PASS",
+    "clientBundleAudit": { "status": "PASS", "javascriptArtifacts": 69 },
+    "mysqlIntegrationTests": "NOT RUN — no dedicated MySQL test database",
+    "endToEndTests": "NOT RUN — no dedicated test database"
+  }
+}

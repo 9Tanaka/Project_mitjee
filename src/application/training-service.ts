@@ -8,6 +8,7 @@ import { actionBindings, playableTemplates, registeredTemplates, publicScenario 
 import { projectResult, projectSession } from "./projections.js";
 import { CALL_STORIES } from "../domain/constants.js";
 import { callStoryRegistry, type CallStoryId } from "../fixtures/call-center-foundation.js";
+import { identifyLatency, latencyFlags, measureLatency } from "../observability/latency.js";
 
 export type CallVariantSelector = () => "NORMAL_CALL" | "SCAM_CALL";
 export class TrainingApplicationService {
@@ -82,15 +83,19 @@ export class TrainingApplicationService {
     return { session: projectSession(reply.session, t), duplicate: reply.duplicate };
   }
   async opening(id: string, user: AuthenticatedPrincipal, input: { expectedRevision: number }) {
-    await this.snapshot(id, user);
+    identifyLatency(id);
+    await measureLatency("db_preflight", () => this.snapshot(id, user));
     const reply = await this.dialogue.openCall({ sessionId: id, ownerId: user.id, expectedRevision: input.expectedRevision });
+    latencyFlags({ duplicate: reply.duplicate });
     return { session: await this.resume(id, user), duplicate: reply.duplicate,
       turn: { turnId: reply.turn.id, committedRevision: reply.turn.committedRevision, characterMessage: reply.turn.response.character_message } };
   }
   async message(id: string, user: AuthenticatedPrincipal, input: SendMessageInput) {
-    await this.snapshot(id, user);
+    identifyLatency(id, input.turnId);
+    await measureLatency("db_preflight", () => this.snapshot(id, user));
     try {
       const reply = await this.dialogue.sendMessage({ ...input, sessionId: id, ownerId: user.id });
+      latencyFlags({ duplicate: reply.duplicate });
       return { session: await this.resume(id, user), duplicate: reply.duplicate,
         turn: { turnId: reply.turn.id, committedRevision: reply.turn.committedRevision, characterMessage: reply.turn.response.character_message } };
     } catch (error) {
