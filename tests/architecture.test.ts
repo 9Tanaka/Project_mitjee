@@ -53,7 +53,7 @@ it("browser roots and public contracts cannot reach server, domain, credentials 
   for (const [file, source] of roots) {
     for (const dependency of reached(file)) {
       expect(localName(dependency), localName(file)).not.toMatch(/^(http|application|auth|accounts|server|domain|quiz|dialogue|persistence|generated|fixtures|security|providers)\/|^core\.ts$/);
-      expect(dependency, localName(file)).not.toMatch(/^(node:|bcrypt|@prisma|mariadb|openai|microsoft-cognitiveservices-speech-sdk|ws$|next-auth$|next-auth\/(?!react$))/);
+      expect(dependency, localName(file)).not.toMatch(/^(node:|bcrypt|@prisma|mariadb|pg|openai|microsoft-cognitiveservices-speech-sdk|ws$|next-auth$|next-auth\/(?!react$))/);
     }
     expect(source, localName(file)).not.toMatch(/localStorage|sessionStorage|document\.cookie|process\.env|dangerouslySetInnerHTML|x-owner-id|x-user-id/);
   }

@@ -1,36 +1,40 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaPg } from "@prisma/adapter-pg";
+import type { PoolConfig } from "pg";
 import { PrismaClient } from "../generated/prisma/client.js";
 
-// The driver's 1s default can expire during a remote TLS/MySQL handshake.
-// Keep both waits finite; pool acquisition must outlast an individual connection.
-export const DATABASE_CONNECT_TIMEOUT_MS = 10_000;
-export const DATABASE_ACQUIRE_TIMEOUT_MS = 15_000;
+export const DATABASE_CONNECTION_TIMEOUT_MS = 10_000;
+export const DATABASE_IDLE_TIMEOUT_MS = 10_000;
+export const DATABASE_POOL_LIMIT = 8;
 
-/** Composition-root helper, never imported by Core. No client is opened on module import. */
-export function createPrismaClient(databaseUrl: string, options: {
-  tlsCa?: string;
-  /** Trusted local server RSA public key path/content; only for loopback development/tests. */
-  loopbackRsaPublicKey?: string;
-} = {}): PrismaClient {
-  const url = new URL(databaseUrl);
-  if (url.protocol !== "mysql:") throw new Error("Expected a mysql database URL");
-  if (url.search || url.hash) throw new Error("Configure TLS explicitly with tlsCa; URL parameters are not silently ignored");
-  const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
-  if (!loopback && options.loopbackRsaPublicKey) {
-    throw new Error("RSA public key configuration is restricted to loopback development/test connections");
-  }
-  if (!loopback && !options.tlsCa) {
-    throw new Error("Remote database connections require a trusted TLS CA");
-  }
-  const adapter = new PrismaMariaDb({
-    host: url.hostname === "[::1]" ? "::1" : url.hostname, port: Number(url.port || 3306),
-    user: decodeURIComponent(url.username), password: decodeURIComponent(url.password),
-    database: decodeURIComponent(url.pathname.slice(1)), connectionLimit: 8,
-    connectTimeout: DATABASE_CONNECT_TIMEOUT_MS, acquireTimeout: DATABASE_ACQUIRE_TIMEOUT_MS,
-    // Domain timestamps are UTC milliseconds, independent of server timezone.
-    timezone: "Z", ...(options.tlsCa ? { ssl: { ca: options.tlsCa, rejectUnauthorized: true } } : {}),
-    ...(options.loopbackRsaPublicKey ? { cachingRsaPublicKey: options.loopbackRsaPublicKey } : {}),
-    allowPublicKeyRetrieval: false,
-  });
+/** No URL, driver error or connection parameter is included in configuration errors. */
+export function postgresPoolConfig(databaseUrl: string, options: { tlsCa?: string } = {}): PoolConfig {
+  let url: URL;
+  try { url = new URL(databaseUrl); } catch { throw new Error("Invalid PostgreSQL database URL"); }
+  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") throw new Error("Expected a PostgreSQL database URL");
+  // pg connection strings can replace the explicit SSL object. Parse only the
+  // connection identity here; all runtime query/hash options fail closed.
+  if (url.search || url.hash) throw new Error("Configure TLS explicitly with tlsCa; URL parameters and fragments are not accepted");
+  if (Object.keys(options).some(key => key !== "tlsCa")) throw new Error("Unsupported database configuration option");
+  let user: string, password: string, database: string;
+  try { user = decodeURIComponent(url.username); password = decodeURIComponent(url.password); database = decodeURIComponent(url.pathname.slice(1)); }
+  catch { throw new Error("Invalid PostgreSQL connection identity"); }
+  if (!url.hostname || !user || !database || /[\x00-\x1f/\\]/.test(database)) throw new Error("Explicit PostgreSQL host, user and database are required");
+  const host = url.hostname === "[::1]" ? "::1" : url.hostname;
+  const loopback = ["127.0.0.1", "localhost", "::1"].includes(host);
+  const ca = options.tlsCa?.trim();
+  if (!loopback && !ca) throw new Error("Remote database connections require a trusted TLS CA");
+  return {
+    host, port: Number(url.port || 5432), user, password, database,
+    max: DATABASE_POOL_LIMIT, connectionTimeoutMillis: DATABASE_CONNECTION_TIMEOUT_MS,
+    idleTimeoutMillis: DATABASE_IDLE_TIMEOUT_MS,
+    // Explicit false prevents ambient PGSSLMODE from changing local test policy.
+    ssl: ca ? { ca, rejectUnauthorized: true } : false,
+    options: "-c timezone=UTC",
+  };
+}
+
+/** PrismaPg owns its lazy pool; Prisma $disconnect disposes that pool. */
+export function createPrismaClient(databaseUrl: string, options: { tlsCa?: string } = {}): PrismaClient {
+  const adapter = new PrismaPg(postgresPoolConfig(databaseUrl, options), { schema: "public" });
   return new PrismaClient({ adapter });
 }

@@ -372,11 +372,10 @@ describe("HTTP Route Handler integration", () => {
   });
 });
 
-const mysqlUrl = process.env.MYSQL_TEST_DATABASE_URL;
-it.skipIf(!mysqlUrl)("HTTP services/real MySQL complete path and persisted resume", async () => {
-  if (!/^mitjee_test(?:_[a-z0-9_]+)?$/.test(new URL(mysqlUrl!).pathname.slice(1))) throw new Error("Dedicated test database required");
-  const key = process.env.MYSQL_TEST_RSA_PUBLIC_KEY_PATH;
-  const client = createPrismaClient(mysqlUrl!, key ? { loopbackRsaPublicKey: key } : {});
+const postgresUrl = process.env.POSTGRES_TEST_DATABASE_URL;
+it.skipIf(!postgresUrl)("HTTP services/real PostgreSQL complete path and persisted resume", async () => {
+  const { postgresTestClient } = await import("./postgres.helpers.js");
+  const client = postgresTestClient()!;
   try {
     const h = await harness(new MockScenarioModelProvider(), new PrismaTrainingRepository(client)); let s = await h.begin();
     for (const [id, payload] of safeSteps) { s = messageDto.parse((await (await h.say(s)).json()).data).session; s = await h.step(s, id, payload); }

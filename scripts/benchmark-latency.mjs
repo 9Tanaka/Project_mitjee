@@ -13,6 +13,10 @@ nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
 
 const args = new Set(process.argv.slice(2));
 const mode = args.has("--live") ? "live" : args.has("--synthetic") ? "synthetic" : null;
+if (mode === "live") {
+  console.error("The MySQL/Azure live baseline requires a separate checkout of 91e707f376372aed5bdf415dd7bbb32d58583536. This branch is PostgreSQL preparation; no replacement live benchmark is approved.");
+  process.exit(1);
+}
 const runId = randomUUID();
 const startedAt = new Date().toISOString();
 const LIVE_PLAN = { warmups: 2, measured: 10 };

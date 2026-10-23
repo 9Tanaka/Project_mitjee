@@ -12,11 +12,11 @@ export function createDatabase(): Client {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("Database configuration is required");
   const caPath = process.env.DATABASE_TLS_CA_PATH;
-  const ca = process.env.DATABASE_TLS_CA || (caPath ? readFileSync(caPath, "utf8") : undefined);
-  const rsaPath = process.env.DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH;
+  let ca: string | undefined;
+  try { ca = process.env.DATABASE_TLS_CA || (caPath ? readFileSync(caPath, "utf8") : undefined); }
+  catch { throw new Error("Database trusted CA file could not be read"); }
   return createPrismaClient(url, {
     ...(ca ? { tlsCa: ca } : {}),
-    ...(rsaPath ? { loopbackRsaPublicKey: rsaPath } : {}),
   });
 }
 export async function closeDatabase(client: Client | undefined): Promise<void> {

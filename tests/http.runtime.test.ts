@@ -16,7 +16,7 @@ beforeEach(() => {
   vi.stubEnv("AUTH_SECRET", "");
   vi.stubEnv("AI_PROVIDER", "mock");
   vi.stubEnv("CALL_CENTER_DEMO_VARIANT", ""); vi.stubEnv("CALL_CENTER_DEMO_STORY", ""); vi.stubEnv("DATABASE_TLS_CA", "");
-  vi.stubEnv("DATABASE_URL", "mysql://localhost/mitjee_test");
+  vi.stubEnv("DATABASE_URL", "postgres://app@localhost/mitjee_test");
   vi.stubEnv("DATABASE_TLS_CA_PATH", ""); vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "");
 });
 afterEach(() => { vi.unstubAllEnvs(); delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime;
@@ -50,10 +50,10 @@ it.each(["", "invalid", "openai"])("invalid provider configuration (%s) fails be
   await expect(getRuntime().application()).rejects.toThrow(/AI_PROVIDER|OPENAI_API_KEY/);
   expect(mocks.create).not.toHaveBeenCalled(); expect(mocks.assemble).not.toHaveBeenCalled();
 });
-it("loopback RSA path remains an explicit composition-root option", async () => {
-  vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "/trusted/local-public.pem");
+it("verified TLS CA reaches the PostgreSQL composition root", async () => {
+  vi.stubEnv("DATABASE_TLS_CA", "trusted-ca");
   const runtime = getRuntime(); await runtime.application();
-  expect(mocks.create).toHaveBeenCalledWith("mysql://localhost/mitjee_test", { loopbackRsaPublicKey: "/trusted/local-public.pem" });
+  expect(mocks.create).toHaveBeenCalledWith("postgres://app@localhost/mitjee_test", { tlsCa: "trusted-ca" });
   await runtime.close();
 });
 it("HTTP and custom-server composition use the same private demo variant selector", async () => {

@@ -1,8 +1,3 @@
-import { spawnSync } from "node:child_process";
-if (!process.env.MYSQL_TEST_DATABASE_URL) {
-  console.error("MYSQL_TEST_DATABASE_URL is required. Use a dedicated mitjee_test database; this command must not silently skip DB tests.");
-  process.exit(1);
-}
-const result = spawnSync(process.execPath, ["node_modules/vitest/vitest.mjs", "run", "tests/persistence.mysql.test.ts", "tests/accounts.mysql.test.ts", "tests/quiz.mysql.test.ts", "tests/call-variants.mysql.test.ts"], { stdio: "inherit" });
-if (result.error) console.error(result.error.message);
-process.exit(result.status ?? 1);
+// Retained MySQL tooling must run with its matching schema, client and runtime.
+console.error("This legacy MySQL command is archived. Reproduce it in a separate checkout of 91e707f376372aed5bdf415dd7bbb32d58583536; reference source is in archive/mysql/phase1. PostgreSQL preparation has no verified live auth/E2E replacement yet.");
+process.exitCode = 1;
