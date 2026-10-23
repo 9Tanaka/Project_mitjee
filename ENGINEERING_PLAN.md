@@ -1,7 +1,7 @@
 # MITJEE engineering plan
 
 Owner: ASTRA. Architecture baseline: `feat/rule-based-evaluation`, `fc5af44c2773851179b8a3599d370c3a178b1cb2`.
-Status: Phase 1 APPROVED after baseline and verification review; Phase 2 preparation GO immediately after root records the reproducible old-stack commit. Later milestone gates remain as specified below. This file is the only file owned by this planning task.
+Status: Phases 1, 2 and 3 preparation APPROVED; offline Phase 4 harness APPROVED. Final code/setup readiness is READY_WITH_NOTES; production/cutover readiness is NOT_READY. ASTRA owns this plan and the final engineering review.
 
 ## Scope and execution discipline
 
@@ -216,3 +216,11 @@ ASTRA reviewed the completed PostgreSQL schema/baseline migration, runtime adapt
 Decision: APPROVE Phase 2 architecture and source preparation, conditional only on LUNA completing full regression tests, typecheck, production build and client-bundle audit successfully. SOL reports schema validation/generation, typecheck/dependency checks and focused verification passing (55 passed, 59 skipped; four files passed and five skipped). Database-dependent skips are NOT RUN. Root may record the completed verification evidence and proceed to Phase 3 code-only preparation once those local gates pass, without another architecture decision. A failing gate must be resolved before handoff.
 
 This is not PostgreSQL runtime replacement or deployment approval. No real PostgreSQL/Supabase migration, catalog/transaction/race behavior, certificate handshake, historical data parity or role enforcement has been verified. Those live gates, data transfer, environment changes, provisioning and cutover remain withheld. Phase 3 must follow the existing exact independent Azure STT / ElevenLabs TTS contract, preserving committed text and replay semantics; ElevenLabs account/audio/Thai-quality/latency checks remain NOT RUN without credentials. AI, aggregate-read and perceived-latency optimization remain NO CHANGE.
+
+## Phase 3 source closure and final review (2026-10-24)
+
+Phase 2's conditional local gate was satisfied: LUNA recorded 936 tests passed, 60 skipped, typecheck/build success and client audit success across 69 JavaScript artifacts. Root preserved preparation at `840744c`; database-dependent skips remain NOT RUN.
+
+ASTRA inspected the final independent factories, Azure STT-only implementation, ElevenLabs request/PCM/WAV adapter, body cancellation, fixed-cap response allocation, configuration regressions and opt-in live roundtrip. The prior partial-configuration construction error is corrected: absent, partial or invalid ElevenLabs settings produce unavailable TTS, without a vendor request or blocking STT/text commit. Response storage is bounded independently of chunk count. The unchanged service retains committed text after TTS failure/cancellation and suppresses provider repetition for committed replay. No Core, decision rule or public protocol rewrite is introduced.
+
+Final LUNA verification, relayed by root, passed Prisma validation/generation, typecheck, the full serialized suite (971 passed, 60 skipped; 58 files passed, five skipped), focused speech tests (117/117), WebSocket tests (20/20), production build and the 69-artifact client bundle audit. The 60 PostgreSQL-dependent skips remain NOT RUN; lint remains NOT CONFIGURED. ASTRA found no remaining source blocker and APPROVES Phase 3 code preparation. Final code/setup readiness is READY_WITH_NOTES; production readiness remains NOT_READY. No live ElevenLabs or PostgreSQL run is represented by local tests. AI optimization and phases 5/6 remain NO CHANGE, and QLoRA remains BLOCKED by missing prerequisites. `FINAL_ENGINEERING_REVIEW.md` records the final evidence and outstanding gates; root will preserve the reviewed voice/report state in its own commit.
