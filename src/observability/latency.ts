@@ -19,6 +19,7 @@ export interface LatencySummary {
   totalMs: number; durationsMs: Record<LatencyStage, number | null>;
   ttftMs: null; ttftUnavailableReason: "non_streaming";
   repositoryReads: number; repositoryWrites: number; repositoryOperations: Record<RepositoryOperation, Count>;
+  aggregateDbReads: Count | null;
   persistenceScope: "training_repository"; prismaReadOperations: null; prismaWriteOperations: null; sqlReads: null; sqlWrites: null;
   events: Event[]; spans: Span[]; truncated: boolean;
 }
@@ -32,6 +33,7 @@ type Trace = {
   duplicate: boolean; fallback: boolean; attempts: number; events: Event[]; spans: Span[]; truncated: boolean;
   pendingSpans: Set<(status?: LatencyStatus) => void>;
   durations: Record<LatencyStage, number | null>; counts: Record<RepositoryOperation, Count>;
+  aggregateDbReads: Count | null;
 };
 const storage = new AsyncLocalStorage<Trace>();
 const key = randomBytes(32);
@@ -120,6 +122,16 @@ export function countRepository(operation: RepositoryOperation): (success: boole
     return success => { try { if (!trace.finished && !ended) { ended = true; if (success) count.succeeded++; else count.failed++; } } catch {} };
   } catch { return () => {}; }
 }
+/** Count actual Prisma session aggregate fetches, including the read inside SAVE.
+ * An included relation can issue several SQL statements; this is not a SQL counter. */
+export async function observeAggregateDbRead<T>(work: () => Promise<T>): Promise<T> {
+  const trace = current();
+  if (!trace) return work();
+  const count = trace.aggregateDbReads ??= { attempts: 0, succeeded: 0, failed: 0 };
+  count.attempts++;
+  try { const result = await work(); if (!trace.finished) count.succeeded++; return result; }
+  catch (error) { if (!trace.finished) count.failed++; throw error; }
+}
 /** Captures an existing transport deadline without changing its business work. */
 export function captureLatencyFinalizer(): (status: LatencyStatus) => void {
   const trace = current();
@@ -144,6 +156,7 @@ function finish(trace: Trace) {
       totalMs: elapsed(trace), durationsMs: { ...trace.durations }, ttftMs: null, ttftUnavailableReason: "non_streaming",
       repositoryReads: trace.counts.get.attempts + trace.counts.getTemplate.attempts,
       repositoryWrites: trace.counts.create.attempts + trace.counts.save.attempts + trace.counts.publish.attempts,
+      aggregateDbReads: trace.aggregateDbReads ? { ...trace.aggregateDbReads } : null,
       repositoryOperations: trace.counts, persistenceScope: "training_repository", prismaReadOperations: null, prismaWriteOperations: null, sqlReads: null, sqlWrites: null,
       events: trace.events, spans: trace.spans, truncated: trace.truncated,
     };
@@ -157,6 +170,7 @@ export async function runLatencyTrace<T>(options: LatencyOptions, work: () => Pr
   if (!transports.has(options.transport) || !operations.has(options.operation)) return work();
   const trace: Trace = { options, requestId: randomUUID(), timestamp: new Date().toISOString(), started: performance.now(), finished: false,
     sessionId: null, turnId: null, status: "success", duplicate: false, fallback: false, attempts: 0, events: [], spans: [], pendingSpans: new Set(), truncated: false,
+    aggregateDbReads: null,
     durations: Object.fromEntries(stages.map(stage => [stage, null])) as Record<LatencyStage, number | null>,
     counts: { get: { attempts: 0, succeeded: 0, failed: 0 }, getTemplate: { attempts: 0, succeeded: 0, failed: 0 },
       create: { attempts: 0, succeeded: 0, failed: 0 }, save: { attempts: 0, succeeded: 0, failed: 0 }, publish: { attempts: 0, succeeded: 0, failed: 0 } } };

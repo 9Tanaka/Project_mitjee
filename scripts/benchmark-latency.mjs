@@ -13,6 +13,7 @@ nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
 
 const args = new Set(process.argv.slice(2));
 const mode = args.has("--live") ? "live" : args.has("--synthetic") ? "synthetic" : null;
+const useWebSocket = args.has("--websocket");
 const runId = randomUUID();
 const startedAt = new Date().toISOString();
 const LIVE_PLAN = { warmups: 2, measured: 10 };
@@ -120,6 +121,7 @@ function actionIdForTransition(template, bindings, from, to) {
 }
 
 let database;
+let socketBenchmark;
 let app;
 let voice;
 let liveProvider;
@@ -179,6 +181,7 @@ async function runOneSample(cohort, phase, index) {
   let trace = null;
   let result = null;
   let safeFailure = null;
+  let clientRoundTripMs = null;
   activeProviderErrors = providerErrorCategories;
   paidProviderEnabled = true;
   try {
@@ -189,7 +192,10 @@ async function runOneSample(cohort, phase, index) {
       : () => voice.send(prepared.sessionId, prepared.user, {
         turnId: randomUUID(), expectedRevision: prepared.revision, audio: audioInput, mime: "audio/wav",
       });
-    result = await (cohort === "text"
+    if (socketBenchmark) {
+      const sample = await socketBenchmark.sample(cohort, prepared, INPUT_TEXT, audioInput);
+      trace = sample.trace; result = sample.result; clientRoundTripMs = sample.clientRoundTripMs;
+    } else result = await (cohort === "text"
       ? runLatencyTrace({
         transport: "service", operation: "message", sink: summary => { trace = summary; },
       }, work)
@@ -210,6 +216,7 @@ async function runOneSample(cohort, phase, index) {
     safeFailure,
     providerErrorCategories,
     trace,
+    clientRoundTripMs,
   };
 }
 
@@ -242,7 +249,7 @@ function stopReasonFor(record, state) {
 
 async function main() {
   if (!mode) stop("LATENCY_CONFIG_MISSING");
-  if (args.size !== 1 || (args.has("--live") && args.has("--synthetic"))) stop("LATENCY_CONFIG_MISSING");
+  if (args.size !== (useWebSocket ? 2 : 1) || [...args].some(arg => !["--live", "--synthetic", "--websocket"].includes(arg)) || (args.has("--live") && args.has("--synthetic"))) stop("LATENCY_CONFIG_MISSING");
 
   const modules = await Promise.all([
     import("../src/application/composition.ts"),
@@ -325,6 +332,7 @@ async function main() {
   if (!targetTemplate) stop("BENCHMARK_TEMPLATE_MISSING");
   template = targetTemplate;
   templateBindings = catalog.actionBindings(template);
+  if (useWebSocket) socketBenchmark = await (await import("./benchmark-latency-socket.mjs")).createSocketBenchmark(app, voice);
 
   report.status = "RUNNING";
   report.methodology = {
@@ -334,15 +342,16 @@ async function main() {
     measuredSamplesPerCohort: mode === "live" ? LIVE_PLAN.measured : SYNTHETIC_PLAN.measured,
     percentile: "nearest-rank; p95 exploratory at these sample counts",
     liveSuccessfulDialogueCallCap: 24,
-    auth: null,
+    auth: useWebSocket ? "production SocketCookieAuthenticator with ephemeral Auth.js JWT fixture" : null,
     sqlReads: null,
     sqlWrites: null,
-    traceTransport: "service",
+    traceTransport: useWebSocket ? "websocket" : "service",
     syntheticLiveSetup: "mock caller openings and one received-call action per fresh session, outside measured traces",
   };
   report.runtime = mode === "live" ? { database: "MySQL runtime", persistenceScope: "training_repository", serviceAuthentication: null }
     : { database: "in-memory", persistenceScope: "training_repository", serviceAuthentication: null };
   report.provider = providerMetadata(environment);
+  report.executionEnvironment = { node: process.version, platform: process.platform, architecture: process.arch };
 
   try {
     const git = childProcess.execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -410,6 +419,7 @@ async function saveArtifacts() {
 }
 
 async function closeResources() {
+  if (socketBenchmark) await socketBenchmark.close();
   if (database) {
     try { await (await import("../src/server/database.ts")).closeDatabase(database); }
     catch { blockers.push("DATABASE_DISCONNECT_FAILED"); }
@@ -417,7 +427,7 @@ async function closeResources() {
 }
 
 if (!mode) {
-  process.stderr.write("Usage: node scripts/benchmark-latency.mjs --synthetic | --live\n");
+  process.stderr.write("Usage: node scripts/benchmark-latency.mjs (--synthetic | --live) [--websocket]\n");
   process.exitCode = 2;
 } else {
   try { await main(); }

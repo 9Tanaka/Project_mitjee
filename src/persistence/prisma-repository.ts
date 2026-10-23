@@ -8,6 +8,7 @@ import type { TrainingSession } from "../domain/types.js";
 import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-contract.js";
 import { copy } from "../domain/copy.js";
 import { rememberTransactionFailure } from "./transaction-diagnostics.js";
+import { observeAggregateDbRead } from "../observability/latency.js";
 
 const include = {
   template: { select: { configuration: true } },
@@ -152,7 +153,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
   async get(id: string, ownerId: string): Promise<TrainingSession> {
     // include may execute multiple SELECTs; repeatable read gives one coherent snapshot.
     return this.transaction("GET", async tx => {
-      const row = await tx.trainingSession.findFirst({ where: { id, ownerId }, include });
+      const row = await observeAggregateDbRead(() => tx.trainingSession.findFirst({ where: { id, ownerId }, include }));
       if (!row) throw new DomainError("SESSION_NOT_FOUND");
       return decode(row);
     }, { isolationLevel: "RepeatableRead", timeout: 15_000 });
@@ -174,7 +175,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
             lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt) },
         });
         if (changed.count !== 1) throw new DomainError("REVISION_CONFLICT");
-        const row = await tx.trainingSession.findUniqueOrThrow({ where: { id: snapshot.id }, include });
+        const row = await observeAggregateDbRead(() => tx.trainingSession.findUniqueOrThrow({ where: { id: snapshot.id }, include }));
         const current = decode(row); current.revision = expectedRevision;
         assertUpdate(current, snapshot, expectedRevision);
         await this.writeChildren(tx, snapshot, current);
