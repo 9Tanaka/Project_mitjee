@@ -17,7 +17,7 @@
     "test:ai:groq:live": "node scripts/test-groq-live.mjs",
     "test:speech:live": "node scripts/test-speech-live.mjs",
     "test:groq": "vitest run tests/groq",
-    "test:speech": "vitest run tests/speech.test.ts tests/voice.integration.test.ts tests/voice.http.test.ts tests/voice.ui.test.tsx tests/microphone.test.ts tests/phone-speech.test.ts tests/phone-speech.http.test.ts",
+    "test:speech": "vitest run tests/speech.test.ts tests/elevenlabs.speech.test.ts tests/voice.integration.test.ts tests/voice.http.test.ts tests/voice.ui.test.tsx tests/microphone.test.ts tests/phone-speech.test.ts tests/phone-speech.http.test.ts",
     "test:websocket": "vitest run tests/websocket",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",

@@ -35,7 +35,7 @@ vi.mock("microsoft-cognitiveservices-speech-sdk", () => ({
   },
 }));
 import { AzureSpeechProvider } from "../src/providers/azure-speech.js";
-import { createSpeechProvider } from "../src/server/voice-runtime.js";
+import { createSpeechToTextProvider, createTextToSpeechProvider } from "../src/server/voice-runtime.js";
 
 afterEach(() => { vi.useRealTimers(); });
 beforeEach(() => {
@@ -90,46 +90,45 @@ describe("speech deadline", () => {
   });
 });
 
-describe("Azure speech adapter with local SDK doubles", () => {
-  it("uses Thai configuration, disables telemetry, and sends PCM without WAV header", async () => {
+describe("Azure transcription adapter with local SDK doubles", () => {
+  it("uses Thai STT, disables telemetry, and sends PCM without the WAV header", async () => {
     const provider = new AzureSpeechProvider("synthetic-test-key", "southeastasia");
     const wav = pcmWav(); wav[44] = 17;
     await expect(provider.transcribe(wav)).resolves.toBe("ข้อความสมมติ");
     expect(fake.telemetry).toHaveBeenCalledWith(false);
-    expect(fake.config).toMatchObject({ speechRecognitionLanguage: "th-TH", speechSynthesisVoiceName: "th-TH-PremwadeeNeural", speechSynthesisOutputFormat: 11 });
+    expect(fake.config).toEqual({ speechRecognitionLanguage: "th-TH" });
+    expect(provider).not.toHaveProperty("synthesize");
     expect(new Uint8Array(fake.write.mock.calls[0]![0] as ArrayBuffer)).toEqual(wav.slice(44));
-    expect(fake.recognizeClose).toHaveBeenCalledOnce();
-    await expect(provider.synthesize("ข้อความสมมติ")).resolves.toEqual(new Uint8Array(fake.audio));
-    expect(fake.synthClose).toHaveBeenCalledOnce();
+    expect(fake.recognizeClose).toHaveBeenCalledOnce(); expect(fake.synthClose).not.toHaveBeenCalled();
   });
-  it.each(["no-match", "throw"] as const)("maps %s recognition failure without exposing raw diagnostic", async mode => {
+  it.each(["no-match", "throw"] as const)("maps %s recognition failure without exposing raw diagnostics", async mode => {
     fake.reason = 0; fake.throwStt = mode === "throw";
     await expect(new AzureSpeechProvider("key", "southeastasia").transcribe(pcmWav())).rejects.toMatchObject({ code: "STT_FAILED", message: "STT_FAILED" });
     expect(fake.recognizeClose).toHaveBeenCalledOnce();
   });
-  it.each(["cancelled", "throw", "empty", "too-large"] as const)("maps %s synthesis failure and releases SDK resources", async mode => {
-    if (mode === "cancelled") fake.ttsReason = 0;
-    if (mode === "throw") fake.throwTts = true;
-    if (mode === "empty") fake.audio = new ArrayBuffer(0);
-    if (mode === "too-large") fake.audio = new ArrayBuffer(4 * 1024 * 1024 + 1);
-    await expect(new AzureSpeechProvider("key", "southeastasia").synthesize("ข้อความสมมติ")).rejects.toMatchObject({ code: "SPEECH_UNAVAILABLE", message: "SPEECH_UNAVAILABLE" });
-    expect(fake.synthClose).toHaveBeenCalledOnce();
-  });
-  it.each(["stt", "tts"] as const)("cancels in-flight %s once and ignores a late SDK callback", async mode => {
-    fake.hold = true; const controller = new AbortController(); const provider = new AzureSpeechProvider("key", "southeastasia");
-    const work = mode === "stt" ? provider.transcribe(pcmWav(), controller.signal) : provider.synthesize("ข้อความสมมติ", controller.signal);
-    const rejection = expect(work).rejects.toThrow(mode === "stt" ? "STT_FAILED" : "SPEECH_UNAVAILABLE");
+  it("cancels STT once and ignores a late SDK callback", async () => {
+    fake.hold = true; const controller = new AbortController();
+    const work = new AzureSpeechProvider("key", "southeastasia").transcribe(pcmWav(), controller.signal);
+    const rejection = expect(work).rejects.toThrow("STT_FAILED");
     controller.abort(); await rejection;
     fake.recognitionCallback?.({ reason: 1, text: "late" });
-    fake.synthesisCallback?.({ reason: 2, audioData: fake.audio });
-    expect(mode === "stt" ? fake.recognizeClose : fake.synthClose).toHaveBeenCalledOnce();
+    expect(fake.recognizeClose).toHaveBeenCalledOnce();
   });
-  it("uses unavailable providers for missing configuration and rejects invalid regions", async () => {
-    const absent = createSpeechProvider({});
-    await expect(absent.transcribe(pcmWav())).rejects.toThrow("SPEECH_UNAVAILABLE");
-    await expect(absent.synthesize("ข้อความสมมติ")).rejects.toThrow("SPEECH_UNAVAILABLE");
-    expect(() => createSpeechProvider({ AZURE_SPEECH_KEY: "key" })).toThrow("SPEECH_UNAVAILABLE");
+  it("factories configure independently and never substitute Azure TTS", async () => {
+    const stt = createSpeechToTextProvider({ AZURE_SPEECH_KEY: "key", AZURE_SPEECH_REGION: "southeastasia", ELEVENLABS_API_KEY: "invalid partial" });
+    expect(stt).toBeInstanceOf(AzureSpeechProvider); expect(stt).not.toHaveProperty("synthesize");
+    const tts = createTextToSpeechProvider({ ELEVENLABS_API_KEY: "key", ELEVENLABS_VOICE_ID: "voice", ELEVENLABS_MODEL_ID: "explicit_model", AZURE_SPEECH_REGION: "invalid-region" });
+    expect(tts).not.toHaveProperty("transcribe");
+    await expect(createTextToSpeechProvider({ AZURE_SPEECH_KEY: "key", AZURE_SPEECH_REGION: "southeastasia" }).synthesize("ทดสอบ")).rejects.toThrow("SPEECH_UNAVAILABLE");
+    await expect(createSpeechToTextProvider({}).transcribe(pcmWav())).rejects.toThrow("SPEECH_UNAVAILABLE");
+    expect(() => createSpeechToTextProvider({ AZURE_SPEECH_KEY: "key" })).toThrow("SPEECH_UNAVAILABLE");
     expect(() => new AzureSpeechProvider("key", "https://attacker.invalid")).toThrow("SPEECH_UNAVAILABLE");
-    expect(fake.fromSubscription).not.toHaveBeenCalled();
+    for (const env of [
+      { ELEVENLABS_API_KEY: "key" },
+      { ELEVENLABS_API_KEY: "key", ELEVENLABS_VOICE_ID: "voice" },
+      { ELEVENLABS_API_KEY: "key", ELEVENLABS_VOICE_ID: "voice", ELEVENLABS_MODEL_ID: " " },
+      { ELEVENLABS_API_KEY: "private\nkey", ELEVENLABS_VOICE_ID: "voice", ELEVENLABS_MODEL_ID: "model" },
+      { ELEVENLABS_API_KEY: "key", ELEVENLABS_VOICE_ID: "../other", ELEVENLABS_MODEL_ID: "model" },
+    ]) await expect(createTextToSpeechProvider(env).synthesize("ทดสอบ")).rejects.toThrow("SPEECH_UNAVAILABLE");
   });
 });
