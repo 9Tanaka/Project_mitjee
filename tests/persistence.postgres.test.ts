@@ -120,7 +120,9 @@ describe.skipIf(!client)("Real PostgreSQL / Prisma persistence (no DB mock)", ()
           decisionSummary: { review: 0, unassessed: 0, safe: sms ? 5 : 4 } });
         expect((await client!.trainingResult.findUniqueOrThrow({ where: { sessionId: id } })).evaluationMode).toBe("DECISION_RULES_V1");
       } finally { await freshClient?.$disconnect(); }
-    }, 30_000,
+    // This case recreates a real remote pool after every action. Budget the
+    // complete test separately from the unchanged per-transaction deadline.
+    }, 300_000,
   );
 
   it("persists version 3 categorical result and resumes it without rewriting legacy history", async () => {

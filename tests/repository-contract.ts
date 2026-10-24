@@ -21,9 +21,9 @@ export const safeActions: ActionInput[] = [
   { kind: "PROGRESS", transitionId: "resolve" },
 ];
 
-export async function repositoryHarness(repository: TrainingRepository, id = randomUUID()) {
-  const core = await TrainingCore.create([fixture], repository, () => 1000);
-  await core.start(id, "test-owner", fixture.id, fixture.version);
+export async function repositoryHarness(repository: TrainingRepository, id = randomUUID(), template = fixture) {
+  const core = await TrainingCore.create([template], repository, () => 1000);
+  await core.start(id, "test-owner", template.id, template.version);
   let sequence = 0;
   const current = () => core.resume(id, "test-owner");
   const command = async (action: ActionInput, actionId = `a-${++sequence}`) => ({
@@ -114,11 +114,14 @@ export function repositoryContract(name: string, createRepository: () => Trainin
       expect(await h.current()).toEqual(before); expect(before.opportunities).toHaveLength(2);
     });
     it("published template and referenced version are immutable across Core instances", async () => {
-      const h = await repositoryHarness(createRepository()); const changed = copy(fixture); changed.title = "Changed";
+      // The shared catalog already owns SMS v3. Use a private template identity
+      // so publishing a new test version never conflicts with authored history.
+      const id = randomUUID(), template = { ...fixture, id: `immutability-${id}` };
+      const h = await repositoryHarness(createRepository(), id, template); const changed = copy(template); changed.title = "Changed";
       await expect(h.core.publishTemplate(changed)).rejects.toThrow("PUBLISHED_TEMPLATE_IMMUTABLE");
       const other = await TrainingCore.create([], h.repository, () => 1000);
       await expect(other.publishTemplate(changed)).rejects.toThrow("PUBLISHED_TEMPLATE_IMMUTABLE");
-      await other.publishTemplate({ ...fixture, version: 3 });
+      await other.publishTemplate({ ...template, version: 3 });
       expect((await other.getSessionTemplate(h.id, "test-owner")).version).toBe(2);
       const session = await h.current(); session.templateVersion = 3; session.revision++;
       await expect(h.repository.save(session, 0)).rejects.toThrow("SESSION_IDENTITY_IMMUTABLE");
