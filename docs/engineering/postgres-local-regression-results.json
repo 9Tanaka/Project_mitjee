@@ -1,0 +1,283 @@
+{
+  "stage": "final_source_regression",
+  "sourceCommit": "5c13cf078f0503e7b08998ea7ac5f12fee200ccd",
+  "date": "2026-10-24T07:09:45.785Z",
+  "status": "PASS",
+  "exitCode": 0,
+  "total": 1047,
+  "passed": 987,
+  "failed": 0,
+  "skipped": 60,
+  "failedCases": [],
+  "runEnd": {
+    "reason": "passed",
+    "unhandledErrorCount": 0,
+    "files": [
+      {
+        "file": "tests/accounts.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/accounts.postgres.test.ts",
+        "state": "skipped"
+      },
+      {
+        "file": "tests/accounts.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/additional-scenarios.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/ai-evaluation-harness.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/architecture.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/auth.integration.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/auth.policy.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/benchmark-post-change.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-behavior-stories.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-continuous.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-continuous.ui.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-foundation.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-foundation.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-live-harness.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-performance.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-stories.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-variants.postgres.test.ts",
+        "state": "skipped"
+      },
+      {
+        "file": "tests/call-variants.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/core-hardening.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/core.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/decision-rules.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/dialogue.integration.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/elevenlabs.speech.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/frontend.api.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/frontend.refresh.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/frontend.ui.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/groq.dialogue.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/groq.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/groq.provider.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/http.integration.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/http.runtime.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/latency-benchmark.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/latency.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/microphone.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/openai.dialogue.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/openai.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/openai.provider.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/persistence.memory.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/persistence.postgres.test.ts",
+        "state": "skipped"
+      },
+      {
+        "file": "tests/phone-speech.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/phone-speech.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/phone.ui.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/postgres-config.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/postgres.metadata.test.ts",
+        "state": "skipped"
+      },
+      {
+        "file": "tests/preview.database.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/preview.runtime.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/prisma-assessment-decoding.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/prisma-client.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/prisma-pg-timezone-patch.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/prisma-save-hardening.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/quiz.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/quiz.postgres.test.ts",
+        "state": "skipped"
+      },
+      {
+        "file": "tests/quiz.snapshot.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/quiz.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/quiz.ui.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/registration-diagnostics.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/scenario-authority.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/speech.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/training-start-hardening.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/voice.http.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/voice.integration.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/voice.ui.test.tsx",
+        "state": "passed"
+      },
+      {
+        "file": "tests/websocket.auth.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/websocket.integration.test.ts",
+        "state": "passed"
+      }
+    ]
+  },
+  "sourcePreservation": {
+    "testHarness": "4d7792f0192893aa03b470353d1420c3d08fe5db",
+    "adapterCompatibility": "c9264db3c937ba8c45eca3725fd4c94d0087a39c",
+    "benchmarkHarness": "abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1"
+  }
+}

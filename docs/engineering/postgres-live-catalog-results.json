@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "5c13cf078f0503e7b08998ea7ac5f12fee200ccd",
+  "date": "2026-10-24T06:09:36.912Z",
+  "target": "owner-approved disposable PostgreSQL; read-only catalog check",
+  "status": "PASS",
+  "columns": 104,
+  "expectedColumns": 104,
+  "primaryKeys": 12,
+  "nonPrimaryIndexes": 8,
+  "checks": {
+    "columnInventory": true,
+    "primaryKeyColumns": true,
+    "indexDefinitions": true,
+    "functionSearchPath": true
+  },
+  "comparisonIncludes": [
+    "column order",
+    "types",
+    "widths",
+    "nullability",
+    "timestamp precision",
+    "collation",
+    "defaults",
+    "primary-key column order",
+    "non-primary index names/columns/uniqueness",
+    "trigger-function fixed search_path"
+  ],
+  "columnInventoryMeasuredAt": "2026-10-24T06:08:44.140Z",
+  "catalogNameArraysDecodedAs": "Explicit text[] cast before ordered-column comparison"
+}

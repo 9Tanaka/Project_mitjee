@@ -1,6 +1,6 @@
 # PostgreSQL preparation verification checklist
 
-This is the Phase 2 verification contract for the Prisma/PostgreSQL preparation. It is not evidence that a Supabase project or PostgreSQL integration test has run. Record each item as **PASS**, **FAIL**, **BLOCKED**, or **NOT RUN** with the exact environment scope; a mock, TypeScript check, build, or generated Prisma client cannot substitute for a database test.
+This is the Phase 2 verification contract for the Prisma/PostgreSQL preparation. For the subsequent owner-approved isolated live execution on 2026-10-24, see [the live verification report](postgres-live-verification.md), including the preserved failing attempts and final case evidence. Record each item as **PASS**, **FAIL**, **BLOCKED**, or **NOT RUN** with the exact environment scope; a mock, TypeScript check, build, or generated Prisma client cannot substitute for a database test.
 
 ## Safety preconditions
 
@@ -96,7 +96,7 @@ These are separate from code preparation and remain **NOT RUN** until a data-tra
 
 ## Current status
 
-Repository inventory at the Phase 2 preflight found no Supabase project or dedicated PostgreSQL test URL, and no `psql`, `postgres`, `pg_ctl`, or Docker executable in the host snapshot. Therefore live Supabase connectivity, migrations, catalog/trigger/transaction tests, backup/restore rehearsal, data transfer, and cutover are **NOT RUN**. Report updated facts only after the relevant gate actually runs against the required target.
+The initial Phase 2 preflight found no Supabase project or dedicated PostgreSQL test URL, and no `psql`, `postgres`, `pg_ctl`, or Docker executable in the host snapshot. Its source-gate results below are historical preparation evidence. The owner later supplied and approved a dedicated Supabase test database: connectivity, verified client TLS, the fresh baseline migration, and exact catalog checks have now run. A non-UTC timestamp defect in the pinned adapter was reproduced and corrected with a version/build-verified compatibility patch; the unchanged seven metadata regressions passed after a clean install. The final 60-case rerun is recorded in the linked live report. Backup/restore rehearsal, real historical-data transfer/parity, restricted production-role enforcement, and cutover remain **NOT RUN** and are not authorized by these isolated tests.
 
 ### Local source-gate results (2026-10-23)
 

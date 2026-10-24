@@ -1,0 +1,58 @@
+{
+  "stage": "bounded_live_speech_roundtrip",
+  "date": "2026-10-24T06:57:14.582Z",
+  "model": "eleven_v4_turbo",
+  "exitCode": 0,
+  "status": "PASS",
+  "maximumSynthesisRequests": 1,
+  "maximumAzureSttRequests": 1,
+  "ttsRequestsObserved": null,
+  "records": [],
+  "initialRunnerAttempt": {
+    "category": "UNSUPPORTED_SETUPFILES_CLI_FLAG",
+    "providerRequests": 0,
+    "corrected": "Equivalent temporary Vitest config with setupFiles"
+  },
+  "rawOutputLogged": false,
+  "runnerDiagnostics": {
+    "timeout": false,
+    "configurationFailure": false,
+    "processExit": 0
+  },
+  "evidence": {
+    "vitestExitCode": 0,
+    "file": "tests/speech.live.ts",
+    "cacheFailed": false,
+    "testModuleDurationMs": 8425.720099999999,
+    "assertions": [
+      "live ElevenLabs synthesis returns validated mono 16000 Hz PCM16 WAV",
+      "Azure STT returns non-empty Thai-script text"
+    ],
+    "languageQuality": "NOT_REVIEWED"
+  },
+  "requestCountsByCompletedHarness": {
+    "elevenlabsTts": 1,
+    "azureStt": 1
+  },
+  "metadataPreflight": {
+    "requests": 2,
+    "modelsHttp": 200,
+    "voiceHttp": 200,
+    "approvedModelFound": true,
+    "canDoTextToSpeech": true,
+    "thaiListed": true,
+    "requiresAlphaAccess": false,
+    "configuredVoiceFound": true
+  },
+  "telemetryLimit": "Process exit and Vitest cache confirm the single test passed; the console-JSON collector did not capture per-provider telemetry. No paid replay was made to fill this gap.",
+  "sourceSha256": {
+    "tests/speech.live.ts": "9ab781019e6e0d480fc9f2d3522598dbcc0d97f7d109c244017802c4e27eb912",
+    "src/providers/elevenlabs-speech.ts": "b4b57cfe3899385306976f358e7e5dcaec1b706d3bb0f30d5a3aacdd061faca5",
+    "src/server/voice-runtime.ts": "ff60574b4e1126ec2da5a13031f64898fd2a3f8aea02ac6a01253518c844e0e2"
+  },
+  "sourcePreservation": {
+    "testHarness": "4d7792f0192893aa03b470353d1420c3d08fe5db",
+    "adapterCompatibility": "c9264db3c937ba8c45eca3725fd4c94d0087a39c",
+    "benchmarkHarness": "abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1"
+  }
+}

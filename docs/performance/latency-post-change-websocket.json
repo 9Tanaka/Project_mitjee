@@ -1,0 +1,967 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "id": "5dc4fbed-f20c-4fb9-b286-310c861b419f",
+    "startedAt": "2026-10-24T07:12:47.774Z",
+    "completedAt": "2026-10-24T07:25:30.051Z",
+    "measurementCommit": "abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1",
+    "comparisonBaselineCommit": "c7e0a2ce7cd9bfc529b9f57822ccec7c6e08e479",
+    "status": "COMPLETED"
+  },
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "prisma": "7.10.0 with version/build-verified timestamp patch",
+    "pg": "8.23.1",
+    "database": "isolated Supabase PostgreSQL 17.11; session pooler; verified client TLS",
+    "scenarioProvider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "sttProvider": "azure",
+    "ttsProvider": "elevenlabs",
+    "ttsModel": "eleven_v4_turbo",
+    "ttsVoiceFingerprint": "acb59c782f6c490580e2c122488ea88f9892df7eff81bc8e155dd1cedf4a059f",
+    "speechRegion": "southeastasia",
+    "transport": "loopback WebSocket using unchanged production handler"
+  },
+  "methodology": {
+    "scenario": {
+      "story": "CC-01",
+      "templateVersion": 6,
+      "initialMeasuredState": "IDENTITY_CLAIM",
+      "measuredUserTurnsPerSession": 1
+    },
+    "concurrency": 1,
+    "warmupsPerCohort": 2,
+    "measuredSamplesPerCohort": 10,
+    "percentile": "nearest-rank; p95 exploratory at these sample counts",
+    "liveSuccessfulDialogueCallCap": 24,
+    "auth": "production SocketCookieAuthenticator with ephemeral Auth.js JWT fixture",
+    "sqlReads": null,
+    "sqlWrites": null,
+    "traceTransport": "websocket",
+    "syntheticLiveSetup": "mock caller openings and one received-call action per fresh session, outside measured traces",
+    "officialResultsMeasured": false,
+    "rawSamples": "latency-post-change-websocket-samples.csv",
+    "inputVoice": "th-TH-PremwadeeNeural; same synthetic text, mono 16kHz PCM16 WAV policy as old baseline; regenerated once, not byte-identical proof",
+    "preservedHistoricalLiveGuard": true
+  },
+  "setup": {
+    "inputAudioFixture": "single Azure-generated synthetic WAV; outside trace",
+    "inputAudioFixtureBytes": 102044,
+    "inputAudioFixtureMs": 660,
+    "mockProviderSetup": true,
+    "mockActions": 24,
+    "mockOpenings": 48,
+    "retainedSyntheticSessions": 24
+  },
+  "initialization": {
+    "durationMs": 2033,
+    "scope": "application setup plus PostgreSQL template publication/connection"
+  },
+  "cohorts": {
+    "text": {
+      "warmups": {
+        "samples": 2,
+        "outcomeCounts": {
+          "provider_success": 2,
+          "fallback": 0,
+          "committed_audio_unavailable": 0,
+          "operation_failure": 0,
+          "cancelled": 0,
+          "replay": 0
+        }
+      },
+      "measured": {
+        "samples": 10,
+        "outcomeCounts": {
+          "provider_success": 10,
+          "fallback": 0,
+          "committed_audio_unavailable": 0,
+          "operation_failure": 0,
+          "cancelled": 0,
+          "replay": 0
+        },
+        "successfulDialogueCalls": 10,
+        "llmFallbacks": 0,
+        "committedTtsUnavailable": 0,
+        "audioStatusCounts": {
+          "READY": 0,
+          "UNAVAILABLE": 0,
+          "REPLAY": 0,
+          "unknown": 10
+        },
+        "providerSuccess": {
+          "samples": 10,
+          "totalMs": {
+            "samples": 10,
+            "min": 8382.496699999989,
+            "p50": 8685.674400000018,
+            "p95": 9285.285899999988,
+            "max": 9285.285899999988
+          },
+          "durationsMs": {
+            "auth": {
+              "samples": 10,
+              "min": 0.9439000000129454,
+              "p50": 1.0727999999653548,
+              "p95": 1.986300000004121,
+              "max": 1.986300000004121
+            },
+            "db_preflight": {
+              "samples": 10,
+              "min": 2136.0075999999535,
+              "p50": 2155.4774000000325,
+              "p95": 2162.2237000000023,
+              "max": 2162.2237000000023
+            },
+            "context": {
+              "samples": 10,
+              "min": 0.07459999999264255,
+              "p50": 0.11209999996935949,
+              "p95": 0.1569000000017695,
+              "max": 0.1569000000017695
+            },
+            "llm": {
+              "samples": 10,
+              "min": 1358.0095000000147,
+              "p50": 1618.0350999999791,
+              "p95": 2211.892000000007,
+              "max": 2211.892000000007
+            },
+            "validation": {
+              "samples": 10,
+              "min": 0.045000000012805685,
+              "p50": 0.050700000021606684,
+              "p95": 0.06880000000819564,
+              "max": 0.06880000000819564
+            },
+            "retry": null,
+            "ai": {
+              "samples": 10,
+              "min": 1358.0915000000095,
+              "p50": 1618.1162999999942,
+              "p95": 2211.9910999999993,
+              "max": 2211.9910999999993
+            },
+            "commit": {
+              "samples": 10,
+              "min": 2733.7460999999894,
+              "p50": 2747.295199999993,
+              "p95": 2754.818299999999,
+              "max": 2754.818299999999
+            },
+            "durable_save": {
+              "samples": 10,
+              "min": 1464.7515999999887,
+              "p50": 1476.224199999997,
+              "p95": 1478.8242000000027,
+              "max": 1478.8242000000027
+            },
+            "stt": null,
+            "tts": null
+          }
+        },
+        "cohorts": {
+          "provider_success": {
+            "samples": 10,
+            "totalMs": {
+              "samples": 10,
+              "min": 8382.496699999989,
+              "p50": 8685.674400000018,
+              "p95": 9285.285899999988,
+              "max": 9285.285899999988
+            },
+            "durationsMs": {
+              "auth": {
+                "samples": 10,
+                "min": 0.9439000000129454,
+                "p50": 1.0727999999653548,
+                "p95": 1.986300000004121,
+                "max": 1.986300000004121
+              },
+              "db_preflight": {
+                "samples": 10,
+                "min": 2136.0075999999535,
+                "p50": 2155.4774000000325,
+                "p95": 2162.2237000000023,
+                "max": 2162.2237000000023
+              },
+              "context": {
+                "samples": 10,
+                "min": 0.07459999999264255,
+                "p50": 0.11209999996935949,
+                "p95": 0.1569000000017695,
+                "max": 0.1569000000017695
+              },
+              "llm": {
+                "samples": 10,
+                "min": 1358.0095000000147,
+                "p50": 1618.0350999999791,
+                "p95": 2211.892000000007,
+                "max": 2211.892000000007
+              },
+              "validation": {
+                "samples": 10,
+                "min": 0.045000000012805685,
+                "p50": 0.050700000021606684,
+                "p95": 0.06880000000819564,
+                "max": 0.06880000000819564
+              },
+              "retry": null,
+              "ai": {
+                "samples": 10,
+                "min": 1358.0915000000095,
+                "p50": 1618.1162999999942,
+                "p95": 2211.9910999999993,
+                "max": 2211.9910999999993
+              },
+              "commit": {
+                "samples": 10,
+                "min": 2733.7460999999894,
+                "p50": 2747.295199999993,
+                "p95": 2754.818299999999,
+                "max": 2754.818299999999
+              },
+              "durable_save": {
+                "samples": 10,
+                "min": 1464.7515999999887,
+                "p50": 1476.224199999997,
+                "p95": 1478.8242000000027,
+                "max": 1478.8242000000027
+              },
+              "stt": null,
+              "tts": null
+            }
+          },
+          "fallback": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "committed_audio_unavailable": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "operation_failure": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "cancelled": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "replay": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          }
+        },
+        "attempts": 10,
+        "retryCount": 0,
+        "repositoryReads": 90,
+        "repositoryWrites": 10,
+        "aggregateDbReads": {
+          "attempts": 60,
+          "succeeded": 60,
+          "failed": 0
+        },
+        "repositoryOperations": {
+          "get": {
+            "attempts": 50,
+            "succeeded": 50,
+            "failed": 0
+          },
+          "getTemplate": {
+            "attempts": 40,
+            "succeeded": 40,
+            "failed": 0
+          },
+          "create": {
+            "attempts": 0,
+            "succeeded": 0,
+            "failed": 0
+          },
+          "save": {
+            "attempts": 10,
+            "succeeded": 10,
+            "failed": 0
+          },
+          "publish": {
+            "attempts": 0,
+            "succeeded": 0,
+            "failed": 0
+          }
+        }
+      }
+    },
+    "voice": {
+      "warmups": {
+        "samples": 2,
+        "outcomeCounts": {
+          "provider_success": 2,
+          "fallback": 0,
+          "committed_audio_unavailable": 0,
+          "operation_failure": 0,
+          "cancelled": 0,
+          "replay": 0
+        }
+      },
+      "measured": {
+        "samples": 10,
+        "outcomeCounts": {
+          "provider_success": 10,
+          "fallback": 0,
+          "committed_audio_unavailable": 0,
+          "operation_failure": 0,
+          "cancelled": 0,
+          "replay": 0
+        },
+        "successfulDialogueCalls": 10,
+        "llmFallbacks": 0,
+        "committedTtsUnavailable": 0,
+        "audioStatusCounts": {
+          "READY": 10,
+          "UNAVAILABLE": 0,
+          "REPLAY": 0,
+          "unknown": 0
+        },
+        "providerSuccess": {
+          "samples": 10,
+          "totalMs": {
+            "samples": 10,
+            "min": 12187.051599999948,
+            "p50": 12540.40579999995,
+            "p95": 13235.778900000034,
+            "max": 13235.778900000034
+          },
+          "durationsMs": {
+            "auth": {
+              "samples": 10,
+              "min": 0.9405999999726191,
+              "p50": 1.1209999999264255,
+              "p95": 1.2640999999712221,
+              "max": 1.2640999999712221
+            },
+            "db_preflight": {
+              "samples": 10,
+              "min": 3412.9971999999834,
+              "p50": 3428.4968000000226,
+              "p95": 3436.3437999999733,
+              "max": 3436.3437999999733
+            },
+            "context": {
+              "samples": 10,
+              "min": 0.0659999999916181,
+              "p50": 0.08070000004954636,
+              "p95": 0.1197999999858439,
+              "max": 0.1197999999858439
+            },
+            "llm": {
+              "samples": 10,
+              "min": 1429.5336999999708,
+              "p50": 1679.2112000000197,
+              "p95": 2005.7592000000877,
+              "max": 2005.7592000000877
+            },
+            "validation": {
+              "samples": 10,
+              "min": 0.043199999956414104,
+              "p50": 0.05800000001909211,
+              "p95": 0.0744999999878928,
+              "max": 0.0744999999878928
+            },
+            "retry": null,
+            "ai": {
+              "samples": 10,
+              "min": 1429.6170000000275,
+              "p50": 1679.2954999999492,
+              "p95": 2005.84850000008,
+              "max": 2005.84850000008
+            },
+            "commit": {
+              "samples": 10,
+              "min": 2727.801899999962,
+              "p50": 2739.809899999993,
+              "p95": 2748.9525999999605,
+              "max": 2748.9525999999605
+            },
+            "durable_save": {
+              "samples": 10,
+              "min": 1462.5025000000023,
+              "p50": 1472.4721000000136,
+              "p95": 1479.8465999999316,
+              "max": 1479.8465999999316
+            },
+            "stt": {
+              "samples": 10,
+              "min": 1360.2799000000232,
+              "p50": 1395.1530000000494,
+              "p95": 1431.078499999945,
+              "max": 1431.078499999945
+            },
+            "tts": {
+              "samples": 10,
+              "min": 740.5450999999885,
+              "p50": 1107.589399999997,
+              "p95": 1980.7654999999795,
+              "max": 1980.7654999999795
+            }
+          }
+        },
+        "cohorts": {
+          "provider_success": {
+            "samples": 10,
+            "totalMs": {
+              "samples": 10,
+              "min": 12187.051599999948,
+              "p50": 12540.40579999995,
+              "p95": 13235.778900000034,
+              "max": 13235.778900000034
+            },
+            "durationsMs": {
+              "auth": {
+                "samples": 10,
+                "min": 0.9405999999726191,
+                "p50": 1.1209999999264255,
+                "p95": 1.2640999999712221,
+                "max": 1.2640999999712221
+              },
+              "db_preflight": {
+                "samples": 10,
+                "min": 3412.9971999999834,
+                "p50": 3428.4968000000226,
+                "p95": 3436.3437999999733,
+                "max": 3436.3437999999733
+              },
+              "context": {
+                "samples": 10,
+                "min": 0.0659999999916181,
+                "p50": 0.08070000004954636,
+                "p95": 0.1197999999858439,
+                "max": 0.1197999999858439
+              },
+              "llm": {
+                "samples": 10,
+                "min": 1429.5336999999708,
+                "p50": 1679.2112000000197,
+                "p95": 2005.7592000000877,
+                "max": 2005.7592000000877
+              },
+              "validation": {
+                "samples": 10,
+                "min": 0.043199999956414104,
+                "p50": 0.05800000001909211,
+                "p95": 0.0744999999878928,
+                "max": 0.0744999999878928
+              },
+              "retry": null,
+              "ai": {
+                "samples": 10,
+                "min": 1429.6170000000275,
+                "p50": 1679.2954999999492,
+                "p95": 2005.84850000008,
+                "max": 2005.84850000008
+              },
+              "commit": {
+                "samples": 10,
+                "min": 2727.801899999962,
+                "p50": 2739.809899999993,
+                "p95": 2748.9525999999605,
+                "max": 2748.9525999999605
+              },
+              "durable_save": {
+                "samples": 10,
+                "min": 1462.5025000000023,
+                "p50": 1472.4721000000136,
+                "p95": 1479.8465999999316,
+                "max": 1479.8465999999316
+              },
+              "stt": {
+                "samples": 10,
+                "min": 1360.2799000000232,
+                "p50": 1395.1530000000494,
+                "p95": 1431.078499999945,
+                "max": 1431.078499999945
+              },
+              "tts": {
+                "samples": 10,
+                "min": 740.5450999999885,
+                "p50": 1107.589399999997,
+                "p95": 1980.7654999999795,
+                "max": 1980.7654999999795
+              }
+            }
+          },
+          "fallback": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "committed_audio_unavailable": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "operation_failure": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "cancelled": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          },
+          "replay": {
+            "samples": 0,
+            "totalMs": null,
+            "durationsMs": {
+              "auth": null,
+              "db_preflight": null,
+              "context": null,
+              "llm": null,
+              "validation": null,
+              "retry": null,
+              "ai": null,
+              "commit": null,
+              "durable_save": null,
+              "stt": null,
+              "tts": null
+            }
+          }
+        },
+        "attempts": 10,
+        "retryCount": 0,
+        "repositoryReads": 110,
+        "repositoryWrites": 10,
+        "aggregateDbReads": {
+          "attempts": 70,
+          "succeeded": 70,
+          "failed": 0
+        },
+        "repositoryOperations": {
+          "get": {
+            "attempts": 60,
+            "succeeded": 60,
+            "failed": 0
+          },
+          "getTemplate": {
+            "attempts": 50,
+            "succeeded": 50,
+            "failed": 0
+          },
+          "create": {
+            "attempts": 0,
+            "succeeded": 0,
+            "failed": 0
+          },
+          "save": {
+            "attempts": 10,
+            "succeeded": 10,
+            "failed": 0
+          },
+          "publish": {
+            "attempts": 0,
+            "succeeded": 0,
+            "failed": 0
+          }
+        }
+      }
+    }
+  },
+  "comparison": {
+    "text": {
+      "oldTotalMs": {
+        "samples": 10,
+        "min": 4298.5815,
+        "p50": 4535.496499999994,
+        "p95": 5031.750999999989,
+        "max": 5031.750999999989
+      },
+      "newTotalMs": {
+        "samples": 10,
+        "min": 8382.496699999989,
+        "p50": 8685.674400000018,
+        "p95": 9285.285899999988,
+        "max": 9285.285899999988
+      },
+      "p50DeltaPercent": 91.50437884804961,
+      "p95DeltaPercent": 84.53389088609526,
+      "stages": {
+        "auth": {
+          "old": {
+            "samples": 10,
+            "min": 1.01140000000305,
+            "p50": 1.2678999999916414,
+            "p95": 1.41809999999532,
+            "max": 1.41809999999532
+          },
+          "new": {
+            "samples": 10,
+            "min": 0.9439000000129454,
+            "p50": 1.0727999999653548,
+            "p95": 1.986300000004121,
+            "max": 1.986300000004121
+          }
+        },
+        "db_preflight": {
+          "old": {
+            "samples": 10,
+            "min": 730.3559999999852,
+            "p50": 754.6082000000024,
+            "p95": 798.1553000000131,
+            "max": 798.1553000000131
+          },
+          "new": {
+            "samples": 10,
+            "min": 2136.0075999999535,
+            "p50": 2155.4774000000325,
+            "p95": 2162.2237000000023,
+            "max": 2162.2237000000023
+          }
+        },
+        "stt": {
+          "old": null,
+          "new": null
+        },
+        "context": {
+          "old": {
+            "samples": 10,
+            "min": 0.08460000000195578,
+            "p50": 0.11060000001452863,
+            "p95": 0.17239999999583233,
+            "max": 0.17239999999583233
+          },
+          "new": {
+            "samples": 10,
+            "min": 0.07459999999264255,
+            "p50": 0.11209999996935949,
+            "p95": 0.1569000000017695,
+            "max": 0.1569000000017695
+          }
+        },
+        "llm": {
+          "old": {
+            "samples": 10,
+            "min": 1608.3020000000033,
+            "p50": 1761.9128999999957,
+            "p95": 2327.5684000000183,
+            "max": 2327.5684000000183
+          },
+          "new": {
+            "samples": 10,
+            "min": 1358.0095000000147,
+            "p50": 1618.0350999999791,
+            "p95": 2211.892000000007,
+            "max": 2211.892000000007
+          }
+        },
+        "commit": {
+          "old": {
+            "samples": 10,
+            "min": 1162.9344999999885,
+            "p50": 1202.3336000000054,
+            "p95": 1297.8050999999978,
+            "max": 1297.8050999999978
+          },
+          "new": {
+            "samples": 10,
+            "min": 2733.7460999999894,
+            "p50": 2747.295199999993,
+            "p95": 2754.818299999999,
+            "max": 2754.818299999999
+          }
+        },
+        "durable_save": {
+          "old": {
+            "samples": 10,
+            "min": 792.7373999999982,
+            "p50": 825.1631000000052,
+            "p95": 913.1595000000088,
+            "max": 913.1595000000088
+          },
+          "new": {
+            "samples": 10,
+            "min": 1464.7515999999887,
+            "p50": 1476.224199999997,
+            "p95": 1478.8242000000027,
+            "max": 1478.8242000000027
+          }
+        },
+        "tts": {
+          "old": null,
+          "new": null
+        }
+      }
+    },
+    "voice": {
+      "oldTotalMs": {
+        "samples": 10,
+        "min": 6574.896999999997,
+        "p50": 6927.262599999987,
+        "p95": 8104.219000000012,
+        "max": 8104.219000000012
+      },
+      "newTotalMs": {
+        "samples": 10,
+        "min": 12187.051599999948,
+        "p50": 12540.40579999995,
+        "p95": 13235.778900000034,
+        "max": 13235.778900000034
+      },
+      "p50DeltaPercent": 81.02974470752665,
+      "p95DeltaPercent": 63.319610439945095,
+      "stages": {
+        "auth": {
+          "old": {
+            "samples": 10,
+            "min": 0.9461000000010245,
+            "p50": 1.036599999992177,
+            "p95": 1.560399999958463,
+            "max": 1.560399999958463
+          },
+          "new": {
+            "samples": 10,
+            "min": 0.9405999999726191,
+            "p50": 1.1209999999264255,
+            "p95": 1.2640999999712221,
+            "max": 1.2640999999712221
+          }
+        },
+        "db_preflight": {
+          "old": {
+            "samples": 10,
+            "min": 1109.7092999999877,
+            "p50": 1121.721200000029,
+            "p95": 1146.4569999999949,
+            "max": 1146.4569999999949
+          },
+          "new": {
+            "samples": 10,
+            "min": 3412.9971999999834,
+            "p50": 3428.4968000000226,
+            "p95": 3436.3437999999733,
+            "max": 3436.3437999999733
+          }
+        },
+        "stt": {
+          "old": {
+            "samples": 10,
+            "min": 1357.091000000015,
+            "p50": 1394.4107999999542,
+            "p95": 1436.73609999998,
+            "max": 1436.73609999998
+          },
+          "new": {
+            "samples": 10,
+            "min": 1360.2799000000232,
+            "p50": 1395.1530000000494,
+            "p95": 1431.078499999945,
+            "max": 1431.078499999945
+          }
+        },
+        "context": {
+          "old": {
+            "samples": 10,
+            "min": 0.06359999999403954,
+            "p50": 0.08369999995920807,
+            "p95": 0.1075999999884516,
+            "max": 0.1075999999884516
+          },
+          "new": {
+            "samples": 10,
+            "min": 0.0659999999916181,
+            "p50": 0.08070000004954636,
+            "p95": 0.1197999999858439,
+            "max": 0.1197999999858439
+          }
+        },
+        "llm": {
+          "old": {
+            "samples": 10,
+            "min": 1602.7393999999622,
+            "p50": 1799.1251999999804,
+            "p95": 3059.287000000011,
+            "max": 3059.287000000011
+          },
+          "new": {
+            "samples": 10,
+            "min": 1429.5336999999708,
+            "p50": 1679.2112000000197,
+            "p95": 2005.7592000000877,
+            "max": 2005.7592000000877
+          }
+        },
+        "commit": {
+          "old": {
+            "samples": 10,
+            "min": 1165.4309999999823,
+            "p50": 1189.9698000000208,
+            "p95": 1260.872399999993,
+            "max": 1260.872399999993
+          },
+          "new": {
+            "samples": 10,
+            "min": 2727.801899999962,
+            "p50": 2739.809899999993,
+            "p95": 2748.9525999999605,
+            "max": 2748.9525999999605
+          }
+        },
+        "durable_save": {
+          "old": {
+            "samples": 10,
+            "min": 793.546399999992,
+            "p50": 829.8567000000039,
+            "p95": 876.3827999999921,
+            "max": 876.3827999999921
+          },
+          "new": {
+            "samples": 10,
+            "min": 1462.5025000000023,
+            "p50": 1472.4721000000136,
+            "p95": 1479.8465999999316,
+            "max": 1479.8465999999316
+          }
+        },
+        "tts": {
+          "old": {
+            "samples": 10,
+            "min": 346.20039999997243,
+            "p50": 591.7615999999689,
+            "p95": 782.5410000000265,
+            "max": 782.5410000000265
+          },
+          "new": {
+            "samples": 10,
+            "min": 740.5450999999885,
+            "p50": 1107.589399999997,
+            "p95": 1980.7654999999795,
+            "max": 1980.7654999999795
+          }
+        }
+      }
+    }
+  },
+  "limitations": [
+    "one warm process, one authored state, concurrency one, ten measured samples per cohort",
+    "nearest-rank p95 equals the maximum at n=10",
+    "combined stack observation; no causal attribution to one provider/database change",
+    "stage spans overlap and component percentiles must not be added",
+    "aggregate DB fetches and aggregate commits are not SQL statement counts",
+    "no remote-browser, playback, production login or production cutover measurement",
+    "initial single speech-test per-provider console telemetry was not captured; this benchmark has separate stage spans"
+  ]
+}

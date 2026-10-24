@@ -1,5 +1,13 @@
 # Final metrics and evidence review
 
+## Isolated live verification addendum (2026-10-24)
+
+The latest operational evidence is [the isolated PostgreSQL live report](docs/engineering/postgres-live-verification.md), based on application checkpoint `5c13cf078f0503e7b08998ea7ac5f12fee200ccd` plus the recorded compatibility/test patches. Connection/TLS, the dedicated fresh migration, and the exact 104-column catalog comparison passed. The first complete live test run found a real non-UTC timestamp defect (59/60 PASS); its failure is preserved. A version-bound adapter correction retains the original assertion. The complete post-fix live suite passed **60/60 PostgreSQL cases with zero skips**, or **125/125** including repeated HTTP mock cases.
+
+Clean `npm ci`, Prisma generation/validation, typecheck, production build and the 69-artifact client audit passed after the correction. The final offline full suite passed **987 tests**, including four new post-change benchmark guard cases, with the **60 database cases deliberately excluded from that offline run**, not counted as passes; see [regression evidence](docs/engineering/postgres-local-regression-results.json). The live database run is separate. Lint remains NOT CONFIGURED.
+
+The owner subsequently configured ElevenLabs and approved `eleven_v4_turbo`. The bounded synthetic TTS/Azure-STT roundtrip passed once; [speech evidence](docs/engineering/elevenlabs-live-verification.json) records the passing process/cache evidence and the per-provider console-telemetry gap without repeating paid calls. The [comparable post-change benchmark](docs/performance/latency-post-change.md) then completed 10+10 measured successes after 2+2 warmups at commit `abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1`. **Latency regressed:** text p50 4,535.496 → 8,685.674 ms (+91.50%); voice 6,927.263 → 12,540.406 ms (+81.03%). Aggregate fetches remain 6/7 per turn; DB preflight/commit costs increased. No speedup or causal attribution to a single component is claimed. Production role restrictions, historical MySQL data/collation parity and restore/cutover rehearsal remain open. No production switch or optimization occurred. Historical sections below retain their original source-gate scope and counts.
+
 **Scope: local source verification through Phase 3, 2026-10-24.** This report records code-level verification and the earlier bounded Phase 1 measurement. The latest measured service baseline predates the PostgreSQL preparation and the Azure-STT/ElevenLabs-TTS split. There is no post-change latency comparison.
 
 Verified source commit for the final local gates: `5f8c48370d8713a436bf8f932cf9a5cca4e6812a`.
@@ -42,12 +50,12 @@ The spans overlap and must not be added as though exclusive. Authentication and 
 | Area | Current evidence | Status |
 | --- | --- | --- |
 | Phase 1 text/voice latency | Values above; MySQL + Groq + Azure Speech. | **MEASURED — historical baseline** |
-| Post-PostgreSQL latency | No real PostgreSQL service/database was configured or measured. | **NOT MEASURED** |
+| Post-PostgreSQL latency | Isolated live database verification is PASS (60/60); the comparable live benchmark is recorded separately from integration-test timing. | **See latest operational/performance report** |
 | Phase 3 speech source behavior | Local full suite plus focused speech and WebSocket regressions passed as listed below. | **PASS — local test doubles only** |
-| ElevenLabs TTS latency/audio quality | No account, key, voice/model access was tested and no live request was made. | **NOT RUN** |
-| Before/after latency delta | No comparable post-change run exists; provider and persistence stack are changing. | **NOT AVAILABLE** |
+| ElevenLabs live compatibility / quality | One owner-approved `eleven_v4_turbo` TTS/Azure-STT roundtrip passed; human Thai quality is not established by that test. | **Compatibility PASS; human quality NOT REVIEWED** |
+| Before/after latency delta | Comparable authenticated workload completed; combined new stack was slower in this run. Full stage statistics and limitations are in the post-change report. | **MEASURED — regression** |
 | AI quality/safety | Offline evaluation-harness tests validate the harness only; no new model evaluation or qualified Thai review was completed. | **NOT REVIEWED / NOT RUN** |
-| Authenticated HTTP/WS or browser playback | Not part of the service-level baseline; no updated end-to-end measurement is recorded here. | **NOT MEASURED** |
+| Authenticated WS / browser playback | Old/new loopback production-WS-handler measurements exist. Remote-browser rendering/playback and production login are outside both. | **WS MEASURED; browser NOT MEASURED** |
 
 ### Local source gates
 
@@ -61,10 +69,10 @@ The client audit found no server dependency/secret markers in those 69 artifacts
 
 - The independent Azure STT / ElevenLabs TTS source split and focused regression gates are complete and passed locally. Missing, partial, or invalid ElevenLabs configuration resolves to unavailable TTS without preventing STT/text commit or making a vendor call; Azure TTS fallback remains disabled and committed text is preserved with audio unavailable.
 - Keep live ElevenLabs verification **NOT RUN** unless the existing `npm run test:speech:live` check is separately authorized and configured. Thai model/voice/account compatibility and human language-quality review are unverified.
-- Keep PostgreSQL integration, catalog/trigger/race behavior, and live TLS handshake **NOT RUN** without the dedicated isolated database, direct migration URL, trusted CA, and approved test target. No database was provisioned or migrated.
+- Isolated PostgreSQL integration (60/60), catalog/trigger/race behavior, verified client TLS and the owner-approved test migration now PASS. A restricted production role, real source-data parity, backup/restore rehearsal and any production migration/cutover remain separate unverified gates. No production database was changed.
 - If an after-change comparison is later authorized, freeze its workload, concurrency, sample count, provider/model/voice configuration, environment/region, source commit, and percentile method first. Report each provider/stage separately, preserve missing values as unavailable, and explain differences from the old MySQL/Azure baseline.
 - QLoRA remains **BLOCKED**: no licensed base model/checkpoint or tokenizer, curated dataset, training runtime/environment, GPU/memory budget, or approved split manifest is established. Do not report training or model-comparison metrics.
-- Phase 5 persistence-read optimization: **NO CHANGE**. Existing measurements do not justify changing the snapshot/read/CAS path; the phase's race/ownership/expiration gates are not ready.
+- Phase 5 persistence-read optimization: **NO CHANGE**. The new measurement prioritizes database-path diagnosis, then a reviewed read-sharing design that preserves ownership, expiration, replay, CAS and atomicity. The isolated correctness suite is green, but no read-removal change is approved or implemented.
 - Phase 6 perceived-latency/streaming work: **NO CHANGE**. The old service trace does not measure browser playback or perceived completion, and streaming/cancellation/reconnect/load gates have not been designed and passed.
 
 ## Interpretation rules

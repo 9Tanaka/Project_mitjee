@@ -1,0 +1,1094 @@
+{
+  "sourceCommit": "5c13cf078f0503e7b08998ea7ac5f12fee200ccd",
+  "verificationSourceSha256": {
+    "tests/repository-contract.ts": "1de77a67b465db28854ec3cb149135c97fee969e4a15cf8fd9e87e8cccf75d6d",
+    "tests/persistence.postgres.test.ts": "95f97163e01e1648f020a963cec86af3b4f4ec6cc3f27563a2fc39b2f20cf2b3",
+    "scripts/test-postgres.mjs": "104ddccfd543c67ca1163daa8513b6e6664219f9519e0416311cd9c7bc8da43d",
+    "scripts/patch-prisma-pg-timezone.mjs": "dde8d2d84b377aae9c019f09e81badad17e07a5506dcaf0ef118dae843678d2b",
+    "tests/prisma-pg-timezone-patch.test.ts": "31ed1c88ede7422810f2dd3d20d4cecc7e3c19e2728665ef6750a592a50b3bb1",
+    "package.json": "0f925b23639af346e192938adf37aea42d1a157b59f54094e3842c1b04d7c50b"
+  },
+  "installedPatchedAdapterSha256": {
+    "index.js": "2826eaf62ff482f969f10d2e6df6b3f8c962333a2048d66082e53baec41359f5",
+    "index.mjs": "40737425963cb363d96a4259ef41e63af58ec21983bcf3d98f1cd52af42776b4"
+  },
+  "environment": {
+    "node": "v24.19.0",
+    "osRelease": "10.0.26200",
+    "platform": "win32",
+    "arch": "x64",
+    "timezone": "Asia/Bangkok",
+    "postgresql": "17.11",
+    "prisma": "7.10.0",
+    "pg": "8.23.1",
+    "vitest": "5.0.0"
+  },
+  "date": "2026-10-24T06:52:36.163Z",
+  "target": "owner-approved disposable Supabase PostgreSQL; session pooler; verified TLS",
+  "runner": {
+    "files": [
+      "tests/persistence.postgres.test.ts",
+      "tests/accounts.postgres.test.ts",
+      "tests/quiz.postgres.test.ts",
+      "tests/call-variants.postgres.test.ts",
+      "tests/postgres.metadata.test.ts",
+      "tests/http.integration.test.ts"
+    ],
+    "maxWorkers": 1,
+    "testTimeoutMs": 300000,
+    "hookTimeoutMs": 60000,
+    "outerTimeoutMs": 1800000
+  },
+  "status": "PASS",
+  "exitCode": 0,
+  "durationMs": 1169487,
+  "counts": {
+    "total": 125,
+    "passed": 125,
+    "failed": 0,
+    "skipped": 0
+  },
+  "postgresql": {
+    "total": 60,
+    "passed": 60,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runEnd": {
+    "reason": "passed",
+    "unhandledErrorCount": 0,
+    "files": [
+      {
+        "file": "tests/accounts.postgres.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/call-variants.postgres.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/http.integration.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/persistence.postgres.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/postgres.metadata.test.ts",
+        "state": "passed"
+      },
+      {
+        "file": "tests/quiz.postgres.test.ts",
+        "state": "passed"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "file": "http.integration.test.ts",
+      "name": "database failure headers expose only repository-recorded operation/timing, never raw error details",
+      "status": "passed",
+      "durationMs": 150,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "unrecorded database failures cannot inject operation diagnostics into HTTP headers",
+      "status": "passed",
+      "durationMs": 62,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated scenarios returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 52,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated scenario returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 43,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated start returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 41,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated resume returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 42,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated message returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 60,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated action returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 45,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated quit returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 59,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unauthenticated result returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 77,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > lists/details playable scenarios using an explicit projection",
+      "status": "passed",
+      "durationMs": 63,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > start binds authenticated owner, fixes version and handles concurrent start retries",
+      "status": "passed",
+      "durationMs": 49,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > lists nine playable categories and starts another scenario through the same authenticated API",
+      "status": "passed",
+      "durationMs": 87,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects spoofed start field ownerId",
+      "status": "passed",
+      "durationMs": 46,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects spoofed start field score",
+      "status": "passed",
+      "durationMs": 44,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects spoofed start field targetState",
+      "status": "passed",
+      "durationMs": 42,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects spoofed start field version",
+      "status": "passed",
+      "durationMs": 58,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects spoofed start field variant",
+      "status": "passed",
+      "durationMs": 46,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects browser Call Center selector field variant before creating a session",
+      "status": "passed",
+      "durationMs": 49,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects browser Call Center selector field callType before creating a session",
+      "status": "passed",
+      "durationMs": 48,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects browser Call Center selector field seed before creating a session",
+      "status": "passed",
+      "durationMs": 48,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects browser Call Center selector field probability before creating a session",
+      "status": "passed",
+      "durationMs": 50,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > owner isolation for resume uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 57,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > owner isolation for message uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 49,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > owner isolation for action uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 44,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > owner isolation for quit uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 45,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > owner isolation for result uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 45,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > resumes and completes a multi-turn safe path with categorical result",
+      "status": "passed",
+      "durationMs": 213,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > several turns do not advance or score, and required checkpoints cannot be skipped",
+      "status": "passed",
+      "durationMs": 86,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > free text cannot cause failure; explicit simulated confirmation does",
+      "status": "passed",
+      "durationMs": 58,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > high-confidence critical hints cannot cause failure through HTTP",
+      "status": "passed",
+      "durationMs": 71,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > pending provider reply cannot commit after revision changes",
+      "status": "passed",
+      "durationMs": 43,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > pending provider reply cannot commit after expiry changes",
+      "status": "passed",
+      "durationMs": 53,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > sanitized-equivalent retries preserve the original dialogue receipt",
+      "status": "passed",
+      "durationMs": 47,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > retrying the final action does not create a second result",
+      "status": "passed",
+      "durationMs": 66,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > risky choices request further practice without critical failure",
+      "status": "passed",
+      "durationMs": 76,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > two requests at one revision have one winner and no partial loser",
+      "status": "passed",
+      "durationMs": 49,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > duplicate action replays after state change; changed payload conflicts",
+      "status": "passed",
+      "durationMs": 52,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > duplicate dialogue returns the original turn and does not call provider again",
+      "status": "passed",
+      "durationMs": 46,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > quit uses Core, replays idempotently, and has no official result",
+      "status": "passed",
+      "durationMs": 46,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > expired resume returns 410",
+      "status": "passed",
+      "durationMs": 45,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > expired message returns 410",
+      "status": "passed",
+      "durationMs": 35,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > expired action returns 410",
+      "status": "passed",
+      "durationMs": 37,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > expired quit returns 410",
+      "status": "passed",
+      "durationMs": 48,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > expired result returns 410",
+      "status": "passed",
+      "durationMs": 38,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field score at either request depth",
+      "status": "passed",
+      "durationMs": 38,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field targetState at either request depth",
+      "status": "passed",
+      "durationMs": 43,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field EventCode at either request depth",
+      "status": "passed",
+      "durationMs": 45,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field nextState at either request depth",
+      "status": "passed",
+      "durationMs": 48,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field criticalFailure at either request depth",
+      "status": "passed",
+      "durationMs": 46,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field pass at either request depth",
+      "status": "passed",
+      "durationMs": 49,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field fail at either request depth",
+      "status": "passed",
+      "durationMs": 48,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field earnedPoints at either request depth",
+      "status": "passed",
+      "durationMs": 44,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field eligibleMaximum at either request depth",
+      "status": "passed",
+      "durationMs": 50,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field validationStatus at either request depth",
+      "status": "passed",
+      "durationMs": 41,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field ruleId at either request depth",
+      "status": "passed",
+      "durationMs": 44,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects authoritative field ownerId at either request depth",
+      "status": "passed",
+      "durationMs": 53,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > rejects invalid JSON, text length, unknown query, malformed IDs and revision ranges",
+      "status": "passed",
+      "durationMs": 59,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > accepts an 8000-code-unit Thai message within byte limit and blocks cross-origin writes",
+      "status": "passed",
+      "durationMs": 86,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > provider error returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 128,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > provider refusal returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 161,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > provider invalid returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 216,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > sanitization remains in the dialogue path and provider exceptions never leak",
+      "status": "passed",
+      "durationMs": 197,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > unexpected database errors log only a closed taxonomy, never raw SQL or secrets",
+      "status": "passed",
+      "durationMs": 57,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP Route Handler integration > central error mapping distinguishes conflicts, validation and state errors",
+      "status": "passed",
+      "durationMs": 0,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "http.integration.test.ts",
+      "name": "HTTP services/real PostgreSQL complete path and persisted resume",
+      "status": "passed",
+      "durationMs": 90953,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > opaque identities preserve exact case and trailing space without crossing ownership",
+      "status": "passed",
+      "durationMs": 8304,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > safe complete multi-turn path preserves full D/W/S and one official result",
+      "status": "passed",
+      "durationMs": 76718,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > explicit simulated critical action persists immediate failure and result",
+      "status": "passed",
+      "durationMs": 19481,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > duplicate action is idempotent and a changed payload conflicts",
+      "status": "passed",
+      "durationMs": 7340,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > concurrent duplicate actions commit exactly once",
+      "status": "passed",
+      "durationMs": 6317,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > duplicate turn resumes the receipt without calling provider again",
+      "status": "passed",
+      "durationMs": 11448,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > concurrent duplicate turns share one committed receipt",
+      "status": "passed",
+      "durationMs": 6247,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > two different requests at the same revision allow one winner, no partial loser",
+      "status": "passed",
+      "durationMs": 6233,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > stale transition cannot open a second opportunity or move the state twice",
+      "status": "passed",
+      "durationMs": 10635,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > published template and referenced version are immutable across Core instances",
+      "status": "passed",
+      "durationMs": 6446,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > variant is part of the template key",
+      "status": "passed",
+      "durationMs": 1544,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > refresh/recreated Core restores state, events, opportunities and sanitized dialogue",
+      "status": "passed",
+      "durationMs": 12820,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > invalid transition and required checkpoint fail atomically",
+      "status": "passed",
+      "durationMs": 6727,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > Prisma repository port > sanitizes user/provider content and never stores raw free text or secret fingerprints",
+      "status": "passed",
+      "durationMs": 8183,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > identical concurrent publication recovers only after a losing transaction rolls back",
+      "status": "passed",
+      "durationMs": 1146,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > conflicting concurrent publication preserves the winning immutable configuration",
+      "status": "passed",
+      "durationMs": 1176,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > duplicate concurrent session creation has one complete aggregate and a mapped conflict",
+      "status": "passed",
+      "durationMs": 1743,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > competing expiration reads preserve one CAS revision and reject a late learner write",
+      "status": "passed",
+      "durationMs": 5958,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > SMS legacy v1 keeps its weighted aggregate across a fresh client",
+      "status": "passed",
+      "durationMs": 35330,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > SMS legacy v2 keeps its weighted aggregate across a fresh client",
+      "status": "passed",
+      "durationMs": 35233,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > call-center-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45653,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > investment-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45691,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > romance-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45798,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > ecommerce-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45890,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > task-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45297,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > fake-loan-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45680,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > recovery-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45170,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > job-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45587,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > sms-phishing-demo v3: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 51406,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > sms-phishing-demo v4: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 52551,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > persists version 3 categorical result and resumes it without rewriting legacy history",
+      "status": "passed",
+      "durationMs": 5293,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > complete aggregate is identical to InMemory after every action and dialogue turn",
+      "status": "passed",
+      "durationMs": 93373,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > atomic rollback after decision writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 11708,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > atomic rollback after transition writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 14479,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > atomic rollback after critical writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 26144,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > atomic rollback after dialogue writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 13437,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > atomic rollback after safe-result writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 41161,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > DB-level foreign key failure rolls back an action, opportunity and revision",
+      "status": "passed",
+      "durationMs": 4259,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > published configuration cannot be changed or deleted through a direct Prisma client",
+      "status": "passed",
+      "durationMs": 1774,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > unique and foreign key constraints reject duplicate/orphan records",
+      "status": "passed",
+      "durationMs": 41738,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) > a new database client resumes without republishing or relying on process memory",
+      "status": "passed",
+      "durationMs": 12514,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > installs all three enabled BEFORE ROW immutability triggers",
+      "status": "passed",
+      "durationMs": 1009,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > keeps fixed CHAR widths, all timestamp milliseconds, JSONB and deterministic text",
+      "status": "passed",
+      "durationMs": 171,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > preserves every FK column order and RESTRICT/CASCADE action without an owner FK or invented CHECK",
+      "status": "passed",
+      "durationMs": 308,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > direct SQL rejects no-op template updates and deletion with P0001",
+      "status": "passed",
+      "durationMs": 2308,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > account identity is immutable while same-ID updates and valid CHAR round trips work",
+      "status": "passed",
+      "durationMs": 997,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > round-trips UTC milliseconds even when the SQL transaction timezone differs",
+      "status": "passed",
+      "durationMs": 604,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) > distinguishes JSON null from SQL NULL and compares canonical JSON without property order",
+      "status": "passed",
+      "durationMs": 824,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > persists frozen snapshots, partial choices and final score across service recreation",
+      "status": "passed",
+      "durationMs": 5436,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > rolls back answers, result, status, revision and receipt on a failure after writes",
+      "status": "passed",
+      "durationMs": 3024,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > concurrent different requests have one winner, preserving the same CAS behavior as memory",
+      "status": "passed",
+      "durationMs": 2259,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > simultaneous exact submit retries persist a single final result and receipt",
+      "status": "passed",
+      "durationMs": 3178,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > concurrent reads never combine a revision with receipts from a different commit",
+      "status": "passed",
+      "durationMs": 9083,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) > a fresh client preserves the frozen Pre-test baseline after a later Pre-test completes",
+      "status": "passed",
+      "durationMs": 7994,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts > persists bcrypt only and new client can resume credentials with the same UUID",
+      "status": "passed",
+      "durationMs": 3362,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts > database unique constraint decides concurrent normalized duplicate registration",
+      "status": "passed",
+      "durationMs": 1066,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts > UserAccount has exactly the approved columns and no plaintext column",
+      "status": "passed",
+      "durationMs": 116,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts > immutable account ID rejects direct database mutation",
+      "status": "passed",
+      "durationMs": 1205,
+      "prismaCodes": [],
+      "errorNames": []
+    },
+    {
+      "file": "call-variants.postgres.test.ts",
+      "name": "Call variant concurrency on real PostgreSQL > independent clients return the persisted winner for concurrent opposite variant selections",
+      "status": "passed",
+      "durationMs": 12190,
+      "prismaCodes": [],
+      "errorNames": []
+    }
+  ],
+  "sourcePreservation": {
+    "testHarness": "4d7792f0192893aa03b470353d1420c3d08fe5db",
+    "adapterCompatibility": "c9264db3c937ba8c45eca3725fd4c94d0087a39c",
+    "benchmarkHarness": "abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1"
+  }
+}

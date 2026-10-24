@@ -1,5 +1,11 @@
 # Final engineering review
 
+## Operational addendum by primary agent (2026-10-24)
+
+The historical architecture/source review below is retained. New owner-approved isolated PostgreSQL evidence is in [the live report](docs/engineering/postgres-live-verification.md). The live run exposed a non-UTC TIMESTAMPTZ adapter defect; a narrowly version/build-guarded compatibility patch corrects serialization/parsing without changing Core, State Machine, repository interfaces or Decision Rule semantics. Its original non-UTC regression passes on the real database after clean installation. Local gates pass, including 983 offline tests, generation/validation, typecheck, production build and client audit. The complete post-fix live rerun passed **60/60 PostgreSQL cases, zero skips** (125/125 including repeated mock cases).
+
+This addendum is an operational verification record, not a new ASTRA review or production approval. The owner-approved `eleven_v4_turbo` synthetic TTS/Azure-STT roundtrip subsequently passed once; per-provider console timing telemetry was not captured and no paid replay was made for that gap. The separately authorized [post-change benchmark](docs/performance/latency-post-change.md) then completed at `abbcec3f93b28f3a5911b6d6d353c4a4e872c4f1`: all 24 turns succeeded, but measured text/voice p50 regressed to 8,685.674/12,540.406 ms. Database preflight and commit are the first diagnostic priority. The final offline suite, including benchmark guards, passed 987 tests. No optimization was implemented. Restricted runtime-role enforcement, real historical-data parity/restore rehearsal and qualified Thai-quality review remain open. The owner-approved test migration does not authorize a production migration, environment cutover or MySQL removal.
+
 Reviewer: ASTRA. Review date: 2026-10-24. Decision: **READY_WITH_NOTES for code/setup preparation; NOT_READY for production deployment or cutover.** Final local gates passed. The outstanding live gates below prevent production approval.
 
 ## Scope and evidence
@@ -25,12 +31,12 @@ The offline AI harness was approved after exact measured case-ID set equality wa
 | Area | Decision or outstanding evidence |
 | --- | --- |
 | Phase 1 | Accepted historical baseline and instrumentation; production latency/SLO claims unsupported. |
-| Phase 2 | Code preparation accepted; live PostgreSQL/Supabase replacement NOT RUN. |
-| Phase 3 | Source preparation accepted after final local verification. Live ElevenLabs account/model/voice/PCM/Thai quality and latency NOT RUN. |
+| Phase 2 | Code preparation accepted; subsequent isolated PostgreSQL acceptance PASS 60/60. Production replacement/cutover not authorized. |
+| Phase 3 | Source preparation accepted; bounded live account/model/voice/PCM/STT compatibility subsequently PASS, and separate benchmark TTS spans measured. Human Thai quality NOT REVIEWED. |
 | Phase 4a | Offline evaluation harness accepted; live quality/safety review NOT RUN. |
 | Phase 4b | NO CHANGE: no comparable quality-controlled optimization evidence. |
 | QLoRA | BLOCKED: no established licensed checkpoint/tokenizer, curated dataset/split, GPU budget or training environment. No pilot/full training or adapter evaluation occurred. |
-| Phase 5 | NO CHANGE: PostgreSQL is not stable live; ownership/expiration/CAS read-removal evidence and race gates are unmet. |
+| Phase 5 | NO CHANGE: isolated correctness and post-change measurements now exist; diagnose DB cost and review any consistency-preserving read-sharing design before implementation. |
 | Phase 6 | NO CHANGE: browser-perceived latency is unmeasured; streaming ordering/cancellation/reconnect/load design is not approved. Existing committed-text-before-audio behavior remains. |
 
 ## Verification and readiness
