@@ -1,4 +1,4 @@
-import type { Prisma } from "../generated/prisma/client.js";
+import { Prisma } from "../generated/prisma/client.js";
 
 // Phase 5D/5E proven explicit SELECT. Identifiers are fixed; values are bound.
 const sql = `SELECT to_jsonb(s) || jsonb_build_object(
@@ -42,7 +42,7 @@ export function hydrateAggregate(value: unknown): AggregateRow | null {
 }
 
 /** Phase 5E supported-state boundary. Reject malformed order; never sort/repair.
- * Receipt revisions may have gaps from explicit actions or expiry. GET only. */
+ * Receipt revisions may have gaps from explicit actions or expiry. Shared by both scopes. */
 function assertSupportedOrdering(row: AggregateRow): void {
   for (const relation of [row.opportunities, row.events, row.messages]) {
     if (relation.some((item, index) => item.position !== index)) throw new Error("UNSUPPORTED_PERSISTED_ORDERING");
@@ -60,5 +60,22 @@ export async function readTrainingAggregate(tx: Pick<Prisma.TransactionClient, "
   const rows = await tx.$queryRawUnsafe<Array<{ aggregate: unknown }>>(sql, id, ownerId);
   const row = hydrateAggregate(rows[0]?.aggregate ?? null);
   if (row) assertSupportedOrdering(row);
+  return row;
+}
+
+// SAVE-only post-CAS reload: same aggregate and codec, original ID-only scope.
+const saveSql = sql.replace('WHERE s.id=$1 AND s."ownerId"=$2', 'WHERE s.id=$1');
+
+/** Call only after a successful session CAS in the same transaction. Persisted
+ * ownership/identity is validated by the unchanged assertUpdate caller. */
+export async function readTrainingAggregateAfterCas(tx: Pick<Prisma.TransactionClient, "$queryRawUnsafe">, id: string): Promise<AggregateRow> {
+  const rows = await tx.$queryRawUnsafe<Array<{ aggregate: unknown }>>(saveSql, id);
+  const row = hydrateAggregate(rows[0]?.aggregate ?? null);
+  if (!row) {
+    // Preserve findUniqueOrThrow's missing-record error category. A successful
+    // locked CAS makes this unreachable for supported persisted states.
+    throw new Prisma.PrismaClientKnownRequestError("No record was found for a query.", { code: "P2025", clientVersion: Prisma.prismaVersion.client });
+  }
+  assertSupportedOrdering(row);
   return row;
 }

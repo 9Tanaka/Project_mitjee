@@ -9,7 +9,7 @@ import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-
 import { copy } from "../domain/copy.js";
 import { rememberTransactionFailure } from "./transaction-diagnostics.js";
 import { observeAggregateDbRead } from "../observability/latency.js";
-import { readTrainingAggregate } from "./aggregate-reader.js";
+import { readTrainingAggregate, readTrainingAggregateAfterCas } from "./aggregate-reader.js";
 
 const include = {
   template: { select: { configuration: true } },
@@ -176,7 +176,7 @@ export class PrismaTrainingRepository implements TrainingRepository {
             lastActivityAt: new Date(snapshot.lastActivityAt), endedAt: date(snapshot.endedAt) },
         });
         if (changed.count !== 1) throw new DomainError("REVISION_CONFLICT");
-        const row = await observeAggregateDbRead(() => tx.trainingSession.findUniqueOrThrow({ where: { id: snapshot.id }, include }));
+        const row = await observeAggregateDbRead(() => readTrainingAggregateAfterCas(tx, snapshot.id));
         const current = decode(row); current.revision = expectedRevision;
         assertUpdate(current, snapshot, expectedRevision);
         await this.writeChildren(tx, snapshot, current);

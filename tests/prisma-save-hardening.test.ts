@@ -14,12 +14,12 @@ async function setup() {
   const row = (s: TrainingSession) => ({ ...s, template: { configuration: fixture },
     revision: s.revision + 1, startedAt: at(s.startedAt), lastActivityAt: at(s.lastActivityAt), endedAt: at(s.endedAt),
     actions: s.actions.map(a => ({ ...a, at: at(a.at) })),
-    opportunities: s.opportunities.map(o => ({ ...o, assessment: o.assessment ?? null, openedAt: at(o.openedAt), finalizedAt: at(o.finalizedAt) })),
+    opportunities: s.opportunities.map((o, position) => ({ ...o, position, assessment: o.assessment ?? null, openedAt: at(o.openedAt), finalizedAt: at(o.finalizedAt) })),
     events: s.events.map(e => ({ ...e, at: at(e.at) })),
     messages: s.messages.map(m => ({ ...m, at: at(m.at) })), turns: s.dialogueTurns, result: null });
   const order: string[] = [];
   const create = (label: string) => vi.fn(async (_data: unknown) => { order.push(label); });
-  const tx = { trainingSession: { updateMany: vi.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: vi.fn().mockResolvedValue(row(before)), update: vi.fn() },
+  const tx = { $queryRawUnsafe: vi.fn().mockResolvedValue([{ aggregate: row(before) }]), trainingSession: { updateMany: vi.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: vi.fn(), update: vi.fn() },
     trainingAction: { create: create("action") }, sessionOpportunity: { create: create("opportunity"), update: create("opportunity") },
     trainingEvent: { create: create("event") }, dialogueTurnReceipt: { create: create("receipt") },
     trainingMessage: { createMany: create("messages") }, trainingResult: { create: create("result") } };
@@ -34,6 +34,10 @@ it("header shares the revision CAS and both dialogue messages use one strict bat
   expect(h.tx.trainingSession.updateMany).toHaveBeenCalledExactlyOnceWith({ where: { id: h.next.id, revision: h.before.revision },
     data: { revision: { increment: 1 }, status: h.next.status, state: h.next.state, lastActivityAt: new Date(h.next.lastActivityAt), endedAt: null } });
   expect(h.tx.trainingSession.update).not.toHaveBeenCalled();
+  expect(h.tx.trainingSession.findUniqueOrThrow).not.toHaveBeenCalled();
+  expect(h.tx.$queryRawUnsafe).toHaveBeenCalledOnce();
+  expect(h.tx.$queryRawUnsafe.mock.calls[0]![0]).toMatch(/WHERE s\.id=\$1$/);
+  expect(h.tx.$queryRawUnsafe.mock.calls[0]!.slice(1)).toEqual([h.next.id]);
   expect(h.order).toEqual(["action", "receipt", "messages"]);
   expect(h.tx.trainingMessage.createMany.mock.calls[0]![0]).toEqual({ data: h.next.messages.map((m, position) => ({ ...m, sessionId: h.next.id, position, at: new Date(m.at) })) });
   expect(h.beforeCommit).toHaveBeenCalledOnce();
@@ -42,6 +46,7 @@ it("stale CAS cannot execute any readback, child insert or commit hook", async (
   const h = await setup(); h.tx.trainingSession.updateMany.mockResolvedValue({ count: 0 });
   await expect(h.repo.save(h.next, h.before.revision)).rejects.toThrow("REVISION_CONFLICT");
   expect(h.tx.trainingSession.findUniqueOrThrow).not.toHaveBeenCalled(); expect(h.order).toEqual([]);
+  expect(h.tx.$queryRawUnsafe).not.toHaveBeenCalled();
   expect(h.beforeCommit).not.toHaveBeenCalled();
 });
 it("immutable identity is still checked inside the transaction before child writes", async () => {
