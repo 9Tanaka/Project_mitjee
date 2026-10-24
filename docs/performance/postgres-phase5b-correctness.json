@@ -1,0 +1,1124 @@
+{
+  "status": "PASS",
+  "startedAt": "2026-10-24T13:47:27.945Z",
+  "sourceCommit": "595a579498814317843907a65b7d09e9a5505ca4",
+  "target": "dedicated PostgreSQL test database / session pooler / trusted CA",
+  "files": [
+    "tests/persistence.postgres.test.ts",
+    "tests/accounts.postgres.test.ts",
+    "tests/quiz.postgres.test.ts",
+    "tests/call-variants.postgres.test.ts",
+    "tests/postgres.metadata.test.ts",
+    "tests/http.integration.test.ts",
+    "tests/preflight-sharing.postgres.test.ts"
+  ],
+  "runner": {
+    "maxWorkers": 1,
+    "testTimeoutMs": 300000,
+    "hookTimeoutMs": 60000
+  },
+  "sourceSha256": {
+    "tests/persistence.postgres.test.ts": "95f97163e01e1648f020a963cec86af3b4f4ec6cc3f27563a2fc39b2f20cf2b3",
+    "tests/accounts.postgres.test.ts": "bba67adfaa432e6142635936d0c5dbe53ffaef808548f1a8453e10f533c92816",
+    "tests/quiz.postgres.test.ts": "863371824550458dcb3a42c881fced041a770d2c59eb7ec842cb75247d02db5c",
+    "tests/call-variants.postgres.test.ts": "4830bfebb5d4a3bea8159440203b01b70f942347abfcd0635da4282e4cd93fac",
+    "tests/postgres.metadata.test.ts": "86e13e9b2afebf1ff049265d27dfd03e93115b32c510c510694a4ce6f34539aa",
+    "tests/http.integration.test.ts": "deb411950d4ec0cb73c943e8dbf664c6a0aa549e111f45c996c80768a22bc9c6",
+    "tests/preflight-sharing.postgres.test.ts": "6c624ce2c18bab19c9336fbc40c0304ee61c7467a27f3f596706bfead43cef6a",
+    "tests/preflight-contract.ts": "80e091bed8ed3fea0d398e6e1a62c490165b60b888287df5f896bf1b8dec2373",
+    "src/application/training-service.ts": "7ca4308d8d058273cb0ef10846f85269eddddc9d32a449ec2f749effb64fc10b",
+    "src/dialogue/orchestrator.ts": "459a6274ed596af11ac47765bf5207bba2989d6c5fc4df12447b24438cd77066",
+    "src/core.ts": "525b91a7b2e6c8a523b4564ef85873293daba62a138748423f8158db4473999f",
+    "src/persistence/prisma-repository.ts": "b4e7f162a506764e44fa9a4208d6847322a710da736fae13b8f3027bba3eeff8",
+    "scripts/verify-postgres-phase5b.mjs": "2d07e18a029a397a873a10c8106bc2db348806540d45a627877edd94d7e951c5"
+  },
+  "cases": [
+    {
+      "file": "tests/accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts persists bcrypt only and new client can resume credentials with the same UUID",
+      "status": "passed",
+      "durationMs": 3230.1098,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts database unique constraint decides concurrent normalized duplicate registration",
+      "status": "passed",
+      "durationMs": 1049.6834,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts UserAccount has exactly the approved columns and no plaintext column",
+      "status": "passed",
+      "durationMs": 147.3161,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/accounts.postgres.test.ts",
+      "name": "Real PostgreSQL accounts immutable account ID rejects direct database mutation",
+      "status": "passed",
+      "durationMs": 1154.4362,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/call-variants.postgres.test.ts",
+      "name": "Call variant concurrency on real PostgreSQL independent clients return the persisted winner for concurrent opposite variant selections",
+      "status": "passed",
+      "durationMs": 12479.320300000001,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "database failure headers expose only repository-recorded operation/timing, never raw error details",
+      "status": "passed",
+      "durationMs": 149.64089999999987,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "unrecorded database failures cannot inject operation diagnostics into HTTP headers",
+      "status": "passed",
+      "durationMs": 63.16750000000002,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated scenarios returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 46.74499999999989,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated scenario returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 52.41430000000037,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated start returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 47.67399999999998,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated resume returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 45.48309999999992,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated message returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 42.778699999999844,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated action returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 36.29809999999998,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated quit returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 43.016599999999926,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unauthenticated result returns 401 before database initialization",
+      "status": "passed",
+      "durationMs": 38.39370000000008,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration lists/details playable scenarios using an explicit projection",
+      "status": "passed",
+      "durationMs": 58.27099999999973,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration start binds authenticated owner, fixes version and handles concurrent start retries",
+      "status": "passed",
+      "durationMs": 45.983600000000024,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration lists nine playable categories and starts another scenario through the same authenticated API",
+      "status": "passed",
+      "durationMs": 73.19039999999995,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects spoofed start field ownerId",
+      "status": "passed",
+      "durationMs": 39.79489999999987,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects spoofed start field score",
+      "status": "passed",
+      "durationMs": 40.21990000000005,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects spoofed start field targetState",
+      "status": "passed",
+      "durationMs": 37.128600000000006,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects spoofed start field version",
+      "status": "passed",
+      "durationMs": 43.16120000000001,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects spoofed start field variant",
+      "status": "passed",
+      "durationMs": 34.5021999999999,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects browser Call Center selector field variant before creating a session",
+      "status": "passed",
+      "durationMs": 48.58959999999979,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects browser Call Center selector field callType before creating a session",
+      "status": "passed",
+      "durationMs": 42.67970000000014,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects browser Call Center selector field seed before creating a session",
+      "status": "passed",
+      "durationMs": 40.52610000000004,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects browser Call Center selector field probability before creating a session",
+      "status": "passed",
+      "durationMs": 36.953500000000076,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration owner isolation for resume uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 34.927599999999984,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration owner isolation for message uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 43.63789999999972,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration owner isolation for action uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 35.2520999999997,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration owner isolation for quit uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 47.62530000000015,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration owner isolation for result uses identical 404 for missing/foreign resources",
+      "status": "passed",
+      "durationMs": 45.36900000000014,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration resumes and completes a multi-turn safe path with categorical result",
+      "status": "passed",
+      "durationMs": 163.63760000000002,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration several turns do not advance or score, and required checkpoints cannot be skipped",
+      "status": "passed",
+      "durationMs": 69.95880000000034,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration free text cannot cause failure; explicit simulated confirmation does",
+      "status": "passed",
+      "durationMs": 61.86059999999998,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration high-confidence critical hints cannot cause failure through HTTP",
+      "status": "passed",
+      "durationMs": 51.83189999999968,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration pending provider reply cannot commit after revision changes",
+      "status": "passed",
+      "durationMs": 40.58490000000029,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration pending provider reply cannot commit after expiry changes",
+      "status": "passed",
+      "durationMs": 41.51780000000008,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration sanitized-equivalent retries preserve the original dialogue receipt",
+      "status": "passed",
+      "durationMs": 41.24549999999999,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration retrying the final action does not create a second result",
+      "status": "passed",
+      "durationMs": 52.51139999999987,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration risky choices request further practice without critical failure",
+      "status": "passed",
+      "durationMs": 60.67059999999992,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration two requests at one revision have one winner and no partial loser",
+      "status": "passed",
+      "durationMs": 48.785699999999906,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration duplicate action replays after state change; changed payload conflicts",
+      "status": "passed",
+      "durationMs": 45.41559999999981,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration duplicate dialogue returns the original turn and does not call provider again",
+      "status": "passed",
+      "durationMs": 45.065700000000106,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration quit uses Core, replays idempotently, and has no official result",
+      "status": "passed",
+      "durationMs": 40.99170000000049,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration expired resume returns 410",
+      "status": "passed",
+      "durationMs": 34.47309999999925,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration expired message returns 410",
+      "status": "passed",
+      "durationMs": 34.17529999999988,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration expired action returns 410",
+      "status": "passed",
+      "durationMs": 43.206200000000536,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration expired quit returns 410",
+      "status": "passed",
+      "durationMs": 37.85940000000028,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration expired result returns 410",
+      "status": "passed",
+      "durationMs": 30.72030000000086,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field score at either request depth",
+      "status": "passed",
+      "durationMs": 32.470800000000054,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field targetState at either request depth",
+      "status": "passed",
+      "durationMs": 31.788900000000467,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field EventCode at either request depth",
+      "status": "passed",
+      "durationMs": 34.40229999999974,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field nextState at either request depth",
+      "status": "passed",
+      "durationMs": 39.20269999999982,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field criticalFailure at either request depth",
+      "status": "passed",
+      "durationMs": 29.46389999999974,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field pass at either request depth",
+      "status": "passed",
+      "durationMs": 41.059400000000096,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field fail at either request depth",
+      "status": "passed",
+      "durationMs": 38.723800000000665,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field earnedPoints at either request depth",
+      "status": "passed",
+      "durationMs": 37.829899999999725,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field eligibleMaximum at either request depth",
+      "status": "passed",
+      "durationMs": 36.692299999999705,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field validationStatus at either request depth",
+      "status": "passed",
+      "durationMs": 35.82330000000002,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field ruleId at either request depth",
+      "status": "passed",
+      "durationMs": 34.70589999999993,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects authoritative field ownerId at either request depth",
+      "status": "passed",
+      "durationMs": 41.97680000000037,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration rejects invalid JSON, text length, unknown query, malformed IDs and revision ranges",
+      "status": "passed",
+      "durationMs": 52.09400000000005,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration accepts an 8000-code-unit Thai message within byte limit and blocks cross-origin writes",
+      "status": "passed",
+      "durationMs": 47.07269999999971,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration provider error returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 42.07389999999941,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration provider refusal returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 47.211599999999635,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration provider invalid returns fallback without internal metadata",
+      "status": "passed",
+      "durationMs": 40.88500000000022,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration sanitization remains in the dialogue path and provider exceptions never leak",
+      "status": "passed",
+      "durationMs": 46.35909999999967,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration unexpected database errors log only a closed taxonomy, never raw SQL or secrets",
+      "status": "passed",
+      "durationMs": 36.30360000000019,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP Route Handler integration central error mapping distinguishes conflicts, validation and state errors",
+      "status": "passed",
+      "durationMs": 0.354099999999562,
+      "postgres": false,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/http.integration.test.ts",
+      "name": "HTTP services/real PostgreSQL complete path and persisted resume",
+      "status": "passed",
+      "durationMs": 80651.60919999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port opaque identities preserve exact case and trailing space without crossing ownership",
+      "status": "passed",
+      "durationMs": 7977.9785999999995,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port safe complete multi-turn path preserves full D/W/S and one official result",
+      "status": "passed",
+      "durationMs": 77486.8158,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port explicit simulated critical action persists immediate failure and result",
+      "status": "passed",
+      "durationMs": 19705.8413,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port duplicate action is idempotent and a changed payload conflicts",
+      "status": "passed",
+      "durationMs": 7436.592800000013,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port concurrent duplicate actions commit exactly once",
+      "status": "passed",
+      "durationMs": 6455.383999999991,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port duplicate turn resumes the receipt without calling provider again",
+      "status": "passed",
+      "durationMs": 11894.340899999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port concurrent duplicate turns share one committed receipt",
+      "status": "passed",
+      "durationMs": 6402.255999999994,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port two different requests at the same revision allow one winner, no partial loser",
+      "status": "passed",
+      "durationMs": 6395.259699999995,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port stale transition cannot open a second opportunity or move the state twice",
+      "status": "passed",
+      "durationMs": 11093.497399999993,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port published template and referenced version are immutable across Core instances",
+      "status": "passed",
+      "durationMs": 6732.631200000003,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port variant is part of the template key",
+      "status": "passed",
+      "durationMs": 1611.0020000000077,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port refresh/recreated Core restores state, events, opportunities and sanitized dialogue",
+      "status": "passed",
+      "durationMs": 13408.0582,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port invalid transition and required checkpoint fail atomically",
+      "status": "passed",
+      "durationMs": 7112.754199999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) Prisma repository port sanitizes user/provider content and never stores raw free text or secret fingerprints",
+      "status": "passed",
+      "durationMs": 8584.945600000006,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) identical concurrent publication recovers only after a losing transaction rolls back",
+      "status": "passed",
+      "durationMs": 1098.0946000000113,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) conflicting concurrent publication preserves the winning immutable configuration",
+      "status": "passed",
+      "durationMs": 1187.1118000000133,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) duplicate concurrent session creation has one complete aggregate and a mapped conflict",
+      "status": "passed",
+      "durationMs": 1788.7663999999932,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) competing expiration reads preserve one CAS revision and reject a late learner write",
+      "status": "passed",
+      "durationMs": 6111.57759999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) SMS legacy v1 keeps its weighted aggregate across a fresh client",
+      "status": "passed",
+      "durationMs": 36689.451299999986,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) SMS legacy v2 keeps its weighted aggregate across a fresh client",
+      "status": "passed",
+      "durationMs": 36711.201500000025,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) call-center-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 46088.53229999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) investment-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45757.12270000001,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) romance-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45490.57499999995,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) ecommerce-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45461.91039999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) task-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 46192.034999999974,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) fake-loan-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 46383.86200000008,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) recovery-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 46211.64130000002,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) job-scam v1: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 45865.24450000003,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) sms-phishing-demo v3: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 52030.67369999993,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) sms-phishing-demo v4: categorical assessments survive every write and fresh-client reload",
+      "status": "passed",
+      "durationMs": 52193.09640000004,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) persists version 3 categorical result and resumes it without rewriting legacy history",
+      "status": "passed",
+      "durationMs": 5274.617700000061,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) complete aggregate is identical to InMemory after every action and dialogue turn",
+      "status": "passed",
+      "durationMs": 93193.76390000002,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) atomic rollback after decision writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 11659.802099999972,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) atomic rollback after transition writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 14402.733099999954,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) atomic rollback after critical writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 25886.00299999991,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) atomic rollback after dialogue writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 13325.902299999958,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) atomic rollback after safe-result writes restores every table and revision",
+      "status": "passed",
+      "durationMs": 41028.41029999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) DB-level foreign key failure rolls back an action, opportunity and revision",
+      "status": "passed",
+      "durationMs": 4281.709700000007,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) published configuration cannot be changed or deleted through a direct Prisma client",
+      "status": "passed",
+      "durationMs": 1805.9305000000168,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) unique and foreign key constraints reject duplicate/orphan records",
+      "status": "passed",
+      "durationMs": 41844.66819999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/persistence.postgres.test.ts",
+      "name": "Real PostgreSQL / Prisma persistence (no DB mock) a new database client resumes without republishing or relying on process memory",
+      "status": "passed",
+      "durationMs": 13080.092399999965,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) installs all three enabled BEFORE ROW immutability triggers",
+      "status": "passed",
+      "durationMs": 819.2060999999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) keeps fixed CHAR widths, all timestamp milliseconds, JSONB and deterministic text",
+      "status": "passed",
+      "durationMs": 183.3456000000001,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) preserves every FK column order and RESTRICT/CASCADE action without an owner FK or invented CHECK",
+      "status": "passed",
+      "durationMs": 310.23900000000003,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) direct SQL rejects no-op template updates and deletion with P0001",
+      "status": "passed",
+      "durationMs": 2276.3403,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) account identity is immutable while same-ID updates and valid CHAR round trips work",
+      "status": "passed",
+      "durationMs": 1016.4604999999997,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) round-trips UTC milliseconds even when the SQL transaction timezone differs",
+      "status": "passed",
+      "durationMs": 612.8797999999997,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/postgres.metadata.test.ts",
+      "name": "PostgreSQL catalog and native semantics (real database) distinguishes JSON null from SQL NULL and compares canonical JSON without property order",
+      "status": "passed",
+      "durationMs": 831.8896999999997,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL text shares one pre-provider read while retaining fresh commit and projection reads",
+      "status": "passed",
+      "durationMs": 10621.6475,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL voice shares one pre-provider read while retaining fresh commit and projection reads",
+      "status": "passed",
+      "durationMs": 10506.987400000002,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL rejects a different owner before provider work or writes",
+      "status": "passed",
+      "durationMs": 5699.400099999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL preserves application expiry errors before invalid message parsing and prevents expired replay",
+      "status": "passed",
+      "durationMs": 11691.985499999999,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL rechecks expiry after a provider wait and commits no late dialogue",
+      "status": "passed",
+      "durationMs": 8017.768300000003,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL does not reuse the pre-STT snapshot when another text turn wins",
+      "status": "passed",
+      "durationMs": 10479.864499999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL rechecks revision after a model wait and rejects stale work without partial writes",
+      "status": "passed",
+      "durationMs": 11573.641699999993,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL replays an identical turn without scoring/writes and rejects a conflicting fingerprint",
+      "status": "passed",
+      "durationMs": 12634.485400000005,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/preflight-sharing.postgres.test.ts",
+      "name": "Live PostgreSQL pre-provider guard Same contract against PostgreSQL rolls back header, action, receipt and messages when pre-commit failure is injected",
+      "status": "passed",
+      "durationMs": 8281.945800000001,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) persists frozen snapshots, partial choices and final score across service recreation",
+      "status": "passed",
+      "durationMs": 5453.4438,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) rolls back answers, result, status, revision and receipt on a failure after writes",
+      "status": "passed",
+      "durationMs": 3135.7191000000003,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) concurrent different requests have one winner, preserving the same CAS behavior as memory",
+      "status": "passed",
+      "durationMs": 3041.6175999999996,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) simultaneous exact submit retries persist a single final result and receipt",
+      "status": "passed",
+      "durationMs": 3242.6294,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) concurrent reads never combine a revision with receipts from a different commit",
+      "status": "passed",
+      "durationMs": 9156.4461,
+      "postgres": true,
+      "failureCategory": null
+    },
+    {
+      "file": "tests/quiz.postgres.test.ts",
+      "name": "Quiz real PostgreSQL transactions (no database mock) a fresh client preserves the frozen Pre-test baseline after a later Pre-test completes",
+      "status": "passed",
+      "durationMs": 8220.871200000001,
+      "postgres": true,
+      "failureCategory": null
+    }
+  ],
+  "counts": {
+    "total": 134,
+    "passed": 134,
+    "failed": 0,
+    "skipped": 0
+  },
+  "postgres": {
+    "total": 69,
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exitCode": 0,
+  "completedAt": "2026-10-24T14:08:17.681Z",
+  "durationMs": 1249736
+}

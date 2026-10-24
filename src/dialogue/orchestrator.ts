@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SubmitCommand, TrainingCore } from "../core.js";
 import { copy } from "../domain/copy.js";
 import { DomainError } from "../domain/types.js";
+import type { SessionStatus } from "../domain/types.js";
 import { aiCharacterResponseSchema, ProviderRefusal } from "./contracts.js";
 import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAIContext, ScenarioModelProvider } from "./contracts.js";
 import { freezeData, sanitizeMessage } from "./sanitize.js";
@@ -58,14 +59,19 @@ export class ScenarioDialogueOrchestrator {
     return this.core.submit(command);
   }
 
-  async sendMessage(input: MessageRequest): Promise<DialogueReply> {
+  async sendMessage(input: MessageRequest, onSessionStatus?: (status: SessionStatus) => void): Promise<DialogueReply> {
+    // Server-only application guard shares this owned/lifecycle-checked read.
+    // Await it before parsing to preserve the application's preflight error order.
+    // No aggregate can be supplied by a caller or reused across a provider wait.
+    const preflight = onSessionStatus ? await measureLatency("db_preflight", () => this.core.getSessionContext(input.sessionId, input.ownerId)) : undefined;
+    if (preflight) onSessionStatus?.(preflight.session.status);
     const parsed = messageRequestSchema.safeParse(input);
     if (!parsed.success) throw new DomainError("INVALID_MESSAGE_REQUEST");
     const request = parsed.data;
     identifyLatency(request.sessionId, request.turnId);
     const text = sanitizeMessage(request.text);
     if (!text) throw new DomainError("EMPTY_SANITIZED_MESSAGE");
-    const { session, template } = await this.core.getSessionContext(request.sessionId, request.ownerId);
+    const { session, template } = preflight ?? await this.core.getSessionContext(request.sessionId, request.ownerId);
     const prior = session.dialogueTurns.find(t => t.id === request.turnId);
     if (prior) {
       if (prior.inputKey !== JSON.stringify({ sanitizedText: text })) throw new DomainError("IDEMPOTENCY_CONFLICT");

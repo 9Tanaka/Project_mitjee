@@ -92,9 +92,10 @@ export class TrainingApplicationService {
   }
   async message(id: string, user: AuthenticatedPrincipal, input: SendMessageInput) {
     identifyLatency(id, input.turnId);
-    await measureLatency("db_preflight", () => this.snapshot(id, user));
     try {
-      const reply = await this.dialogue.sendMessage({ ...input, sessionId: id, ownerId: user.id });
+      const reply = await this.dialogue.sendMessage({ ...input, sessionId: id, ownerId: user.id }, status => {
+        if (status === "EXPIRED") throw new ApplicationError("SESSION_EXPIRED");
+      });
       latencyFlags({ duplicate: reply.duplicate });
       return { session: await this.resume(id, user), duplicate: reply.duplicate,
         turn: { turnId: reply.turn.id, committedRevision: reply.turn.committedRevision, characterMessage: reply.turn.response.character_message } };
