@@ -88,6 +88,11 @@ export function summarizeSamples(records, stages = LATENCY_STAGES) {
     retryCount: sum(records, record => record.trace?.retryCount),
     repositoryReads: sum(records, record => record.trace?.repositoryReads),
     repositoryWrites: sum(records, record => record.trace?.repositoryWrites),
+    aggregateDbReads: records.some(record => record.trace?.aggregateDbReads != null) ? {
+      attempts: sum(records, record => record.trace?.aggregateDbReads?.attempts),
+      succeeded: sum(records, record => record.trace?.aggregateDbReads?.succeeded),
+      failed: sum(records, record => record.trace?.aggregateDbReads?.failed),
+    } : null,
     repositoryOperations: Object.fromEntries(["get", "getTemplate", "create", "save", "publish"].map(operation => {
       const totals = { attempts: 0, succeeded: 0, failed: 0 };
       for (const record of records) {
@@ -97,4 +102,21 @@ export function summarizeSamples(records, stages = LATENCY_STAGES) {
       return [operation, totals];
     })),
   };
+}
+
+/** Numerical sample export, not a dump of messages/credentials/provider objects. */
+export function samplesCsv(records) {
+  const fields = ["cohort", "phase", "sample", "transport", "outcome", "total_ms", ...LATENCY_STAGES.map(stage => `${stage}_ms`),
+    "aggregate_db_reads", "repository_get_calls", "template_port_calls", "aggregate_commits", "retry_count", "client_round_trip_ms"];
+  const numeric = value => value == null ? "" : Number.isFinite(value) && value >= 0 ? String(value) : (() => { throw new Error("Invalid numeric sample"); })();
+  const rows = records.map(record => {
+    if (!["text", "voice"].includes(record.cohort) || !["warmup", "measured"].includes(record.phase) ||
+      !OUTCOMES.includes(record.outcome) || !["service", "websocket", "http"].includes(record.trace?.transport)) throw new Error("Invalid sample classification");
+    const trace = record.trace;
+    return [record.cohort, record.phase, numeric(record.sample), trace.transport, record.outcome, numeric(trace.totalMs),
+      ...LATENCY_STAGES.map(stage => numeric(trace.durationsMs?.[stage])), numeric(trace.aggregateDbReads?.succeeded),
+      numeric(trace.repositoryOperations?.get?.attempts), numeric(trace.repositoryOperations?.getTemplate?.attempts),
+      numeric(trace.repositoryOperations?.save?.succeeded), numeric(trace.retryCount), numeric(record.clientRoundTripMs)].join(",");
+  });
+  return [fields.join(","), ...rows].join("\n") + "\n";
 }

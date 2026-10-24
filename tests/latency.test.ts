@@ -1,11 +1,23 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { voiceHarness } from "./voice.helpers.js";
-import { beginLatencySpan, captureLatencyFinalizer, identifyLatency, latencyEvent, latencyOutcome, measureLatency, measureLatencySync, observeHttpLatency, runLatencyTrace, type LatencySummary } from "../src/observability/latency.js";
+import { beginLatencySpan, captureLatencyFinalizer, identifyLatency, latencyEvent, latencyOutcome, measureLatency, measureLatencySync, observeAggregateDbRead, observeHttpLatency, runLatencyTrace, type LatencySummary } from "../src/observability/latency.js";
 import { measuredRepository } from "../src/observability/measured-repository.js";
 import type { TrainingRepository } from "../src/domain/training-repository.js";
 
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllEnvs(); });
 const collect = (records: LatencySummary[]) => (summary: LatencySummary) => { records.push(summary); };
+
+it("counts aggregate database fetches separately from cached template/port calls and preserves errors", async () => {
+  const records: LatencySummary[] = [], expected = { revision: 1 }, failure = new Error("PRIVATE_DB_ERROR");
+  await runLatencyTrace({ transport: "service", operation: "message", sink: collect(records) }, async () => {
+    expect(await observeAggregateDbRead(async () => expected)).toBe(expected);
+    await expect(observeAggregateDbRead(async () => { throw failure; })).rejects.toBe(failure);
+  });
+  expect(records[0]!.aggregateDbReads).toEqual({ attempts: 2, succeeded: 1, failed: 1 });
+  expect(records[0]!.repositoryReads).toBe(0);
+  expect(records[0]!.sqlReads).toBeNull();
+  expect(JSON.stringify(records)).not.toContain("PRIVATE_DB_ERROR");
+});
 
 it("disabled observation preserves return identity and never invokes the sink", async () => {
   const records: LatencySummary[] = [], result = { text: "private text" };

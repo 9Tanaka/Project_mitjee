@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  classifySample, distribution, nearestRank, summarizeSamples,
+  classifySample, distribution, nearestRank, samplesCsv, summarizeSamples,
 } from "../scripts/benchmark-latency-helpers.mjs";
 
 function trace(overrides: Record<string, unknown> = {}) {
@@ -27,6 +27,16 @@ function trace(overrides: Record<string, unknown> = {}) {
 }
 
 describe("latency benchmark statistics", () => {
+  it("exports only allowlisted numerical samples and rejects text in numeric fields", () => {
+    const record = { cohort: "text", phase: "measured", sample: 1, outcome: "provider_success", trace: trace({ transport: "websocket", privatePayload: "SECRET", aggregateDbReads: { succeeded: 5 } }) };
+    const csv = samplesCsv([record]);
+    expect(csv).toContain("aggregate_db_reads");
+    expect(csv).toContain("text,measured,1,websocket,provider_success,100");
+    expect(csv).not.toContain("SECRET");
+    expect(() => samplesCsv([{ ...record, trace: { ...record.trace, totalMs: "SECRET" } }])).toThrow();
+    expect(summarizeSamples([record]).aggregateDbReads).toEqual({ attempts: 0, succeeded: 5, failed: 0 });
+    expect(summarizeSamples([{ trace: trace(), outcome: "provider_success" }]).aggregateDbReads).toBeNull();
+  });
   it("uses nearest-rank percentiles and preserves null for unavailable distributions", () => {
     expect(nearestRank([90, 10, 40, 20, 30], 0.5)).toBe(30);
     expect(nearestRank([90, 10, 40, 20, 30], 0.95)).toBe(90);
