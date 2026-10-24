@@ -10,3 +10,18 @@ next-env.d.ts
 test-results/
 playwright-report/
 frontend-artifacts/
+
+# Local database certificates and private key material; never commit these.
+certs/
+certificates/
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.pfx
+*.p12
+*.p7b
+*.p7c
+*.jks
+*.keystore
