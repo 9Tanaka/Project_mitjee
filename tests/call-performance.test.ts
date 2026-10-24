@@ -35,12 +35,14 @@ it("uncached invalid database JSON is rejected, never remembered", async () => {
   expect(findUnique).toHaveBeenCalledTimes(2);
 });
 it("owned aggregate read keeps repeatable-read with a finite remote-network transaction budget", async () => {
-  const findFirst = vi.fn().mockResolvedValue(null);
-  const transaction = vi.fn(async (run: (tx: unknown) => Promise<unknown>, _options: unknown) => run({ trainingSession: { findFirst } }));
+  const query = vi.fn().mockResolvedValue([]);
+  const transaction = vi.fn(async (run: (tx: unknown) => Promise<unknown>, _options: unknown) => run({ $queryRawUnsafe: query }));
   const repo = new PrismaTrainingRepository({ $transaction: transaction } as unknown as PrismaClient);
   await expect(repo.get("private-session-id", "private-owner-id")).rejects.toThrow("SESSION_NOT_FOUND");
   expect(transaction.mock.calls[0]![1]).toEqual({ isolationLevel: "RepeatableRead", timeout: 15_000, maxWait: 5_000 });
-  expect(findFirst.mock.calls[0]![0].where).toEqual({ id: "private-session-id", ownerId: "private-owner-id" });
+  expect(query).toHaveBeenCalledOnce();
+  expect(query.mock.calls[0]!.slice(1)).toEqual(["private-session-id", "private-owner-id"]);
+  expect(query.mock.calls[0]![0]).toContain('WHERE s.id=$1 AND s."ownerId"=$2');
 });
 it("transaction diagnostics contain only operation/category/timing; original error still propagates", async () => {
   const error = Object.assign(new Error("PRIVATE_SQL_PASSWORD_URL"), { code: "P2028", meta: { error: "PRIVATE_META" } });

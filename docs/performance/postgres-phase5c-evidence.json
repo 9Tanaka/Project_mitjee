@@ -1,0 +1,71 @@
+{
+  "baseline": "ec5b180313ca347e3ff9e9f5ace2034685e706d3",
+  "at": "2026-10-24T14:52:04.444Z",
+  "scope": "dedicated PostgreSQL test database, session pooler, read-only metadata and synthetic scalar expressions",
+  "candidateReaderImplemented": false,
+  "status": "PASS",
+  "orderingDuplicateGroups": [
+    {
+      "table": "SessionOpportunity",
+      "key": "position",
+      "groups": 0
+    },
+    {
+      "table": "TrainingEvent",
+      "key": "position",
+      "groups": 0
+    },
+    {
+      "table": "TrainingMessage",
+      "key": "position",
+      "groups": 0
+    },
+    {
+      "table": "DialogueTurnReceipt",
+      "key": "committedRevision",
+      "groups": 0
+    }
+  ],
+  "userTriggerTables": [
+    "ScenarioTemplateVersion",
+    "ScenarioTemplateVersion",
+    "UserAccount"
+  ],
+  "scalarChecks": {
+    "typedTimestampIsDate": true,
+    "nestedTimestampType": "string",
+    "nestedTimestampRequiresExplicitHydration": true,
+    "nestedTimestampParsesToSameInstant": true,
+    "explicitNullKeyPreserved": true,
+    "nullStrippingDropsKey": true,
+    "sqlAndJsonNullBothReachJsAsNull": true,
+    "emptyJsonAggregateIsNull": true
+  },
+  "persistedHistoryCounterexample": {
+    "scope": "synthetic in-memory use of existing baseline assertUpdate; no candidate implementation",
+    "unchangedBaselineAccepted": true,
+    "sameHeaderRevision": true,
+    "sameCollectionLengths": true,
+    "sameMessageIds": true,
+    "oldValidatorRejection": "HISTORY_IMMUTABLE"
+  },
+  "semanticEquivalenceDemonstrated": false,
+  "candidatePerformanceMeasured": false,
+  "runtimeRecommendation": "DEFER",
+  "runtimeSourceSha256": {
+    "src/application/training-service.ts": "7ca4308d8d058273cb0ef10846f85269eddddc9d32a449ec2f749effb64fc10b",
+    "src/application/voice-service.ts": "db5f1efa8dc28a67b82138a101cc0b4bae5484fbabbffc08b13f830c3e66fb0c",
+    "src/dialogue/orchestrator.ts": "459a6274ed596af11ac47765bf5207bba2989d6c5fc4df12447b24438cd77066",
+    "src/core.ts": "525b91a7b2e6c8a523b4564ef85873293daba62a138748423f8158db4473999f",
+    "src/persistence/prisma-repository.ts": "b4e7f162a506764e44fa9a4208d6847322a710da736fae13b8f3027bba3eeff8",
+    "src/persistence/prisma-client.ts": "a02b73a1b8c639eb045df163a742daa2358b7bd3c007ad06aa616f2c2cf0f5cc",
+    "src/domain/scoring.ts": "144f95f809165dc73c2e1deba020c33e304906d56a366d4e791896c786064e11"
+  },
+  "runtimeSourceMatchesPhase5B": true,
+  "runtimeSchemaScriptsDiffAgainstBaseline": "EMPTY",
+  "localCapability": {
+    "prismaVersion": "7.10.0",
+    "previewFeaturesEmpty": true,
+    "generatedSessionExposesRelationLoadStrategy": false
+  }
+}

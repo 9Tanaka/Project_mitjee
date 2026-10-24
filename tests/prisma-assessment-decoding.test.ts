@@ -16,10 +16,10 @@ async function readPersisted(version: number, categorical: boolean, assessment: 
   const row = {
     ...session, startedAt: new Date(session.startedAt), lastActivityAt: new Date(session.lastActivityAt), endedAt: null,
     template: { configuration: template }, actions: [], events: [], messages: [], turns: [], result: null,
-    opportunities: session.opportunities.map(o => ({ ...o, assessment, openedAt: new Date(o.openedAt),
+    opportunities: session.opportunities.map((o, position) => ({ ...o, position, assessment, openedAt: new Date(o.openedAt),
       finalizedAt: finalized ? new Date(1000) : null, finalizedByActionId: finalized ? "action" : null })),
   };
-  const tx = { trainingSession: { findFirst: async () => row } };
+  const tx = { $queryRawUnsafe: async () => [{ aggregate: row }] };
   const client = { $transaction: async (operation: (transaction: typeof tx) => Promise<unknown>) => operation(tx) } as unknown as PrismaClient;
   return (await new PrismaTrainingRepository(client).get(session.id, session.ownerId)).opportunities[0]!;
 }

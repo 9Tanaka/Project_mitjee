@@ -9,6 +9,7 @@ import { assertSanitized, assertUpdate, canonical } from "../domain/persistence-
 import { copy } from "../domain/copy.js";
 import { rememberTransactionFailure } from "./transaction-diagnostics.js";
 import { observeAggregateDbRead } from "../observability/latency.js";
+import { readTrainingAggregate } from "./aggregate-reader.js";
 
 const include = {
   template: { select: { configuration: true } },
@@ -151,9 +152,9 @@ export class PrismaTrainingRepository implements TrainingRepository {
   }
 
   async get(id: string, ownerId: string): Promise<TrainingSession> {
-    // include may execute multiple SELECTs; repeatable read gives one coherent snapshot.
+    // One aggregate SELECT; preserve the existing repeatable-read transaction contract.
     return this.transaction("GET", async tx => {
-      const row = await observeAggregateDbRead(() => tx.trainingSession.findFirst({ where: { id, ownerId }, include }));
+      const row = await observeAggregateDbRead(() => readTrainingAggregate(tx, id, ownerId));
       if (!row) throw new DomainError("SESSION_NOT_FOUND");
       return decode(row);
     }, { isolationLevel: "RepeatableRead", timeout: 15_000 });

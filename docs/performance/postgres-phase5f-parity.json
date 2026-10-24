@@ -1,0 +1,769 @@
+{
+  "phase": "5F",
+  "sourceCommit": "ec5b180313ca347e3ff9e9f5ace2034685e706d3",
+  "startedAt": "2026-10-24T17:04:03.520Z",
+  "status": "PASS",
+  "cases": [
+    {
+      "case": "historical-0-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-1-v2-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-2-v3-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-3-v4-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-4-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-5-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-6-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-7-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-8-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-9-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-10-v1-DEFAULT",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-11-v1-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-12-v1-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-13-v2-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-14-v2-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-15-v3-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-16-v3-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-17-v3-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-18-v3-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-19-v4-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-20-v4-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-21-v4-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-22-v4-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-23-v5-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-24-v5-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-25-v5-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-26-v5-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-27-v6-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-28-v6-SCAM_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-29-v6-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "historical-30-v6-NORMAL_CALL",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "completed-sms-v1",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "one-dialogue",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "completed-sms-v2",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "Asia/Bangkok",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "America/New_York",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "completed-sms-v3",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "completed-sms-v4",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "critical-password",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "categorical-zero-decisions",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "abandoned",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "expired",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-01-one-character",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-01-assessment-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-01-completed",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-unassessed",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "result-sql-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "result-json-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "result-empty-object",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "result-empty-array",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "result-nested-json",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-02-one-character",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-02-assessment-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-02-completed",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N01-one-character",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N01-assessment-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N01-completed",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N02-one-character",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N02-assessment-null",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "call-CC-N02-completed",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "Asia/Bangkok",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "America/New_York",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "Asia/Bangkok",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "America/New_York",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "scalar-negative-zero",
+      "timezone": "UTC",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "scalar-negative-zero",
+      "timezone": "Asia/Bangkok",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    },
+    {
+      "case": "scalar-negative-zero",
+      "timezone": "America/New_York",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "orderingViolations": [],
+      "statements": 4,
+      "selects": 1,
+      "controls": 3
+    }
+  ],
+  "ownership": [
+    {
+      "case": "missing-session",
+      "sameDomainError": true
+    },
+    {
+      "case": "other-owner",
+      "sameDomainError": true
+    }
+  ],
+  "malformed": [
+    {
+      "relation": "SessionOpportunity",
+      "rejected": true,
+      "repaired": false
+    },
+    {
+      "relation": "TrainingEvent",
+      "rejected": true,
+      "repaired": false
+    },
+    {
+      "relation": "TrainingMessage",
+      "rejected": true,
+      "repaired": false
+    },
+    {
+      "relation": "DialogueTurnReceipt",
+      "rejected": true,
+      "repaired": false
+    }
+  ],
+  "saveUnchanged": true,
+  "decoderUnchanged": true,
+  "nativeJoinEnabled": false,
+  "sourceSha256": {
+    "src/persistence/prisma-repository.ts": "385895194aaa03fa482f5e76cd7950176027057a3a3e6e488876b4013be5c483",
+    "src/persistence/aggregate-reader.ts": "9f205bc3b50fd7f2576d46765405c346cd9e35340c03c97a018ccfe323e6b991",
+    "scripts/verify-aggregate-runtime.mjs": "5acac6106a6da8038b59319e627ee5d9add68e3d4f6f64565811d74f5ba05a75",
+    "scripts/shadow-aggregate/explicit-reader.mjs": "ce524fb3d0772a803277e56e574a0da68364d13a6101a5c4953452a3a06a2f04"
+  },
+  "sqlUnchanged": true,
+  "fixtureCount": 62,
+  "stage": "parity",
+  "coherence": {
+    "repeatableSnapshot": true,
+    "freshReadSeesCommit": true
+  },
+  "jsonNullStorage": [
+    {
+      "case": "sql-null",
+      "sqlNull": true,
+      "jsonNull": null
+    },
+    {
+      "case": "json-null",
+      "sqlNull": false,
+      "jsonNull": true
+    }
+  ],
+  "completedAt": "2026-10-24T17:08:03.312Z"
+}
