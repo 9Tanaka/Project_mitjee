@@ -1,12 +1,13 @@
-// Bounded service-level latency benchmark. Live mode creates retained synthetic MySQL sessions;
-// it never authenticates, mutates user data, resets, migrates, or cleans up database state.
-import { randomUUID } from "node:crypto";
+// Bounded service/authenticated-loopback benchmark. The historical live guard is
+// retained; --post-change uses only the explicitly approved PostgreSQL test DB.
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import nextEnv from "@next/env";
 import { register } from "tsx/esm/api";
 import { classifySample, summarizeSamples, LATENCY_STAGES } from "./benchmark-latency-helpers.mjs";
+import { checkPostChangeEvidence, postChangeDatabaseConfiguration } from "./benchmark-post-change-config.mjs";
 
 register();
 nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
@@ -14,7 +15,8 @@ nextEnv.loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
 const args = new Set(process.argv.slice(2));
 const mode = args.has("--live") ? "live" : args.has("--synthetic") ? "synthetic" : null;
 const useWebSocket = args.has("--websocket");
-if (mode === "live") {
+const postChange = args.has("--post-change");
+if (mode === "live" && !postChange) {
   console.error("Run the authenticated MySQL/Groq/Azure baseline from a separate checkout of c7e0a2ce7cd9bfc529b9f57822ccec7c6e08e479 (historical service-only baseline: 91e707f376372aed5bdf415dd7bbb32d58583536). This checkout uses the later PostgreSQL/provider preparation.");
   process.exit(1);
 }
@@ -32,6 +34,7 @@ const report = {
   schemaVersion: 1,
   runId,
   mode,
+  stack: postChange ? "post-change" : "historical",
   status: "RUNNING",
   startedAt,
   completedAt: null,
@@ -65,6 +68,7 @@ function safeFailureCategory(error) {
       "VOICE_INPUT_FIXTURE_UNAVAILABLE", "BENCHMARK_TEMPLATE_MISSING", "BENCHMARK_ACTION_MISSING",
       "BENCHMARK_SETUP_STATE_MISMATCH", "BENCHMARK_SAMPLE_SETUP_FAILED", "BENCHMARK_SAMPLE_FAILED",
       "APPLICATION_INITIALIZATION_FAILED",
+      "POST_CHANGE_GATE_REQUIRED", "POST_CHANGE_TARGET_REJECTED", "POST_CHANGE_CA_REQUIRED", "POST_CHANGE_SPEECH_CONFIGURATION_REQUIRED",
     ]);
     if (allowed.has(error.code)) return error.code;
   }
@@ -82,8 +86,8 @@ function safeProviderErrorCategory(error, classes) {
 }
 
 function liveConfigurationBlocker(env) {
-  if (!env.DATABASE_URL) return "LATENCY_CONFIG_MISSING";
-  try { if (new URL(env.DATABASE_URL).protocol !== "mysql:") return "DATABASE_NOT_MYSQL"; }
+  if (!postChange && !env.DATABASE_URL) return "LATENCY_CONFIG_MISSING";
+  try { if (!postChange && new URL(env.DATABASE_URL).protocol !== "mysql:") return "DATABASE_NOT_MYSQL"; }
   catch { return "LATENCY_CONFIG_MISSING"; }
   if (!env.AI_PROVIDER || env.AI_PROVIDER === "mock") return "LIVE_PROVIDER_NOT_CONFIGURED";
   if (env.AI_PROVIDER === "groq" && (!env.GROQ_API_KEY?.trim() || !env.GROQ_MODEL?.trim())) return "LIVE_PROVIDER_NOT_CONFIGURED";
@@ -99,8 +103,11 @@ function providerMetadata(env) {
   return {
     scenarioProvider,
     model: model || null,
-    speechProvider: mode === "live" ? "azure" : "mock",
+    speechProvider: mode === "live" ? (postChange ? "azure-stt/elevenlabs-tts" : "azure") : "mock",
     speechRegion: mode === "live" ? env.AZURE_SPEECH_REGION : null,
+    ttsModel: mode === "live" && postChange ? env.ELEVENLABS_MODEL_ID : null,
+    ttsVoiceFingerprint: mode === "live" && postChange
+      ? createHash("sha256").update(env.ELEVENLABS_VOICE_ID).digest("hex") : null,
   };
 }
 
@@ -130,6 +137,7 @@ let app;
 let voice;
 let liveProvider;
 let speechProvider;
+let ttsProvider;
 let activeProviderErrors = null;
 let paidProviderEnabled = false;
 let setupProvider;
@@ -253,7 +261,7 @@ function stopReasonFor(record, state) {
 
 async function main() {
   if (!mode) stop("LATENCY_CONFIG_MISSING");
-  if (args.size !== (useWebSocket ? 2 : 1) || [...args].some(arg => !["--live", "--synthetic", "--websocket"].includes(arg)) || (args.has("--live") && args.has("--synthetic"))) stop("LATENCY_CONFIG_MISSING");
+  if (args.size !== 1 + Number(useWebSocket) + Number(postChange) || [...args].some(arg => !["--live", "--synthetic", "--websocket", "--post-change"].includes(arg)) || (args.has("--live") && args.has("--synthetic"))) stop("LATENCY_CONFIG_MISSING");
 
   const modules = await Promise.all([
     import("../src/application/composition.ts"),
@@ -283,19 +291,29 @@ async function main() {
   };
   environment = process.env;
   if (mode === "live") {
+    let postChangeDatabase;
+    if (postChange) {
+      checkPostChangeEvidence();
+      postChangeDatabase = postChangeDatabaseConfiguration(environment);
+    }
     const blocker = liveConfigurationBlocker(environment);
     if (blocker) stop(blocker);
     try { liveProvider = scenarioRuntime.createScenarioProvider(environment); }
     catch { stop("SCENARIO_PROVIDER_CONFIG_INVALID"); }
     try {
-      speechProvider = speechRuntime.createSpeechProvider(environment);
+      speechProvider = postChange ? speechRuntime.createSpeechToTextProvider(environment) : speechRuntime.createSpeechProvider(environment);
+      ttsProvider = postChange ? speechRuntime.createTextToSpeechProvider(environment) : speechProvider;
       const fixtureStarted = performance.now();
-      audioInput = await speechContracts.speechDeadline(signal => speechProvider.synthesize(INPUT_TEXT, signal));
+      audioInput = await speechContracts.speechDeadline(signal => postChange
+        ? import("./benchmark-azure-input.mjs").then(module => module.baselineInputAudio(INPUT_TEXT, environment, signal))
+        : speechProvider.synthesize(INPUT_TEXT, signal));
       speechContracts.validateWav(audioInput, "audio/wav");
       report.setup = { inputAudioFixture: "single Azure-generated synthetic WAV; outside trace", inputAudioFixtureBytes: audioInput.byteLength,
         inputAudioFixtureMs: Math.round(performance.now() - fixtureStarted), mockProviderSetup: true };
     } catch { stop("VOICE_INPUT_FIXTURE_UNAVAILABLE"); }
-    try { database = databaseModule.createDatabase(); }
+    try { database = postChange
+      ? (await import("../src/persistence/prisma-client.ts")).createPrismaClient(postChangeDatabase.url, { tlsCa: postChangeDatabase.tlsCa })
+      : databaseModule.createDatabase(); }
     catch { stop("DATABASE_UNAVAILABLE"); }
   } else {
     audioInput = makeSyntheticWav();
@@ -321,8 +339,8 @@ async function main() {
   try { app = await composition.createApplication(repository, routedProvider, Date.now, undefined, () => "CC-01"); }
   catch { stop(mode === "live" ? "DATABASE_UNAVAILABLE" : "APPLICATION_INITIALIZATION_FAILED"); }
   report.initialization = { durationMs: Math.max(0, Math.round(performance.now() - initStarted)),
-    scope: mode === "live" ? "application setup plus MySQL template publication/connection" : "application setup over in-memory repository" };
-  if (mode === "live") voice = new voiceModule.VoiceApplicationService(app, speechProvider, speechProvider);
+    scope: mode === "live" ? `application setup plus ${postChange ? "PostgreSQL" : "MySQL"} template publication/connection` : "application setup over in-memory repository" };
+  if (mode === "live") voice = new voiceModule.VoiceApplicationService(app, speechProvider, ttsProvider);
   else {
     const speechMock = {
       async transcribe() { return INPUT_TEXT; },
@@ -352,7 +370,7 @@ async function main() {
     traceTransport: useWebSocket ? "websocket" : "service",
     syntheticLiveSetup: "mock caller openings and one received-call action per fresh session, outside measured traces",
   };
-  report.runtime = mode === "live" ? { database: "MySQL runtime", persistenceScope: "training_repository", serviceAuthentication: null }
+  report.runtime = mode === "live" ? { database: postChange ? "dedicated PostgreSQL test target" : "MySQL runtime", persistenceScope: "training_repository", serviceAuthentication: null }
     : { database: "in-memory", persistenceScope: "training_repository", serviceAuthentication: null };
   report.provider = providerMetadata(environment);
   report.executionEnvironment = { node: process.version, platform: process.platform, architecture: process.arch };
@@ -412,7 +430,7 @@ async function saveArtifacts() {
   const directory = path.join(process.cwd(), "frontend-artifacts");
   await mkdir(directory, { recursive: true });
   const stamp = new Date().toISOString().replaceAll(":", "-");
-  const stem = `latency-benchmark-${mode ?? "unknown"}-${stamp}-${runId.slice(0, 8)}`;
+  const stem = `latency-benchmark-${mode ?? "unknown"}${postChange ? "-post-change" : ""}-${stamp}-${runId.slice(0, 8)}`;
   const summaryPath = path.join(directory, `${stem}.json`);
   const tracePath = path.join(directory, `${stem}.jsonl`);
   artifacts.summary = path.relative(process.cwd(), summaryPath).replaceAll("\\", "/");
@@ -431,7 +449,7 @@ async function closeResources() {
 }
 
 if (!mode) {
-  process.stderr.write("Usage: node scripts/benchmark-latency.mjs (--synthetic | --live) [--websocket]\n");
+  process.stderr.write("Usage: node scripts/benchmark-latency.mjs (--synthetic | --live) [--websocket] [--post-change]\n");
   process.exitCode = 2;
 } else {
   try { await main(); }
