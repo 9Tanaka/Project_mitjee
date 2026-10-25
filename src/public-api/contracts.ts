@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { phoneDto } from "./phone.js";
+import { postDecisionGuidanceDto } from "./post-decision.js";
 export { openingRequest } from "./phone.js";
 
 export const publicId = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
@@ -49,6 +50,7 @@ export const messageDto = z.strictObject({
 });
 const score = z.number().finite().min(0).max(100).nullable();
 export const resultDto = z.strictObject({
+  postDecisionGuidance: postDecisionGuidanceDto.optional(),
   sessionId: publicId, revision, D: score, W: score, S: score, trainingScore: score,
   outcome: z.enum(["PASSED", "NOT_PASSED", "CRITICAL_FAILURE", "NEEDS_PRACTICE", "UNASSESSED"]),
   weakestSkills: z.array(z.enum(["D", "W", "S"])),

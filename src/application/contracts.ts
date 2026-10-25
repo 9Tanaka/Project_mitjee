@@ -51,6 +51,21 @@ export interface PublicTrainingResult {
     qualitativeInsights: { label: string; authority: "NON_AUTHORITATIVE" }[] };
   decisionSummary?: { encountered: number; safe: number; review: number; unassessed: number; critical?: number;
     checkpoints?: (Omit<DecisionFeedback, "ruleId" | "checkpointId"> & { ruleRef: string })[] } | null;
+  postDecisionGuidance?: PublicPostDecisionGuidance;
+}
+export interface PublicLearningSource { title: string; url: string; reviewedAt: string }
+export interface PublicPostDecisionGuidance {
+  contentRef: string; contentVersion: number; reviewedAt: string;
+  checkpoints: { ruleRef: string; label: string; assessment: DecisionFeedback["assessment"];
+    explanation: string; selectedAction: string | null; saferAlternative: string }[];
+  tutorial: { ref: string; title: string; explanation: string; independentVerification: string[];
+    commonMistakes: string[]; nextTimePrevention: string[] }[];
+  recovery: { incidentType: "MONEY_TRANSFERRED" | "OTP_OR_CREDENTIAL_DISCLOSED"; confirmedAction: string;
+    immediateActions: string[]; evidenceToPreserve: string[];
+    officialHelp: { category: "BANK" | "AOC" | "POLICE"; label: string; url: string }[];
+    accountRecoverySteps: string[]; nextTimePrevention: string[]; retryRecommendation: string;
+    sources: PublicLearningSource[] }[];
+  nextTimePrevention: string[];
 }
 export interface TrainingMutation { session: PublicTrainingSession; duplicate: boolean }
 export interface TrainingMessageReply extends TrainingMutation {

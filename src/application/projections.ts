@@ -8,6 +8,7 @@ import { phoneAppAllowed } from "../domain/call-conversation.js";
 import { callerTurnReady } from "../domain/call-center.js";
 import { activePhoneApp, actionBehavior } from "../domain/call-behavior.js";
 import type { CallBehavior } from "../domain/phone-model.js";
+import { decisionRuleRef, projectPostDecisionGuidance } from "./post-decision-guidance.js";
 
 const stateLabels = {
   contact: "รับข้อความ", build_trust: "พิจารณาหลักฐาน", create_pressure: "ข้อความเพิ่มเติม",
@@ -20,7 +21,7 @@ function projectDecisionSummary(r: TrainingResult): NonNullable<PublicTrainingRe
   if (!r.decisionSummary) return null;
   const { checkpoints, ...counts } = r.decisionSummary;
   return { ...counts, ...(checkpoints ? { checkpoints: checkpoints.map(({ ruleId, checkpointId: _internalCheckpointId, ...feedback }) => ({
-    ...feedback, ruleRef: `R-${createHash("sha256").update(`${r.templateId}@${r.templateVersion}:${ruleId}`).digest("hex").slice(0, 16)}`,
+    ...feedback, ruleRef: decisionRuleRef(r, ruleId),
   })) } : {}) };
 }
 export function projectSession(s: TrainingSession, t: ScenarioTemplate): PublicTrainingSession {
@@ -80,6 +81,7 @@ const behaviorLabels: Record<CallBehavior, string> = {
 export function projectResult(s: TrainingSession, t?: ScenarioTemplate): PublicTrainingResult {
   if (!s.result || !["COMPLETED", "FAILED"].includes(s.status)) throw new ApplicationError("RESULT_NOT_FOUND");
   const r = s.result;
+  const guidance = t ? projectPostDecisionGuidance(s, t) : undefined;
   return { sessionId: s.id, revision: s.revision, D: r.scores.D.normalized, W: r.scores.W.normalized,
     S: r.scores.S.normalized, trainingScore: r.trainingScore, outcome: r.outcome, weakestSkills: [...r.weakestSkills],
     recommendation: { recommendationType: r.recommendation.recommendationType, recommendationKey: r.recommendation.recommendationKey, reason: r.recommendation.reason },
@@ -91,5 +93,6 @@ export function projectResult(s: TrainingSession, t?: ScenarioTemplate): PublicT
       qualitativeInsights: s.dialogueTurns.flatMap(turn => { const label = ({ asked_caller_identity: "ข้อความอาจสะท้อนการขอข้อมูลผู้โทร", asked_for_reference: "ข้อความอาจสะท้อนการขอข้อมูลอ้างอิง", requested_clarification: "ข้อความอาจสะท้อนการขอคำอธิบายเพิ่มเติม" } as Record<string, string>)[turn.response.observed_intent]; return !turn.usedFallback && label && s.messages.some(m => m.turnId === turn.id && m.role === "user") ? [{ label, authority: "NON_AUTHORITATIVE" as const }] : []; }),
     } } : {}),
     ...(r.evaluationMode === "DECISION_RULES_V1" ? { evaluationMode: r.evaluationMode,
-      decisionSummary: projectDecisionSummary(r) } : {}) };
+      decisionSummary: projectDecisionSummary(r) } : {}),
+    ...(guidance ? { postDecisionGuidance: guidance } : {}) };
 }

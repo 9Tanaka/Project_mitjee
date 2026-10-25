@@ -3,6 +3,7 @@ import Link from "next/link.js";
 import { resultDto } from "../public-api/contracts.js";
 import { useResource } from "./hooks.js";
 import { Failure, Loading, Notice, PageIntro } from "./ui.js";
+import { CallCenterResult } from "./call-center-result.js";
 
 const skills = { D: "การตัดสินใจ", W: "การสังเกตสัญญาณเตือน", S: "การตอบสนองอย่างปลอดภัย" };
 const outcomes = {
@@ -24,6 +25,7 @@ export function Result({ sessionId }: { sessionId: string }) {
   if (resource.loading) return <Loading text="กำลังโหลดผลการฝึก…" />;
   if (resource.error) return <div className="space-y-5"><Failure error={resource.error} retry={() => void resource.reload()} />{resource.error.code === "RESULT_NOT_FOUND" && <Link className="text-link" href={"/training/" + encodeURIComponent(sessionId)}>กลับไปดูรอบฝึก →</Link>}</div>;
   const result = resource.data; if (!result) return <Notice>ยังไม่มีผลการฝึก</Notice>;
+  if (result.postDecisionGuidance) return <CallCenterResult result={result} guidance={result.postDecisionGuidance} />;
   const outcome = outcomes[result.outcome];
   const decisionRules = result.evaluationMode === "DECISION_RULES_V1";
   return <div className="space-y-7">
