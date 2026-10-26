@@ -9,6 +9,9 @@ import { callerTurnReady } from "../domain/call-center.js";
 import { activePhoneApp, actionBehavior } from "../domain/call-behavior.js";
 import type { CallBehavior } from "../domain/phone-model.js";
 import { decisionRuleRef, projectPostDecisionGuidance } from "./post-decision-guidance.js";
+import { projectCallConversation } from "./call-conversation-presentation.js";
+import { projectOtpMessage } from "./otp-presentation.js";
+import { simulatedOtp } from "../dialogue/simulated-otp.js";
 
 const stateLabels = {
   contact: "รับข้อความ", build_trust: "พิจารณาหลักฐาน", create_pressure: "ข้อความเพิ่มเติม",
@@ -50,7 +53,7 @@ function projectPhone(s: TrainingSession, t: ScenarioTemplate): NonNullable<Publ
         : { title: "รายการในบัญชีจำลองของฉัน", lines: c.transaction ? [c.transaction.reference, `${c.transaction.amount.toLocaleString("th-TH")} บาท`, c.transaction.time, c.transaction.item, c.transaction.status] : [] };
       if (app === "MESSAGES") {
         // Stable simulation data derived from persisted session identity. Never sent to the model or stored as raw dialogue.
-        const otp = String(100000 + parseInt(createHash("sha256").update(`mitjee-synthetic-otp:${s.id}`).digest("hex").slice(0, 8), 16) % 900000);
+        const otp = simulatedOtp(s.id);
         data[app] = { title: "MITJEE Bank · ข้อความจำลอง", lines: [`รหัสยืนยันจำลองของคุณคือ ${otp}`, "ใช้สำหรับแบบฝึกนี้เท่านั้น ไม่มี SMS จริง"] };
       }
     }
@@ -64,7 +67,8 @@ function projectPhone(s: TrainingSession, t: ScenarioTemplate): NonNullable<Publ
       hangUpActionId: actionBindings(t).find(b => b.state === s.state && b.public.label === "วางสาย")?.public.id,
       independentContactActionId: actions.find(a => a.label === "จบสายเพื่อติดต่อช่องทางที่มีอยู่เดิม")?.id,
     } : {};
-    return { ...base, ...controls, activeApp: activePhoneApp(s, t), appData: data, availableInternalApps: apps.map(id => ({ id, label: labels[id], availability: "AVAILABLE" as const })) };
+    const otpMessage = projectOtpMessage(s, t);
+    return { ...base, ...controls, ...projectCallConversation(s, t), ...(otpMessage ? { otpMessage } : {}), activeApp: activePhoneApp(s, t), appData: data, availableInternalApps: apps.map(id => ({ id, label: labels[id], availability: "AVAILABLE" as const })) };
   }
   return { ...base,
     availableInternalApps: callStatus === "CONNECTED" && ready ? [

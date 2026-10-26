@@ -14,6 +14,7 @@ import { callCenterStoryTemplates } from "../fixtures/call-center-stories.js";
 import { callCenterBehaviorTemplates } from "../fixtures/call-center-behavior-stories.js";
 import { callCenterContinuousTemplates } from "../fixtures/call-center-continuous-stories.js";
 import { activePhoneApp, freshConfirmation, hasBehavior, interactionAvailable } from "../domain/call-behavior.js";
+import { callChoicePresentation } from "./call-conversation-presentation.js";
 
 // Presentation-only bindings. Core templates own assessments, events and guards.
 export const playableTemplate = smsPhishingFeedbackFixture;
@@ -115,7 +116,7 @@ function genericBindings(t: ScenarioTemplate): Binding[] {
   const result: Binding[] = [];
   for (const [position, o] of t.opportunities.entries()) {
     const options = o.skill === "W" ? o.evidence.map((item, index) => ({ id: `o${index + 1}`, label: item.text }))
-      : (o.skill === "D" ? o.choices : o.actions).map((choice, index) => ({ id: `o${index + 1}`, label: choice.publicLabel! }));
+      : (o.skill === "D" ? o.choices : o.actions).map((choice, index) => ({ id: `o${index + 1}`, label: choice.id === "trust" ? callChoicePresentation(t, o.id, choice.id)?.label ?? choice.publicLabel! : choice.publicLabel! }));
     result.push({ state: o.state, opportunityId: o.id, visible: s => !o.app || activePhoneApp(s, t) === o.app,
       public: { id: `a${String(position + 1).padStart(2, "0")}`, label: o.publicCheckpointLabel!, ...(o.app ? { app: o.app } : {}),
         input: o.skill === "W" ? "EVIDENCE" : "CHOICE", options },

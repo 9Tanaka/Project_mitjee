@@ -8,6 +8,8 @@ import type { AICharacterResponse, DialogueReply, ProviderFailure, ScenarioAICon
 import { freezeData, sanitizeMessage } from "./sanitize.js";
 import { callerTurnId, callerTurnKey, callerStateTurn, callerTurnRequired, callerTurnReady } from "../domain/call-center.js";
 import { validateCallOutput } from "../domain/call-conversation.js";
+import { hasSimulatedOtpContext, simulatedOtp, supportsSimulatedOtp, otpDialogueConstraint, contradictsUnconfirmedOtp } from "./simulated-otp.js";
+import { containsSimulatedOtp } from "../public-api/simulated-otp.js";
 import { beginLatencySpan, identifyLatency, latencyFlags, measureLatency, measureLatencySync } from "../observability/latency.js";
 
 const messageRequestSchema = z.strictObject({
@@ -80,6 +82,7 @@ export class ScenarioDialogueOrchestrator {
     }
     if (session.status !== "ACTIVE") throw new DomainError("SESSION_NOT_ACTIVE");
     if (session.revision !== request.expectedRevision) throw new DomainError("REVISION_CONFLICT");
+    if (hasSimulatedOtpContext(session, template) && containsSimulatedOtp(request.text, simulatedOtp(session.id))) throw new DomainError("SIMULATED_OTP_CONFIRMATION_REQUIRED");
     if (template.callCenter && (["INCOMING_CALL", "CALL_ENDING", "END_SCENARIO"].includes(session.state) || !callerTurnReady(session, template))) throw new DomainError("CALL_NOT_READY");
     if (!template.characterRole) throw new DomainError("DIALOGUE_ROLE_NOT_CONFIGURED");
     const characterRole = template.characterRole;
@@ -94,7 +97,7 @@ export class ScenarioDialogueOrchestrator {
       ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
       characterRole: sanitizeMessage(characterRole),
       allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage),
-      forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
+      forbiddenBehaviors: [...state.forbiddenBehaviors.map(sanitizeMessage), ...(supportsSimulatedOtp(template) ? [otpDialogueConstraint] : [])],
       recentSanitizedMessages: session.messages.slice(-12).map(m => ({
         id: m.id, role: m.role, text: sanitizeMessage(m.text).slice(0, 2000), state: m.state,
       })),
@@ -133,7 +136,7 @@ export class ScenarioDialogueOrchestrator {
         variant: template.variant, title: sanitizeMessage(template.title), callStoryId },
       currentState: session.state, characterRole: sanitizeMessage(template.characterRole!),
       ...(state.conversation ? { callConversation: { allowedSignals: state.conversation.allowedSignals, fallbackSignal: state.conversation.fallbackSignal } } : {}),
-      allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: state.forbiddenBehaviors.map(sanitizeMessage),
+      allowedBehaviors: state.allowedBehaviors.map(sanitizeMessage), forbiddenBehaviors: [...state.forbiddenBehaviors.map(sanitizeMessage), ...(supportsSimulatedOtp(template) ? [otpDialogueConstraint] : [])],
       recentSanitizedMessages: session.messages.slice(-12).map(m => ({ id: m.id, role: m.role, text: sanitizeMessage(m.text), state: m.state })), currentUserMessage: null, turnKind: kind,
     }));
     const generated = await measureLatency("ai", () => this.generate(context, state.fallbackMessage, `${session.id}:${turnId}`, template));
@@ -156,6 +159,7 @@ export class ScenarioDialogueOrchestrator {
         try {
           const output = aiCharacterResponseSchema.safeParse(raw);
           if (!output.success) throw new AttemptFailure("INVALID_OUTPUT");
+          if (supportsSimulatedOtp(template) && contradictsUnconfirmedOtp(output.data.character_message)) throw new AttemptFailure("INVALID_OUTPUT");
           try { validateCallOutput(output.data, template, context.currentState); } catch { throw new AttemptFailure("INVALID_OUTPUT"); }
           if (output.data.safety.contains_real_pii || output.data.safety.out_of_scope) throw new AttemptFailure("SAFETY_BLOCKED");
           if (context.scenario.callStoryId && /\bCC-(?:N?0[12])\b|SCAM_CALL|NORMAL_CALL/.test(output.data.character_message)) throw new AttemptFailure("SAFETY_BLOCKED");

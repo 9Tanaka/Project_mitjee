@@ -39,6 +39,9 @@ export interface PublicTrainingSession {
     contextualDecision?: { available: true; id: string; label: string; actionIds: string[] };
     hangUpActionId?: string;
     independentContactActionId?: string;
+    otpMessage?: { simulatedCode: string; unread: boolean; nextAction: { id: string; confirmed: boolean }; managedActionIds: string[] };
+    transcript?: { id: string; role: "user" | "character"; text: string; kind: "DIALOGUE" | "COMMITTED_ACTION" }[];
+    criticalEnding?: { title: string; description: string; actionText: string };
   };
 }
 export interface PublicTrainingResult {

@@ -5,6 +5,7 @@ import { ApplicationError } from "../application/errors.js";
 import { SpeechError } from "../speech/contracts.js";
 
 const errors = {
+  SIMULATED_OTP_CONFIRMATION_REQUIRED: [409, "Confirm simulated disclosure using the phone control."],
   SPEECH_UNAVAILABLE: [503, "Speech is temporarily unavailable; text mode remains available."],
   STT_FAILED: [503, "Unable to transcribe this recording; retry or use text."],
   EMPTY_TRANSCRIPT: [422, "No speech was recognized."], INVALID_AUDIO: [400, "Invalid audio format."],
@@ -34,7 +35,7 @@ export function publicError(error: unknown) {
   let code: ApiErrorCode = "INTERNAL_ERROR";
   if (error instanceof ApiError || error instanceof ApplicationError || error instanceof AccountError || error instanceof QuizError || error instanceof SpeechError) code = error.code;
   else if (error instanceof DomainError) {
-    if (["SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
+    if (["SIMULATED_OTP_CONFIRMATION_REQUIRED", "SESSION_NOT_FOUND", "REVISION_CONFLICT", "IDEMPOTENCY_CONFLICT", "SESSION_NOT_ACTIVE"].includes(error.code)) code = error.code as ApiErrorCode;
     else if (actionErrors.has(error.code)) code = "INVALID_ACTION";
     else if (["INVALID_STATE", "CALL_NOT_READY", "INVALID_TRANSITION", "CHECKPOINT_OR_EVENT_REQUIRED"].includes(error.code)) code = "INVALID_STATE";
     else if (["INVALID_COMMAND", "INVALID_MESSAGE_REQUEST", "INVALID_TURN_ID", "EMPTY_SANITIZED_MESSAGE", "RESERVED_ACTION_ID"].includes(error.code)) code = "INVALID_REQUEST";

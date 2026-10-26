@@ -13,5 +13,10 @@ export const phoneDto = z.strictObject({
   contextualDecision: z.strictObject({ available: z.literal(true), id: z.string(), label: z.string(), actionIds: z.array(z.string()).min(1) }).optional(),
   hangUpActionId: z.string().optional(),
   independentContactActionId: z.string().optional(),
+  otpMessage: z.strictObject({ simulatedCode: z.string().regex(/^\d{6}$/), unread: z.boolean(),
+    nextAction: z.strictObject({ id: z.string(), confirmed: z.boolean() }), managedActionIds: z.array(z.string()) }).optional(),
+  transcript: z.array(z.strictObject({ id: z.string().regex(/^T-[a-f0-9]{24}$/), role: z.enum(["user", "character"]),
+    text: z.string().max(8000), kind: z.enum(["DIALOGUE", "COMMITTED_ACTION"]) })).optional(),
+  criticalEnding: z.strictObject({ title: z.string(), description: z.string(), actionText: z.string() }).optional(),
 });
 export const openingRequest = z.strictObject({ expectedRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) });

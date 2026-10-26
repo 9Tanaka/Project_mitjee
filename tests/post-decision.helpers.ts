@@ -24,7 +24,7 @@ export async function learningHarness(story: CallStoryId = "CC-01", provider: Sc
     const o = template.opportunities.find(o => o.state === session.phone?.state);
     const definition = session.availableActions.find(a => a.input === "CHOICE");
     const option = o?.skill === "D" ? o.choices.find(c => c.id === id) : undefined;
-    const publicOption = definition?.options.find(c => c.label === option?.publicLabel);
+    const publicOption = definition?.options.find(c => c.id === `o${o?.skill === "D" ? o.choices.indexOf(option!) + 1 : 0}`);
     if (!definition || !publicOption) throw new Error("TEST_CHOICE_UNAVAILABLE");
     return action(definition.label, { choiceId: publicOption.id });
   }

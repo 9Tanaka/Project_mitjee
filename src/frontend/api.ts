@@ -2,6 +2,7 @@ import { z } from "zod";
 import { errorEnvelope, successEnvelope } from "../public-api/contracts.js";
 
 export const errorMessages: Record<string, string> = {
+  SIMULATED_OTP_CONFIRMATION_REQUIRED: "รหัสนี้เป็นรหัสจำลองของรอบฝึก กรุณาใช้ปุ่มบอกรหัสจำลองในแอปข้อความเพื่อยืนยัน หรือแก้ไขข้อความ",
   STT_FAILED: "ถอดเสียงไม่ได้ ลองบันทึกใหม่หรือใช้ข้อความได้ รอบฝึกยังไม่ถูกเปลี่ยนจากการถอดเสียงที่ล้มเหลว",
   SPEECH_UNAVAILABLE: "ระบบเสียงยังไม่พร้อม สามารถใช้ข้อความต่อได้",
   EMPTY_TRANSCRIPT: "ไม่พบคำพูดในเสียงที่ส่ง กรุณาพูดใหม่หรือใช้ข้อความ",

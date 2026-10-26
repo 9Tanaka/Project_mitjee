@@ -27,6 +27,12 @@
 .phone-transcript-line:last-of-type { border-bottom: 0; }
 .phone-transcript-line span { color: #776791; font-size: 11px; font-weight: 700; padding-top: 2px; }
 .phone-transcript-line p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.phone-transcript-user { background: #eee9f8; border-radius: 8px; padding-inline: 8px; }
+.phone-transcript:focus-visible { outline: 2px solid #6250a8; outline-offset: 3px; }
+.phone-ending .phone-transcript { text-align: left; margin-bottom: 24px; }
+.phone-ending .phone-transcript p { font-size: 13px; margin: 0; }
+.phone-critical-notice { padding: 20px 12px; background: #fff3e5; border: 1px solid #e9c6a3; border-radius: 14px; }
+.phone-critical-notice:focus { outline: 2px solid #6250a8; outline-offset: 3px; }
 .phone-compose { display: grid; gap: 10px; margin-top: 18px; }
 .phone-compose label { font-size: 12px; font-weight: 650; }
 .phone-compose textarea { width: 100%; min-width: 0; resize: vertical; border: 1px solid #d5ccdf; border-radius: 12px; padding: 12px; font-size: 13px; background: white; }
@@ -53,8 +59,15 @@
 .phone-footnote,.phone-request-status { font-size: 12px; text-align: center; max-width: 440px; margin: 14px auto; color: #746982; }
 .phone-voice-controls { padding: 16px 0; border-bottom: 1px solid #ded7e8; font-size: 12px; }
 .phone-voice-controls audio { display: block; width: 100%; max-width: 100%; }
+.phone-voice-controls audio[hidden] { display: none; }
+.phone-screen > .phone-voice-controls { padding-inline: 18px; }
 .phone-voice-controls .button { min-width: 0; white-space: normal; }
 .phone-speaker-toggle { display: flex; gap: 8px; align-items: center; }
 .phone-call-timer { text-align: center; font-variant-numeric: tabular-nums; color: #746982; margin-block: 12px; }
+.phone-message-badge { margin-inline-start: 4px; font-weight: 700; }
+.phone-sms-notice { margin-block: 12px; padding: 10px; border: 1px solid #dcd1ec; border-radius: 12px; font-size: 12px; }
+.phone-otp-confirmation { margin: 18px 0 0; font-size: 13px; }
+.phone-otp-confirmation h3 { font-size: 15px; margin-bottom: 10px; }
+.phone-otp-confirmation .field-hint { margin-top: 10px; }
 @media (max-width: 480px) { .phone-shell { padding: 7px; border-radius: 30px; } .phone-screen { border-radius: 21px; } .phone-training-heading h1 { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .phone-training * { scroll-behavior: auto; } }
