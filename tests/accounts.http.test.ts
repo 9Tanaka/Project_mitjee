@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 const mock = vi.hoisted(() => ({ accounts: vi.fn() }));
 vi.mock("../src/server/account-runtime.js", () => ({ getAccountService: mock.accounts }));
@@ -7,8 +7,10 @@ import { AccountService } from "../src/application/account-service.js";
 import { freshPassword, MemoryAccounts, TestHasher } from "./accounts.helpers.js";
 
 beforeEach(async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
   mock.accounts.mockReset().mockResolvedValue(await AccountService.create(new MemoryAccounts(), new TestHasher()));
 });
+afterEach(() => vi.restoreAllMocks());
 const valid = () => ({ email: "user@example.test", password: freshPassword() });
 function request(input: unknown, headers: Record<string, string> = {}, raw?: string, query = "") {
   return POST(new Request("http://localhost/api/auth/register" + query, {
@@ -54,5 +56,15 @@ it("cross-origin registration is blocked", async () => {
 it("database/hasher errors are fixed 500 without details", async () => {
   mock.accounts.mockRejectedValue(new Error("internal private data"));
   const response = await request(valid()); expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({ error: { code: "INTERNAL_ERROR", message: "Unable to process the request." } });
+  expect(console.error).toHaveBeenCalledWith(expect.stringContaining('"stage":"runtime"'));
+  expect(console.error).not.toHaveBeenCalledWith(expect.stringContaining("internal private data"));
+});
+it("records a sanitized account-write failure without changing the public 500", async () => {
+  mock.accounts.mockResolvedValue({ register: async () => { throw new Error("ER_GET_CONNECTION_TIMEOUT private credentials"); } });
+  const response = await request(valid());
+  expect(response.status).toBe(500);
+  expect(console.error).toHaveBeenCalledWith(expect.stringContaining('"category":"DATABASE_TIMEOUT"'));
+  expect(console.error).toHaveBeenCalledWith(expect.stringContaining('"stage":"account_write"'));
   expect(await response.json()).toEqual({ error: { code: "INTERNAL_ERROR", message: "Unable to process the request." } });
 });

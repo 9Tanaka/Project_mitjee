@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 model Scenario {
@@ -20,7 +20,7 @@ model ScenarioTemplateVersion {
   version Int
   variant String @db.VarChar(40)
   configuration Json
-  publishedAt DateTime @default(now())
+  publishedAt DateTime @default(now()) @db.Timestamptz(3)
   scenario Scenario @relation(fields: [templateId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   sessions TrainingSession[]
   @@id([templateId, version, variant])
@@ -35,9 +35,9 @@ model TrainingSession {
   status String @db.VarChar(30)
   state String @db.VarChar(40)
   revision Int
-  startedAt DateTime
-  lastActivityAt DateTime
-  endedAt DateTime?
+  startedAt DateTime @db.Timestamptz(3)
+  lastActivityAt DateTime @db.Timestamptz(3)
+  endedAt DateTime? @db.Timestamptz(3)
   template ScenarioTemplateVersion @relation(fields: [templateId, templateVersion, variant], references: [templateId, version, variant], onDelete: Restrict, onUpdate: Restrict)
   actions TrainingAction[]
   opportunities SessionOpportunity[]
@@ -55,7 +55,7 @@ model TrainingAction {
   fingerprint String @db.Text
   state String @db.VarChar(40)
   revision Int
-  at DateTime
+  at DateTime @db.Timestamptz(3)
   validationStatus String @db.VarChar(40)
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   events TrainingEvent[]
@@ -73,11 +73,12 @@ model SessionOpportunity {
   state String @db.VarChar(40)
   eligibleMaximum Float
   earned Float
-  openedAt DateTime
-  finalizedAt DateTime?
+  openedAt DateTime @db.Timestamptz(3)
+  finalizedAt DateTime? @db.Timestamptz(3)
   finalizedByActionId String? @db.VarChar(120)
   correctWarningSignIds Json
   incorrectEvidenceIds Json
+  assessment String? @db.VarChar(20)
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   action TrainingAction? @relation(fields: [sessionId, finalizedByActionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
   events TrainingEvent[]
@@ -95,7 +96,7 @@ model TrainingEvent {
   ruleId String @db.VarChar(255)
   authority String @db.VarChar(30)
   critical Boolean
-  at DateTime
+  at DateTime @db.Timestamptz(3)
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   action TrainingAction @relation(fields: [sessionId, actionId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
   opportunity SessionOpportunity @relation(fields: [sessionId, opportunityId], references: [sessionId, definitionId], onDelete: Restrict, onUpdate: Restrict)
@@ -131,7 +132,7 @@ model TrainingMessage {
   role String @db.VarChar(20)
   text String @db.Text
   state String @db.VarChar(40)
-  at DateTime
+  at DateTime @db.Timestamptz(3)
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   turn DialogueTurnReceipt @relation(fields: [sessionId, turnId], references: [sessionId, id], onDelete: Restrict, onUpdate: Restrict)
   @@id([sessionId, id])
@@ -148,7 +149,9 @@ model TrainingResult {
   criticalEventIds Json
   weakestSkills Json
   recommendation Json
-  calculatedAt DateTime
+  calculatedAt DateTime @db.Timestamptz(3)
+  evaluationMode String @default("LEGACY_WEIGHTED_V1") @db.VarChar(30)
+  decisionSummary Json?
   session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
@@ -157,6 +160,35 @@ model UserAccount {
   id String @id @db.Char(36)
   email String @unique @db.VarChar(254)
   passwordHash String @db.Char(60)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+// Separate Quiz history: no numeric fields are added to categorical Scenario evaluation.
+model QuizAttempt {
+  id String @id @db.VarChar(100)
+  ownerId String @db.VarChar(120)
+  mode String @db.VarChar(20)
+  bankVersion String @db.VarChar(80)
+  blueprint String @db.VarChar(80)
+  status String @db.VarChar(20)
+  revision Int
+  startedAt DateTime @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  snapshot Json
+  answers Json
+  result Json?
+  receipts QuizReceipt[]
+  @@index([ownerId, startedAt, id])
+  @@index([ownerId, mode, bankVersion, blueprint, completedAt])
+}
+
+model QuizReceipt {
+  attemptId String @db.VarChar(100)
+  requestId String @db.Char(36)
+  fingerprint String @db.Char(64)
+  revision Int
+  attempt QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  @@id([attemptId, requestId])
+  @@unique([attemptId, revision])
 }

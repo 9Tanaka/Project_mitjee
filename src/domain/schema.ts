@@ -1,65 +1,92 @@
 import { z } from "zod";
-import { CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js";
+import { CALL_STORIES, CATEGORIES, CRITICAL_CODES, EVENT_CODES, STATES } from "./constants.js";
+import { CALL_BEHAVIORS, PHONE_APPS, callInteractionSchema, phoneContentSchema } from "./phone-model.js";
+import { callConversationPolicySchema, callSignalSchema } from "./call-signals.js";
 
 const id = z.string().min(1).max(120).regex(/^[a-zA-Z0-9_-]+$/);
 const event = z.enum(EVENT_CODES);
 const points = z.number().finite().nonnegative();
+const assessment = z.enum(["SAFE", "REVIEW", "UNASSESSED"]);
 
 const common = {
   id,
   state: z.enum(STATES),
   required: z.boolean(),
   // MVP: static, backend-owned content is offered on state entry; no AI exposure inference.
-  activation: z.literal("STATE_ENTRY"),
+  activation: z.enum(["STATE_ENTRY", "CALLER_SIGNAL"]),
+  publicCheckpointLabel: z.string().min(1).optional(),
+  publicResultLabel: z.string().min(1).optional(),
+  unassessedFeedback: z.string().min(1).optional(),
+  app: z.enum(PHONE_APPS).optional(),
 };
 
 export const opportunitySchema = z.discriminatedUnion("skill", [
   z.strictObject({
-    ...common, skill: z.literal("D"), maxScore: z.literal(10),
+    ...common, skill: z.literal("D"), maxScore: z.literal(10).optional(),
     choices: z.array(z.strictObject({
-      id, rating: z.enum(["safe", "partially_safe", "risky"]),
-      score: z.union([z.literal(0), z.literal(5), z.literal(10)]),
+      id, rating: z.enum(["safe", "partially_safe", "risky"]), publicLabel: z.string().min(1).optional(),
+      score: z.union([z.literal(0), z.literal(5), z.literal(10)]).optional(),
+      assessment: assessment.optional(), publicFeedback: z.string().min(1).optional(),
       eventCodes: z.array(event),
+      behavior: z.enum(CALL_BEHAVIORS).optional(), requiresBehaviors: z.array(z.enum(CALL_BEHAVIORS)).optional(),
     })).min(1),
   }),
   z.strictObject({
     ...common, skill: z.literal("W"),
+    assessmentRule: z.enum(["ALL_WARNINGS_NO_FALSE_POSITIVES", "NO_WARNINGS_EXPECTED"]).optional(),
+    safeFeedback: z.string().min(1).optional(), reviewFeedback: z.string().min(1).optional(),
     evidence: z.array(z.strictObject({
       id, text: z.string().min(1), warningSignId: id.nullable(),
     })).min(1),
   }),
   z.strictObject({
-    ...common, skill: z.literal("S"), maxScore: points.positive(),
+    ...common, skill: z.literal("S"), maxScore: points.positive().optional(),
     actions: z.array(z.strictObject({
-      id, score: points, eventCodes: z.array(event),
+      id, score: points.optional(), assessment: assessment.optional(), publicLabel: z.string().min(1).optional(), publicFeedback: z.string().min(1).optional(), eventCodes: z.array(event),
+      behavior: z.enum(CALL_BEHAVIORS).optional(), requiresBehaviors: z.array(z.enum(CALL_BEHAVIORS)).optional(),
     })).min(1),
   }),
 ]);
 
 export const scenarioTemplateSchema = z.strictObject({
   id, version: z.number().int().positive(),
+  evaluationMode: z.literal("DECISION_RULES_V1").optional(),
+  publicFeedbackEnabled: z.literal(true).optional(),
+  publicActionBindings: z.literal(true).optional(),
   category: z.enum(CATEGORIES),
   variant: z.enum(["DEFAULT", "NORMAL_CALL", "SCAM_CALL"]),
-  title: z.string().min(1), learningObjectives: z.array(z.string().min(1)).min(1),
+  title: z.string().min(1), description: z.string().min(1).optional(), learningObjectives: z.array(z.string().min(1)).min(1),
   // Optional for existing Core-only versions. Dialogue-enabled versions must specify a role.
   characterRole: z.string().min(1).max(1000).optional(),
-  fictionalOnly: z.literal(true), initialState: z.literal("contact"),
+  fictionalOnly: z.literal(true), initialState: z.enum(["contact", "INCOMING_CALL"]),
+  callCenter: z.strictObject({ storyId: z.enum(CALL_STORIES), topic: z.enum(["PARCEL", "BANK"]),
+    openingFallback: z.string().trim().min(1).max(8000), fullStory: z.literal(true).optional(), content: phoneContentSchema.optional(), continuousConversation: z.literal(true).optional() }).optional(),
   states: z.array(z.strictObject({
     id: z.enum(STATES), objective: z.string().min(1),
     allowedBehaviors: z.array(z.string()), forbiddenBehaviors: z.array(z.string()),
     allowedEventCodes: z.array(event),
     fallbackMessage: z.string().min(1),
+    callerTurnRequired: z.boolean().optional(), internalApps: z.array(z.enum(PHONE_APPS)).optional(),
+    conversation: callConversationPolicySchema.optional(),
+    appSignalGates: z.array(z.strictObject({ app: z.enum(PHONE_APPS), signals: z.array(callSignalSchema).min(1) })).optional(),
+    interactions: z.array(callInteractionSchema).optional(),
     transitions: z.array(z.strictObject({
-      id, target: z.enum(STATES),
+      id, target: z.enum(STATES), publicLabel: z.string().min(1).optional(),
       requiresFinalized: z.array(id), requiresEvents: z.array(event),
       safeResolution: z.boolean(),
+      earlySafeResolution: z.boolean().optional(),
+      internalOnly: z.literal(true).optional(),
+      behavior: z.enum(CALL_BEHAVIORS).optional(),
+      requiresBehaviors: z.array(z.enum(CALL_BEHAVIORS)).optional(),
+      requiresChoices: z.array(z.strictObject({ opportunityId: id, choiceIds: z.array(id).min(1) })).optional(),
     })),
   })).min(2),
   opportunities: z.array(opportunitySchema).min(1),
   criticalFailureRules: z.array(z.strictObject({
-    id, state: z.enum(STATES), opportunityId: id,
+    id, state: z.enum(STATES), opportunityId: id, publicLabel: z.string().min(1).optional(), publicFeedback: z.string().min(1).optional(),
     eventCode: z.enum(CRITICAL_CODES), requiresExplicitAction: z.literal(true),
     requiresAbsentEvents: z.array(event),
+    app: z.enum(PHONE_APPS).optional(), behavior: z.enum(CALL_BEHAVIORS).optional(), preparationInteractionId: id.optional(),
   })),
   recommendations: z.strictObject({
     D: z.strictObject({ type: z.literal("DECISION_PRACTICE"), key: id, reason: z.string().min(1) }),

@@ -1,14 +1,28 @@
 # MITJEE
 
+Minimal Vercel Preview setup and verification scope: [Vercel Preview](docs/vercel-preview.md).
+Installation and production builds generate the ignored Prisma client automatically; database migrations remain an explicit operation.
+
 ## Project overview
 
 โครงงานนี้พัฒนาระบบฝึกรับมือการหลอกลวงทางไซเบอร์ด้วยสถานการณ์จำลอง
-โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับ SMS / Phishing
-สนทนาผ่าน Mock หรือ OpenAI Responses API adapter ตาม configuration ของ server
+โค้ดปัจจุบันเป็น Scenario Simulation module พร้อม Frontend และ Next.js HTTP API สำหรับสถานการณ์ 9 ประเภท
+Call Center ใหม่เป็น [Phone Simulator v6](docs/call-center-continuous-ux.md): สนทนาต่อเนื่องผ่านข้อความ/เสียง ไม่มีปุ่มคุยต่อทั่วไป และเปิด contextual decision หลัง committed semantic signal ที่ Backend ตรวจสอบแล้วเท่านั้น; v1–v5 คงเดิม
+Backend เลือกและตรึงหนึ่งในสี่เรื่องพัสดุ/ธนาคารแบบ matched normal/scam โดยไม่ส่งชื่อเรื่องหรือประเภทสายให้ browser ดู [Call Center Part 2](docs/call-center-part2.md)
+Phone มี Push-to-Talk และ Replay เสียงผู้โทรในหน้ารับสายโดยตรง; HTTP fallback ไม่ต้องใช้ custom WebSocket server ดู [Call Center Part 3](docs/call-center-part3.md)
+เพิ่ม Quiz Pre-test/Post-test: สุ่มครั้งละ 20 ข้อจากคลัง 210 ข้อใน 7 หมวด บันทึกทำต่อ ดูเฉลย และเปรียบเทียบผลก่อน/หลังฝึก — ดู [Quiz](docs/quiz.md)
+ผลฝึกใหม่ใช้ Rule-Based Decision Evaluation แบบหมวดหมู่ตาม [กฎล่าสุด](docs/decision-evaluation.md)
+ผลเก่าของ SMS template รุ่น 1–2 ยังคงสูตรคะแนนเดิมและไม่ถูกคำนวณย้อนหลังใหม่; เลข version ไม่ใช้เลือกระบบประเมิน
+สนทนาผ่าน Mock, OpenAI หรือ Groq Responses API adapter ตาม configuration ของ server
 สลับกับการตัดสินใจและการกระทำจำลอง จนได้ผลประเมินจากกฎของ Backend
 มีบัญชีผู้ใช้ Email/Password, สมัครสมาชิกและล็อกอินผ่าน Auth.js Credentials แล้ว
 Training API รับ UUID จาก verified session เท่านั้น; ไม่มีทางลัดผ่าน owner header
 ดู [Authentication](docs/authentication.md) และ [Frontend](docs/frontend.md) — ยังไม่ใช่ production-ready
+
+UI refresh ตาม Proposal ภาพที่ 7–26: หน้าแรกสีเข้ม/ม่วง ปุ่มมิ้นต์, sidebar และเมนูมือถือ,
+รายละเอียดสถานการณ์ → ยืนยันคำเตือน → ฝึก, Quiz และแดชบอร์ดจากประวัติ Quiz จริง
+ดู [UI refresh: หน้าที่ทำแล้ว / ข้อจำกัด / หลักฐานการตรวจ](docs/ui-refresh.md)
+เกมสืบสวนและคลังความรู้เป็น **ตัวอย่าง UI ที่ระบุป้ายชัดเจน** ไม่ใช่ระบบเกม/บทเรียนที่บันทึกผลได้
 
 ## Current implementation status
 
@@ -16,20 +30,27 @@ Training API รับ UUID จาก verified session เท่านั้น;
 |---|---|
 | Core Domain | Implemented |
 | Scenario State Machine | Implemented |
-| Rule-Based Scoring | Implemented |
+| Rule-Based Decision Evaluation | Implemented for new sessions in all nine text scenarios; historical weighted results preserved |
 | Mock Dialogue | Implemented |
 | Repository abstraction | Implemented |
-| Prisma/MySQL Persistence | Implemented |
-| HTTP API / Public DTO | Implemented — 8 endpoints |
+| Prisma/MySQL Persistence | Implemented but external verification pending — assessment recovery and Quiz snapshot fixes; dedicated test DB unavailable |
+| HTTP API / Public DTO | Implemented — Training/Quiz endpoints and bounded Call Center voice endpoint |
 | Authentication Boundary | Implemented — verified Auth.js session → opaque owner UUID |
 | User Account / Auth.js Credentials | Implemented — MySQL accounts, bcrypt, registration, JWT/cookie login |
-| Frontend UI | Implemented — registration/login, catalog, playable SMS / Phishing, result/logout |
-| Live AI Provider | Implemented — OpenAI Responses API adapter; explicit Mock/OpenAI selection; **network verification NOT RUN** |
-| Voice / playable Call Center | Planned / Not Implemented |
-| WebSocket | Planned / Not Implemented |
+| Frontend UI | Implemented — Proposal-aligned shell, responsive navigation, registration/login, searchable nine-scenario catalog, details/safety acknowledgment, training/result, Quiz and FAQ |
+| Live AI Provider | Implemented — Mock/OpenAI/Groq; all four v6 Preview flows functionally passed on 2026-10-07, but two used one INVALID_OUTPUT fallback each; [bounded receipt evidence](docs/call-center-continuous-ux.md); historical v5 results retained in Part 3 |
+| Call Center text | Four v6 continuous semantic-gated stories; 3 meaningful checkpoints for scams / 2 for normal calls; verified simulator evidence required for verification branch; historical v1–v5 preserved; [current verification](docs/call-center-continuous-ux.md) |
+| Voice Call Center | Implemented — Phone-integrated Push-to-Talk, committed opening/state/reply TTS and replay, captions/text/HTTP fallback; live Azure NOT RUN (credentials absent) |
+| Quiz Pre-test/Post-test | Implemented — 210 questions, seven groups, 20 per round, owned persisted attempts and comparison |
+| WebSocket | Implemented — authenticated, owned active Call Center session, bounded transport and reconnect/replay |
+| Account / Dashboard UI | Read-only session account; dashboard uses existing Quiz history (up to 50 rounds), not aggregated scenario history or overall mastery |
+| Investigation Game / Knowledge Base | UI-only labeled previews and honest empty states; backend/content publishing/progress not implemented |
 
-ประเภท Call Center และ variant มีใน schema แต่ยังไม่มี fixture/ระบบเสียง/ตัวเลือกแบบ seeded ที่เล่นได้
+วันที่ 7 ตุลาคม 2026 ทดสอบ browser จริงบน Preview ครบสี่เรื่อง Call Center v6 ผ่านถึงผลและ logout; CC-02/CC-N02 ใช้ fallback อย่างละหนึ่ง turn จึงไม่อ้างว่าทุกคำขอ AI สำเร็จทั้งหมด ดู [ผล v6 และข้อจำกัด](docs/call-center-continuous-ux.md) ส่วน Azure ยังไม่ได้ทดสอบจริง และการตรวจ local เป็น in-memory/Mock แยกจากหลักฐาน Preview; [Part 3](docs/call-center-part3.md) เก็บผล v5 เดิม
 ขอบเขตที่ทำแล้วไม่เท่ากับขอบเขต Proposal ทั้งโครงงาน
+ผลรอบล่าสุดอยู่ใน [Live AI + Voice + WebSocket verification](docs/realtime-verification.md)
+
+Runtime มี **9 category-level playable scenarios** ไม่ใช่ target storyboard ทั้ง 21 เรื่อง Call Center ใหม่ใช้ v6 ครบสี่เรื่อง PARCEL/BANK × NORMAL/SCAM พร้อม OTP/การโอนจำลองและ matched normal controls ส่วน Call Center v1–v5 (รวมสายห้องสมุดเดิม) ยังคงไว้สำหรับ session เก่าโดยไม่แก้ configuration
 
 ## Architecture summary
 
@@ -44,7 +65,15 @@ Browser / React UI [IMPLEMENTED; public DTOs only]
 
 ScenarioDialogueOrchestrator → ScenarioModelProvider
                               ├─ Mock Provider [IMPLEMENTED]
-                              └─ OpenAI Responses API Provider [IMPLEMENTED; network NOT VERIFIED]
+                              ├─ OpenAI Responses API Provider [pending credits]
+                              └─ Groq Responses API Provider [four v5 stories live verified; deployed acceptance tracked separately]
+
+Call Center microphone → authenticated WebSocket / bounded HTTP
+  → Azure STT → sanitized text → existing Dialogue → atomic commit
+  → Azure TTS → in-memory browser audio (text remains available)
+
+Committed caller opening/state/text-reply → protected HTTP /speech (owned turnId only)
+  → Azure TTS → best-effort playback / replay (no AI turn or training action)
 ```
 
 ดูขอบเขตหน้าที่และ Mermaid ใน [Architecture](docs/architecture.md)
@@ -60,6 +89,25 @@ Free Text และ AI candidate ไม่สามารถสร้าง irre
 
 ## Development
 
+`npm run dev` และ `npm start` ใช้ custom Node server ที่ให้ HTTP กับ WebSocket บน origin เดียวกัน
+`npm run dev:http` / `npm run start:http` คง HTTP-only fallback ไว้
+ตั้ง `AUTH_URL` ให้ตรงกับ browser origin (ค่าเริ่มต้น `http://127.0.0.1:3000`)
+ดู [Voice setup and limits](docs/voice.md) และ [WebSocket deployment](docs/websocket.md)
+
+Provider configuration เป็น server-only และต้องเลือกชัดเจน ไม่มีการสลับ provider อัตโนมัติ:
+
+| Selection | Required private settings |
+|---|---|
+| `AI_PROVIDER=mock` | ไม่มี provider key |
+| `AI_PROVIDER=openai` | `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5.6-luna` |
+| `AI_PROVIDER=groq` | `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-120b` |
+| Azure Speech for voice | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` |
+
+Groq เป็น free development alternative ภายใน quota ของผู้ให้บริการ ไม่ได้อ้างว่าเทียบเท่า Luna
+Historical Proposal ยังคงอ้าง `gpt-5.4-mini`; ไม่มีการแก้ย้อนหลังเป็น Luna หรือ Groq
+Live opt-in: `npm run test:ai:groq:live` และ `npm run test:speech:live` หลังตั้ง private environment
+คำสั่ง live ไม่โหลด `.env.local` อัตโนมัติ; shell สามารถใช้ Node `--env-file=.env.local` เรียก launcher เดียวกันได้
+
 Node.js 24 เป็น tested development environment ไม่ใช่ Proposal Requirement
 เริ่มจากโฟลเดอร์นี้:
 
@@ -73,6 +121,22 @@ npm run build
 ```
 
 หากไม่ได้ตั้ง `MYSQL_TEST_DATABASE_URL`, MySQL tests จะเป็น skipped ไม่ใช่ผ่าน
+ผลก่อนรอบ recovery, 26 กันยายน 2026 — Quiz Pre-test/Post-test และ scenario decision rules:
+
+- Full tests: **454 passed, 34 skipped**, 488 รวม; ข้ามกรณีที่ต้องใช้ฐาน MySQL เพราะไม่มี `MYSQL_TEST_DATABASE_URL`
+- Prisma generate/validate, typecheck, production build และ client audit ผ่าน
+- Migration ของ Quiz เป็น additive; ยังไม่ได้ deploy ฐานจริง
+- Browser+MySQL E2E ใหม่ยัง **NOT RUN**; ไม่เรียก Live OpenAI
+- ขอบเขตโหมดอื่นของรอบนี้จำกัดที่ Pre-test/Post-test ตามคำขอล่าสุด ไม่รวม Review Quiz, บทเรียน 16 เรื่องหรือ Investigation Game
+
+ผลรอบ recovery และเงื่อนไขที่ยังติดค้างอยู่ใน [Current recovery verification](docs/recovery-verification.md)
+Full tests รอบ recovery: **475 passed, 48 skipped**, 523 รวม; skipped ไม่ใช่ PASS
+แก้ assessment หายหลัง Prisma resume โดยอิง evaluationMode ของ pinned template และค่าที่ persist จริง
+เพิ่ม repeatable-read snapshot สำหรับ Quiz และ E2E ของ investment-scam ที่พร้อมรันกับฐานจริง
+ฐานทดสอบยังไม่พร้อม: **NOT RUN — MYSQL_TEST_DATABASE_URL unavailable**; ไม่ deploy migration หรืออ้างว่า browser/MySQL ผ่าน
+
+ผลด้านล่างเป็นประวัติการตรวจรุ่นก่อนหน้า ไม่ใช่ผลการรันรอบนี้:
+
 ผลล่าสุด 22 กันยายน 2026 — Live AI Provider Integration:
 
 - Prisma generate/validate, typecheck, production build และ client audit ผ่าน
@@ -131,10 +195,13 @@ Training endpoints ทุกตัวต้อง authenticate; registration แ
 ตั้ง `AI_PROVIDER=mock` อย่างชัดเจนเพื่อพัฒนาโดยไม่เรียก OpenAI; ไม่มี implicit Mock default อีกต่อไป
 หากใช้ `AI_PROVIDER=openai` ต้องมี `OPENAI_API_KEY` และ `OPENAI_MODEL` ใน private server environment
 Proposal v4 ระบุ `gpt-5.4-mini` และ final-test snapshot `gpt-5.4-mini-2026-03-17`;
-ไม่มีการเปลี่ยน model ให้เอง ไม่มี browser selector และไม่มี arbitrary proxy URL
+approved implementation decision ใช้ `gpt-5.6-luna` ตามคำอนุมัติล่าสุด โดยยังตั้ง `OPENAI_MODEL` ฝั่ง server ได้
+ดู [official Luna documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna); ไม่แก้ประวัติ Proposal
+ไม่มี browser selector และไม่มี arbitrary proxy URL
 OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โดย fake client ไม่เรียกเครือข่าย
 `npm run test:ai:live` แยกต่างหากสำหรับข้อมูลสมมติหนึ่ง turn สูงสุดสอง requests
-รอบนี้ไม่มี private API key: **Real OpenAI network verification: NOT RUN; model used: none**
+รอบ recovery ไม่เรียก Live API ซ้ำ: ครั้งล่าสุดใน workspace วันที่ 25 กันยายนใช้ gpt-5.6-luna และล้มเหลวด้วย HTTP 429 credit_balance_exhausted
+ต้องมีเครดิตพร้อมก่อนทดสอบจริงใหม่; fake-client tests ไม่ยืนยัน live network หรือความเข้ากันได้ของบัญชี
 ดู [AI integration](docs/ai-integration.md) สำหรับขอบเขตข้อมูล, timeout/retry และข้อจำกัด
 ดู [API contract และ composition setup](docs/api.md) สำหรับ environment และ protocol
 
@@ -142,9 +209,13 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 
 - [Architecture และแหล่งอ้างอิง](docs/architecture.md)
 - [Scenario Engine และ domain model](docs/scenario-engine.md)
+- [สถานการณ์ข้อความทั้งเก้าประเภทและขอบเขต Call Center](docs/scenario-catalog.md)
 - [State Machine และ lifecycle](docs/state-machine.md)
 - [Scoring และคำแนะนำ](docs/scoring.md)
-- [AI Integration — Mock/OpenAI adapter ทำแล้ว; live network ยังไม่ตรวจ](docs/ai-integration.md)
+- [Decision Evaluation รุ่นใหม่และความเข้ากันได้กับผลเก่า](docs/decision-evaluation.md)
+- [Quiz Pre-test/Post-test](docs/quiz.md)
+- [Recovery verification — historical baseline วันที่ 26 กันยายน](docs/recovery-verification.md)
+- [AI Integration — Mock/OpenAI/Groq adapters ทำแล้ว; live status แยกตาม provider](docs/ai-integration.md)
 - [Persistence และ MySQL tests](docs/persistence.md)
 - [HTTP API และ Authentication Boundary](docs/api.md)
 - [User accounts / Auth.js: identity policy, tests และข้อจำกัด](docs/authentication.md)
@@ -158,5 +229,5 @@ OpenAI adapter ใช้ SDK `openai@7.21.0`; รัน `npm run test:ai` โด
 Phase User Account + Credentials Authentication เพิ่ม account store/registration/verifier ตามที่อนุมัติแล้ว
 Application เป็นเจ้าของ contracts/errors; HTTP map/validate DTO; Core/scoring/state ไม่เปลี่ยน
 Frontend Foundation + Authentication UI + Playable Training Flow ทำแล้วตาม backend ปัจจุบัน
-ยังไม่เริ่ม Profile, อีก 8 fixtures, Pre/Post-test, Game, Knowledge Base, Dashboard, OAuth, Voice หรือ WebSocket
-หยุดรอ review ก่อน Phase ถัดไป
+Quiz Pre-test/Post-test, Call Center Voice และ WebSocket ทำแล้ว; Profile, Game, Knowledge Base, Review Quiz, Dashboard และ OAuth ยังไม่ทำ
+งานที่ยังเหลือและลำดับดำเนินการอยู่ใน [Implementation gap and phases](docs/implementation-roadmap.md)

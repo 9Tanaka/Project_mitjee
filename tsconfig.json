@@ -37,6 +37,8 @@
     "playwright.config.ts",
     "vitest.config.ts",
     "vitest.ai-live.config.ts",
+    "vitest.groq-live.config.ts",
+    "vitest.speech-live.config.ts",
     "prisma.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"

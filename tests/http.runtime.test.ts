@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({ disconnect: vi.fn(), create: vi.fn(), assemble
 vi.mock("../src/persistence/prisma-client.js", () => ({ createPrismaClient: mocks.create }));
 vi.mock("../src/application/composition.js", () => ({ createApplication: mocks.assemble }));
 import { getRuntime } from "../src/server/runtime.js";
+import { createCallRuntime } from "../src/server/call-runtime.js";
 
 
 beforeEach(() => {
@@ -14,7 +15,8 @@ beforeEach(() => {
   mocks.assemble.mockResolvedValue({ marker: "application" });
   vi.stubEnv("AUTH_SECRET", "");
   vi.stubEnv("AI_PROVIDER", "mock");
-  vi.stubEnv("DATABASE_URL", "mysql://localhost/mitjee_test");
+  vi.stubEnv("CALL_CENTER_DEMO_VARIANT", ""); vi.stubEnv("CALL_CENTER_DEMO_STORY", ""); vi.stubEnv("DATABASE_TLS_CA", "");
+  vi.stubEnv("DATABASE_URL", "postgres://app@localhost/mitjee_test");
   vi.stubEnv("DATABASE_TLS_CA_PATH", ""); vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "");
 });
 afterEach(() => { vi.unstubAllEnvs(); delete (globalThis as { mitjeeHttpRuntime?: unknown }).mitjeeHttpRuntime;
@@ -48,9 +50,32 @@ it.each(["", "invalid", "openai"])("invalid provider configuration (%s) fails be
   await expect(getRuntime().application()).rejects.toThrow(/AI_PROVIDER|OPENAI_API_KEY/);
   expect(mocks.create).not.toHaveBeenCalled(); expect(mocks.assemble).not.toHaveBeenCalled();
 });
-it("loopback RSA path remains an explicit composition-root option", async () => {
-  vi.stubEnv("DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH", "/trusted/local-public.pem");
+it("verified TLS CA reaches the PostgreSQL composition root", async () => {
+  vi.stubEnv("DATABASE_TLS_CA", "trusted-ca");
   const runtime = getRuntime(); await runtime.application();
-  expect(mocks.create).toHaveBeenCalledWith("mysql://localhost/mitjee_test", { loopbackRsaPublicKey: "/trusted/local-public.pem" });
+  expect(mocks.create).toHaveBeenCalledWith("postgres://app@localhost/mitjee_test", { tlsCa: "trusted-ca" });
   await runtime.close();
+});
+it("HTTP and custom-server composition use the same private demo variant selector", async () => {
+  vi.stubEnv("CALL_CENTER_DEMO_VARIANT", "SCAM_CALL");
+  const http = getRuntime(), call = createCallRuntime();
+  await http.application(); await call.application();
+  expect(mocks.assemble.mock.calls.every(args => ["CC-01", "CC-02"].includes(args[4]()))).toBe(true);
+  await call.close(); await http.close();
+});
+it("custom-server runtime owns an isolated lazy pool while reusing its own concurrent initialization", async () => {
+  const http = getRuntime(), call = createCallRuntime();
+  expect(mocks.create).not.toHaveBeenCalled();
+  await http.application();
+  const [first, second] = await Promise.all([call.application(), call.application()]);
+  expect(first).toBe(second); expect(mocks.create).toHaveBeenCalledTimes(2);
+  await call.close(); await http.close(); expect(mocks.disconnect).toHaveBeenCalledTimes(2);
+});
+it("custom-server failed initialization closes its pool and can retry", async () => {
+  mocks.assemble.mockRejectedValueOnce(new Error("call startup failed"));
+  const call = createCallRuntime();
+  await expect(call.application()).rejects.toThrow("call startup failed");
+  expect(mocks.disconnect).toHaveBeenCalledOnce();
+  await call.application(); expect(mocks.create).toHaveBeenCalledTimes(2);
+  await call.close(); expect(mocks.disconnect).toHaveBeenCalledTimes(2);
 });

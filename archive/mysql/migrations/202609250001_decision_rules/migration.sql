@@ -1,0 +1,2 @@
+ALTER TABLE `SessionOpportunity` ADD COLUMN `assessment` VARCHAR(20) NULL;
+ALTER TABLE `TrainingResult` ADD COLUMN `evaluationMode` VARCHAR(30) NOT NULL DEFAULT 'LEGACY_WEIGHTED_V1', ADD COLUMN `decisionSummary` JSON NULL;

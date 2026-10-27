@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import type { ResponseCreateParamsNonStreaming } from "openai/resources/responses/responses";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { aiCharacterResponseSchema, ProviderRefusal } from "../dialogue/contracts.js";
+import { responseSchemaFor, ProviderRefusal } from "../dialogue/contracts.js";
 import type { AICharacterResponse, ProviderOptions, ScenarioAIContext, ScenarioModelProvider } from "../dialogue/contracts.js";
 import { buildOpenAIRequest } from "./openai-prompt.js";
 
@@ -57,7 +57,7 @@ export class OpenAIScenarioModelProvider implements ScenarioModelProvider {
       const parts = parsed.data.output.flatMap(item => item.type === "message" ? item.content : []);
       if (parts.some(part => part.type === "refusal")) throw new ProviderRefusal("Provider refused scenario dialogue");
       if (parts.length !== 1 || parts[0]?.type !== "output_text") throw new OpenAIProviderError();
-      const result = aiCharacterResponseSchema.safeParse(JSON.parse(parts[0].text));
+      const result = responseSchemaFor(context).safeParse(JSON.parse(parts[0].text));
       if (!result.success) throw new OpenAIProviderError();
       return result.data;
     } catch (error) {

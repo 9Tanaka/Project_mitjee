@@ -1,0 +1,111 @@
+{
+  "phase": "5H",
+  "status": "COMPLETE",
+  "recommendation": "FREEZE_PERSISTENCE_ARCHITECTURE",
+  "completedAt": "2026-10-24T19:06:00.868Z",
+  "gates": {
+    "before": true,
+    "after": true,
+    "parity": true,
+    "postgres": true,
+    "nonRegressive": true,
+    "structural": true,
+    "controlsUnchanged": true,
+    "typecheck": true,
+    "offlineRegression": true,
+    "prismaValidateGenerate": true,
+    "productionBuild": true,
+    "clientAudit": true
+  },
+  "nonRegression": [
+    {
+      "mode": "text",
+      "boundary": "total",
+      "quantile": "p50",
+      "beforeMs": 2638.8706999999995,
+      "afterMs": 1943.8141499999983,
+      "pass": true
+    },
+    {
+      "mode": "text",
+      "boundary": "total",
+      "quantile": "p95",
+      "beforeMs": 2642.9240999999965,
+      "afterMs": 1958.7258999999976,
+      "pass": true
+    },
+    {
+      "mode": "text",
+      "boundary": "save",
+      "quantile": "p50",
+      "beforeMs": 1463.462050000002,
+      "afterMs": 777.6834500000004,
+      "pass": true
+    },
+    {
+      "mode": "text",
+      "boundary": "save",
+      "quantile": "p95",
+      "beforeMs": 1467.8887000000032,
+      "afterMs": 793.4016999999949,
+      "pass": true
+    },
+    {
+      "mode": "voice",
+      "boundary": "total",
+      "quantile": "p50",
+      "beforeMs": 3031.665799999999,
+      "afterMs": 2330.0956000000006,
+      "pass": true
+    },
+    {
+      "mode": "voice",
+      "boundary": "total",
+      "quantile": "p95",
+      "beforeMs": 3037.7319000000134,
+      "afterMs": 2337.2452999999987,
+      "pass": true
+    },
+    {
+      "mode": "voice",
+      "boundary": "save",
+      "quantile": "p50",
+      "beforeMs": 1465.264099999993,
+      "afterMs": 778.094350000003,
+      "pass": true
+    },
+    {
+      "mode": "voice",
+      "boundary": "save",
+      "quantile": "p95",
+      "beforeMs": 1469.4365000000034,
+      "afterMs": 781.3366999999998,
+      "pass": true
+    }
+  ],
+  "tests": {
+    "offlinePassed": 1032,
+    "offlineSkipped": 69,
+    "postgresPassed": 69,
+    "combinedCorrectnessPassed": 134,
+    "parityMatches": 117,
+    "semanticCases": 22,
+    "malformedRejections": 4
+  },
+  "transactionControlsRemoved": false,
+  "schemaChanged": false,
+  "validationWeakened": false,
+  "newIntegrityProtocol": false,
+  "productionDeployed": false,
+  "sourceSha256": {
+    "src/persistence/prisma-repository.ts": "ca9845aca8365ec32c8f1e6b0d6b710c2ca6854bd18edd7172f0f4ccb6d2f274",
+    "src/persistence/aggregate-reader.ts": "b120feb54286c1b5aa5e81cfc1af661b3bb7745ee808d48198dd2ad0f7a2efb1",
+    "src/domain/persistence-contract.ts": "ef6b1af503779b40a49b9bb767eb04435b9e2b154ff12e87523068b708be917c",
+    "src/core.ts": "525b91a7b2e6c8a523b4564ef85873293daba62a138748423f8158db4473999f"
+  },
+  "checkpoint": {
+    "baselineCommit": "4767470143b7225ffd7ac00dc2e366a0089d9f96",
+    "finalCommit": "reported in task handoff",
+    "pushPerformed": false
+  }
+}

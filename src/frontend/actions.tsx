@@ -12,11 +12,11 @@ export function ActionControl({ definition, disabled, submit }: {
   const [confirm, setConfirm] = useState(false);
   if (definition.input === "NONE") return <button className="button button-secondary w-full" disabled={disabled} onClick={() => submit({})}>{definition.label}<span aria-hidden="true">→</span></button>;
   if (definition.input === "CONFIRM") return <div className="simulated-control">
-    <button className="button button-warning w-full" disabled={disabled} onClick={() => setConfirm(true)}>{definition.label}</button>
+    <button className={`button ${definition.app ? "button-secondary" : "button-warning"} w-full`} disabled={disabled} onClick={() => setConfirm(true)}>{definition.label}</button>
     {confirm && <div className="confirmation" role="group" aria-label="ยืนยันการกระทำจำลอง">
       <p className="font-semibold">ยืนยันการกระทำจำลองนี้หรือไม่?</p>
       <p className="text-sm muted mt-2">การเลือกนี้มีผลต่อรอบฝึก ไม่ต้องกรอกรหัส OTP รหัสผ่าน หรือข้อมูลทางการเงินจริง</p>
-      <div className="flex flex-wrap gap-2 mt-4"><button className="button button-warning" disabled={disabled} onClick={() => { setConfirm(false); submit({ confirmed: true }); }}>ยืนยันการกระทำจำลอง</button><button className="button button-secondary" disabled={disabled} onClick={() => setConfirm(false)}>ยกเลิก</button></div>
+      <div className="flex flex-wrap gap-2 mt-4"><button className={`button ${definition.app ? "button-secondary" : "button-warning"}`} disabled={disabled} onClick={() => { setConfirm(false); submit({ confirmed: true }); }}>ยืนยันการกระทำจำลอง</button><button className="button button-secondary" disabled={disabled} onClick={() => setConfirm(false)}>ยกเลิก</button></div>
     </div>}
   </div>;
   const multiple = definition.input === "EVIDENCE";

@@ -149,8 +149,8 @@ Absent: email verification, password reset/change, compromised-password detectio
 recovery, MFA, CAPTCHA, production rate-limit/abuse infrastructure, account deletion/
 profile/RBAC, deployment security review and verified external TLS.
 Do not expose this demo as unprotected production identity infrastructure.
-Frontend and OpenAI dialogue adapter are implemented (OpenAI network NOT VERIFIED);
-OAuth, Voice and WebSocket remain unimplemented.
+Frontend, Mock/OpenAI/Groq adapters, Voice และ WebSocket ที่ตรวจ session ownership ผ่าน verified identity ทำแล้ว ดู [Voice](voice.md), [WebSocket](websocket.md) และ [ผล verification](realtime-verification.md)
+Live Azure/Groq และ dedicated MySQL/browser E2E ยัง NOT RUN; OpenAI Luna ครั้งก่อนติดเครดิต ส่วน OAuth ยังไม่ implement
 
 ## Frontend authentication boundary
 

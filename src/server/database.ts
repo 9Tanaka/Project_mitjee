@@ -5,13 +5,18 @@ type Client = ReturnType<typeof createPrismaClient>;
 const host = globalThis as typeof globalThis & { mitjeeDatabase?: Client };
 export function getDatabase(): Client {
   if (host.mitjeeDatabase) return host.mitjeeDatabase;
+  return host.mitjeeDatabase = createDatabase();
+}
+/** An isolated pool for the unbundled custom server; no compiled application objects cross into Next. */
+export function createDatabase(): Client {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("Database configuration is required");
   const caPath = process.env.DATABASE_TLS_CA_PATH;
-  const rsaPath = process.env.DATABASE_LOOPBACK_RSA_PUBLIC_KEY_PATH;
-  return host.mitjeeDatabase = createPrismaClient(url, {
-    ...(caPath ? { tlsCa: readFileSync(caPath, "utf8") } : {}),
-    ...(rsaPath ? { loopbackRsaPublicKey: rsaPath } : {}),
+  let ca: string | undefined;
+  try { ca = process.env.DATABASE_TLS_CA || (caPath ? readFileSync(caPath, "utf8") : undefined); }
+  catch { throw new Error("Database trusted CA file could not be read"); }
+  return createPrismaClient(url, {
+    ...(ca ? { tlsCa: ca } : {}),
   });
 }
 export async function closeDatabase(client: Client | undefined): Promise<void> {

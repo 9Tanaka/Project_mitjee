@@ -1,0 +1,2834 @@
+{
+  "phase": "5G",
+  "startedAt": "2026-10-24T18:18:38.021Z",
+  "status": "PASS",
+  "sourceCommit": "ec5b180313ca347e3ff9e9f5ace2034685e706d3",
+  "authoritativeBaseline": "Phase 5F working-tree source digests",
+  "runtimeSaveChanged": false,
+  "candidateDrivesWrites": false,
+  "cases": [
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "status": "PASS"
+    },
+    {
+      "case": "duplicate-dialogue-replay",
+      "status": "PASS"
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "status": "PASS"
+    },
+    {
+      "case": "stale-revision-no-reload",
+      "status": "PASS"
+    },
+    {
+      "case": "concurrent-distinct-CAS-one-winner",
+      "status": "PASS"
+    },
+    {
+      "case": "concurrent-duplicate-turn-one-commit",
+      "status": "PASS"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-decision",
+      "status": "PASS"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "status": "PASS"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "status": "PASS"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-dialogue",
+      "status": "PASS"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "status": "PASS"
+    },
+    {
+      "case": "foreign-key-write-failure-atomic-rollback",
+      "status": "PASS"
+    },
+    {
+      "case": "create-fault-seam-no-save-reload",
+      "status": "PASS"
+    },
+    {
+      "case": "owner-identity-tamper",
+      "status": "PASS"
+    },
+    {
+      "case": "message-history-tamper",
+      "status": "PASS"
+    },
+    {
+      "case": "opportunity-identity-tamper",
+      "status": "PASS"
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "status": "PASS"
+    },
+    {
+      "case": "result-immutability-rejection",
+      "status": "PASS"
+    },
+    {
+      "case": "malformed-SessionOpportunity",
+      "status": "PASS"
+    },
+    {
+      "case": "malformed-TrainingEvent",
+      "status": "PASS"
+    },
+    {
+      "case": "malformed-TrainingMessage",
+      "status": "PASS"
+    },
+    {
+      "case": "malformed-DialogueTurnReceipt",
+      "status": "PASS"
+    }
+  ],
+  "corpus": [
+    {
+      "case": "historical-0-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-1-v2-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-2-v3-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-3-v4-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-4-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-5-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-6-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-7-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-8-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-9-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-10-v1-DEFAULT",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-11-v1-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-12-v1-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-13-v2-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-14-v2-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-15-v3-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-16-v3-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-17-v3-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-18-v3-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-19-v4-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-20-v4-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-21-v4-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-22-v4-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-23-v5-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-24-v5-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-25-v5-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-26-v5-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-27-v6-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-28-v6-SCAM_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-29-v6-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "historical-30-v6-NORMAL_CALL",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "completed-sms-v1",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "one-dialogue",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "completed-sms-v2",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "Asia/Bangkok",
+      "status": "PASS"
+    },
+    {
+      "case": "physical-reverse",
+      "timezone": "America/New_York",
+      "status": "PASS"
+    },
+    {
+      "case": "completed-sms-v3",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "completed-sms-v4",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "critical-password",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "categorical-zero-decisions",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "abandoned",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "expired",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-01-one-character",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-01-assessment-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-01-completed",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-unassessed",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "result-sql-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "result-json-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "result-empty-object",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "result-empty-array",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "result-nested-json",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-02-one-character",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-02-assessment-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-02-completed",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N01-one-character",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N01-assessment-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N01-completed",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N02-one-character",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N02-assessment-null",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "call-CC-N02-completed",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "Asia/Bangkok",
+      "status": "PASS"
+    },
+    {
+      "case": "before-epoch",
+      "timezone": "America/New_York",
+      "status": "PASS"
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "UTC",
+      "status": "PASS"
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "Asia/Bangkok",
+      "status": "PASS"
+    },
+    {
+      "case": "millisecond-boundary",
+      "timezone": "America/New_York",
+      "status": "PASS"
+    }
+  ],
+  "recommendation": "IMPLEMENT_SAVE_ONE_SELECT",
+  "sourceSha256": {
+    "package-lock.json": "5853a2bf98640903ea4414b3ae995c969b293822aeeabc61b1f5f81407e4bd5c",
+    "package.json": "0f925b23639af346e192938adf37aea42d1a157b59f54094e3842c1b04d7c50b",
+    "prisma/migrations/202610220001_postgresql_baseline/migration.sql": "207be320c7e797ce74ad11c17131acf140db7726ecf74ba5dc178daa12578c57",
+    "prisma/migrations/migration_lock.toml": "e0f301404b533bea819cafbc56ca2a9d9bcc2cf97d6350473e3a008f0637cc12",
+    "prisma/schema.prisma": "81684b924f1000a8114cd4e2c3834288fb22f64b264311602f7598da088e2985",
+    "src/accounts/contracts.ts": "1b4f8659e0e23f2920d8685569b0c5c133552086811e62eaf487dad98b9616e5",
+    "src/accounts/policy.ts": "95619e366b43d50e0b6ba6354b6c5c62f12588b0578098c4f97b3f1e4165f440",
+    "src/app/(auth)/layout.tsx": "289b402a6e2e267ea7442b12af02471c0f0982ff7aea135ac8c06ac244fbd1dc",
+    "src/app/(auth)/login/page.tsx": "62dcae60a683dacbe34876f8750bad60a63e62370580528bacb8064fa9b282b3",
+    "src/app/(auth)/register/page.tsx": "cfcc6166b290c8d24960e0bbd7e503f9bc7810bf00c9faaa3a4e7aab32587398",
+    "src/app/(training)/dashboard/page.tsx": "f93ca076b70fff76d26b310507d87a31b340fc5109e9956bab24743e642e1887",
+    "src/app/(training)/games/page.tsx": "ed9f2095abd33b2107399d269f37ebefef2653106624d6d8d794a801349a5a1f",
+    "src/app/(training)/games/preview/page.tsx": "f7317241da0fbb24d2f7dfc753877985e4ce3be7dd0e421b0b6dda87e35cf135",
+    "src/app/(training)/games/preview/result/page.tsx": "b132a07dcc91c523e91af5e8c1fcf7039205d173091380039f227fa3e61fb583",
+    "src/app/(training)/knowledge/page.tsx": "b252f630962ed6d0c946487bc91605de042d8640cf51e642ae4cfad62357688c",
+    "src/app/(training)/knowledge/preview/page.tsx": "76d2f5dd519850b383f3aa7e28c422e95c78b43a1a60b9003490e507d4aec13a",
+    "src/app/(training)/layout.tsx": "a1c08a550315eeb33dc8732b12564261503d072f565f679227a2b1ad382e8b97",
+    "src/app/(training)/quiz/[attemptId]/page.tsx": "06edf3f10d713f10c554790c21f3137c3388d4838eb064a0220b1ea53b2a0a16",
+    "src/app/(training)/quiz/details/[mode]/page.tsx": "e1bb9f3e086c805abb65cd697ccc34e118b8f8ffe6c39fb163a98d7b3353dd85",
+    "src/app/(training)/quiz/page.tsx": "5c4a2a47d07b4ea9eff5b7f52eb1f1553f41638cce82ab9792068206ea0be848",
+    "src/app/(training)/scenarios/[scenarioId]/page.tsx": "f23fd3eaa0dd8703fd6b82dcb8fc24beb163a73d2585a2054825472fea47a71f",
+    "src/app/(training)/scenarios/[scenarioId]/prepare/page.tsx": "355360daa921c5e75d2ce7547f4547f5c9e2e94f05b9d64de47c9ba04071a918",
+    "src/app/(training)/scenarios/page.tsx": "454343b0decd8940b239e379e8548bea9fb361d98241fbf208bed5116b0a528c",
+    "src/app/(training)/settings/page.tsx": "2e411e1c4218f91fb2b2e7e45eaf3d71e6a4d0002171c0af65f33233c3494f54",
+    "src/app/(training)/training/[sessionId]/page.tsx": "1e9b7881c620664a783e1d43e6d0e563c060a291dd392e7ff1ba5c474aabbcf2",
+    "src/app/(training)/training/[sessionId]/result/page.tsx": "947b1b9b531ac29bba0fd1cf8e09019776148c9a13d64583dcb4b0b379b5f45b",
+    "src/app/api/auth/[...nextauth]/route.ts": "16cac2c158f8a6fbed3852e022e906ea55d9889b226c44c24a4235eb308aae23",
+    "src/app/api/auth/register/route.ts": "fd9fcdc2cfc5fea8b3e02bd82a785907dc84db26ccc1749af13f1ad00a6f7400",
+    "src/app/api/quiz/attempts/[attemptId]/route.ts": "a077a155f95f9229671da5e425e325ad77fc935254cd1ee7ddfc3ca618e0bc0b",
+    "src/app/api/quiz/attempts/[attemptId]/save/route.ts": "8efc2694d24040575cd78831ec44905cf18af41410bab6a80db15298105deb8b",
+    "src/app/api/quiz/attempts/[attemptId]/submit/route.ts": "266bb09514a7783c7440a5e0f82c6bc87b72a86c09c1c64e1d8085a2b6986dc5",
+    "src/app/api/quiz/attempts/route.ts": "76e77e73dbb6e0c784962bc7df6d4612bbfec9d1ea23127cf0fad64e35385bd0",
+    "src/app/api/quiz/route.ts": "14c77fe0eba42224d9e632511418faf7b6365a578c4a074e9678d65c10ac1424",
+    "src/app/api/scenarios/[scenarioId]/route.ts": "8581e0d8adf3b5ff923ae034d902f580eadf8026321110025b21aac915b3b282",
+    "src/app/api/scenarios/[scenarioId]/start/route.ts": "fb3d0fd546714087df4d8bc6d67ceaa637f34a9d9da5d41adb4fab4921124b9d",
+    "src/app/api/scenarios/route.ts": "0130757691ee8d16c015cf44b3f7a818602786c309fd3c6f39c39e5beb5a0fac",
+    "src/app/api/training/[sessionId]/action/route.ts": "7173d45dbb00f2bbcdc6f183ef1ee16692a3903b78f74b254ef3922d6ea29fde",
+    "src/app/api/training/[sessionId]/message/route.ts": "a83bc9ae6f416493f3dde01044eb8fe7448e01b05837b7962d87cf3a3723cb60",
+    "src/app/api/training/[sessionId]/opening/route.ts": "b5c5629816d8c42e7509b07fa15897dde200f7ac82a4027e09d9aa8f41cb220b",
+    "src/app/api/training/[sessionId]/quit/route.ts": "8d3c609d8d432457c3a3052d1b7e5e91fff0e83e4176de87859c941e93b9d0bb",
+    "src/app/api/training/[sessionId]/result/route.ts": "bdee5b7c177904796e01d97703487a336b28bcb4ba128ebb7ce564ed84f0feaf",
+    "src/app/api/training/[sessionId]/route.ts": "88abd2d49db01bf03a82787d6ae44532791025a629e3e7eb75a49d7abe2ec0e0",
+    "src/app/api/training/[sessionId]/speech/route.ts": "54698040697309c6bdaa493864fe40cc70acd9399de31dd26219dbbcdba759f8",
+    "src/app/api/training/[sessionId]/voice/route.ts": "4cbec35869a286004d557796f4e5874612f64c067188f8be182436bf28cdc1c2",
+    "src/app/design-system.css": "0c977bc1697d12d1cd80aee561343c42fcff7f75cb0a4a1d7eee57a1a4ebfc08",
+    "src/app/error.tsx": "eb47f47e4b434a34bef4bac8151348decaa7f555d3ba8735c584c15ef02fb7ad",
+    "src/app/faq/page.tsx": "8f2a861b48bb76e64fd3846480e0a9752833300ba15da2ac338827173266a827",
+    "src/app/globals.css": "7802c664d8b4290ef19ff658d3d1f5860f7a5c21d920108bc64fde7ded26d495",
+    "src/app/layout.tsx": "85b82e530b9b0ec6682d92bd24ab4bb2dd476f6e4aba2b39371168cc2c618107",
+    "src/app/loading.tsx": "0b7e109e07b76d608a8292f3058971415a4858a10d2c21924c80e48e03626680",
+    "src/app/not-found.tsx": "7c11963915ab784d383738191fa28fdf21b835543adde79e7ac4d0cce8987243",
+    "src/app/page.tsx": "cf1aebee9194b5d094dd6a8b0e78740e005155a899d4d90d5334f3e066145300",
+    "src/app/phone-simulator.css": "39c8b0504ac7200ae7bcb27604f961a8b4879c6d4c3dcc93b3fd7453d1021317",
+    "src/application/account-service.ts": "838e2dfcdffc2fbd44070f3eea5a29665ae9b3ee7f0808ec9dacf7660b635ba3",
+    "src/application/catalog.ts": "586013d6f0cd8638d26e9d9ccb1fb28c9c0cc121ec859f1da3c06cfc158b7d38",
+    "src/application/composition.ts": "f1a77757c197e13cd57a204ed71dd4851195914dcf0cdd4e255c6296ade235f0",
+    "src/application/contracts.ts": "1548d68698f3ffba7b2231cc6fc946d167a66f613064ae479b28cf9549a87449",
+    "src/application/errors.ts": "8a99826adf4fe4459f0b3243f6e97662163ab85113040690448a8304af46cc9f",
+    "src/application/projections.ts": "7d78cf5125b1ca35c6b53670d7a69f95fdd4b472479a5947142db3a396d75d18",
+    "src/application/training-service.ts": "7ca4308d8d058273cb0ef10846f85269eddddc9d32a449ec2f749effb64fc10b",
+    "src/application/voice-service.ts": "db5f1efa8dc28a67b82138a101cc0b4bae5484fbabbffc08b13f830c3e66fb0c",
+    "src/auth/authjs.ts": "73b72cc1f24c79e5ac8663600a9aca6367e9190298cfb63cb16877baafdd4a5a",
+    "src/auth/credentials.ts": "7bce204dda35274b76abd8ff2ce8f6e341ab87a77e3b1e1c6cf88b5aa1371097",
+    "src/auth/identity.ts": "df11789d1a5fe1b720c676c9b8447d58ac38e1f582d3578f16893c8977d3f863",
+    "src/auth/request-authenticator.ts": "58af03578dc28c0dfbe88293eb9c6558963f7fa3fa670c2083855999cc34b5c8",
+    "src/auth/session-policy.ts": "c13b5b4148bd6c451bf965e316570a2aed1fc520ca647f9c64d8b51fa03e5f2c",
+    "src/auth/socket-authenticator.ts": "f42506a98a530648b56195d917a7300701c96bb0dcbd14d34096d3ef3699299c",
+    "src/core.ts": "525b91a7b2e6c8a523b4564ef85873293daba62a138748423f8158db4473999f",
+    "src/dialogue/contracts.ts": "f53d1314b62791a312e37a269fd954de95e3b531f32e5eb0f087a1bbece42d4a",
+    "src/dialogue/mock-provider.ts": "6608826db38f37f1234ccf4b2e664d9f29ff9cfdca4589d947d82e1473902077",
+    "src/dialogue/orchestrator.ts": "459a6274ed596af11ac47765bf5207bba2989d6c5fc4df12447b24438cd77066",
+    "src/dialogue/sanitize.ts": "047b0fa2495b0db3148a1a19494d301c43c126a2c2959a224848dfaa0421329b",
+    "src/domain/call-behavior.ts": "f86f4e097d33f5fd2984f4c110d45c45a8d4ba28c8e1fa1467811bcd81aab9dd",
+    "src/domain/call-center.ts": "f2db538616b49810745da876ea7781a88470caaa1c52312fee8dfdcecaafc99e",
+    "src/domain/call-conversation.ts": "5b9a1d51da44b6a7555df40d16bcaef3485b93e2ef5490458e9bc07cdead2f24",
+    "src/domain/call-signals.ts": "13c5d34d966dfd001a8986f0cf46b3716d85a24b9b57d42ad9f359702ce5fb4e",
+    "src/domain/constants.ts": "cb69d76e3fff0c2f7c325e6fcdcbc49661f7aa52273e845e364efd9f6101ee9d",
+    "src/domain/copy.ts": "e2f0e60412f2efcd7e0fc6943cccad82a504b684be8aaba77d59b4041f4c57b5",
+    "src/domain/critical-failure.ts": "61f8367e02d0ab354a825e5510dcb7a0cb337a088adff6b5f95afe437b5705d6",
+    "src/domain/event-registry.ts": "675e567875fa76187337744a7fb6d0a2a33d35abc90150c6e75d7771d84e5252",
+    "src/domain/event-validator.ts": "0e374145cf3aea4c31097b13a58851738c7b3f59c105ef849ea1659b86d4cf60",
+    "src/domain/persistence-contract.ts": "ef6b1af503779b40a49b9bb767eb04435b9e2b154ff12e87523068b708be917c",
+    "src/domain/phone-model.ts": "5e49e5733ef0ef03b3ded12507d7cbbededdb4f42d080230cb19fd60a86b2f14",
+    "src/domain/repository.ts": "cdd97155a5b7796af20839ea6854f69c69759e50f519900b4c84e56e5cc792eb",
+    "src/domain/schema.ts": "da53154a991290ec89f96a0434a3a2aecd0f190256831618012bb9496cbb6c13",
+    "src/domain/scoring.ts": "144f95f809165dc73c2e1deba020c33e304906d56a366d4e791896c786064e11",
+    "src/domain/session-opportunity.ts": "add1e4334bd2dfb40709de3b3f8d884dc0de81e43f6c664907c29fb2b36e657b",
+    "src/domain/state-machine.ts": "eefa32a5c0ddfca393258c0d81c538a145345983ca93fc26689cc6aefa5b4aa4",
+    "src/domain/template-validator.ts": "2ff8608db0592994d53debcdc31b0824610aa6c0e50848718c0f700bcaceeedd",
+    "src/domain/training-action.ts": "9393c35ec19fc9638b776c5134dbbcbecdab3159e6bdf0b32a4d8ed51381f896",
+    "src/domain/training-repository.ts": "3336ea43787a160a134fe5fbb7ddb55bd01a680f2acacf0971a6c73a119afeb9",
+    "src/domain/types.ts": "70ae87f85521827718fff1f5ae6ebbbd9219119716f8277675757b88fdf9c8ff",
+    "src/fixtures/call-center-behavior-stories.ts": "0f043c84aa583b4a550f3b43f02dfe888366aaceb8f269e146275e9f1e48e301",
+    "src/fixtures/call-center-continuous-stories.ts": "6e217666433b7c1ce8e35871b277330ef91f5a03f2048b23dde1a4241dfe0136",
+    "src/fixtures/call-center-foundation.ts": "f6ba0b922f973eeb37ef63acbf689c214d87a5557970516982ee77db21ba3a2e",
+    "src/fixtures/call-center-stories.ts": "a9e7f8711c3780334f43aea2a06133cffcc86550707f9d697ef4822b5711f868",
+    "src/fixtures/normal-call.ts": "75267c2500160891774035aba5f8e6bf59d030d48523c1e9e2bb58d4d1f28640",
+    "src/fixtures/quiz-bank.ts": "0418b23326335f3b9d9c7e3b93b8b1b1a3c51171577ad9020f3da9c4f1fef37f",
+    "src/fixtures/scam-scenarios.ts": "29b6ff94084b2f1a430998af49a4e5b3d79ed7dce041ff6a1dbb23d8d9b93643",
+    "src/fixtures/sms-phishing-decision-rules.ts": "d66290ad67cd56188fadf80551e70c4d8bbca111592627cb11e0d55cfe2f1ce1",
+    "src/fixtures/sms-phishing-dialogue.ts": "fb1b7adb292940f409f8827ddd10a396e9f911def074dfecd72fc31106ecd0e2",
+    "src/fixtures/sms-phishing-feedback.ts": "157d3e80fa898ae3dc70caee002fc9b9105aab24c4ae97b155a970b045db9d79",
+    "src/fixtures/sms-phishing.ts": "f2dc39a3ee515f95e483bfdf8ebd1c1acf38ee10b8f246e96305b82c498fc7b1",
+    "src/frontend/actions.tsx": "14e01ff655b83f096480a6f52905369f25c1bd20944caae38a96314f68ecceaa",
+    "src/frontend/api.ts": "2fbc118c2f8a816f605003af496c3fa41f12a13beab2f65728f2cda4f8b9f063",
+    "src/frontend/auth.tsx": "756bc03063014f34a6d2a40179c2f1ed3f978cf3f345e7402c7126e2d4e9bd97",
+    "src/frontend/call-transport.ts": "ad0f943f6969f66becc38de3c937ff7c5d0d7c5cfeb702793e7ac601c9beda2c",
+    "src/frontend/demo-content.ts": "323a2200b0f0f1a27b57873f3d51bfc31b40882cd1e6905d3c80a042f8029c12",
+    "src/frontend/hooks.ts": "2a8d97d2c8c5f68688761a626d8ef18b490b3a11edd8d7bac94ea13e0756ab7c",
+    "src/frontend/learning-pages.tsx": "accc5412b12d9a8c5cfb642b2210ae9a33cb7ab19d105aee8f59e63f55f9ddc1",
+    "src/frontend/microphone.ts": "93f0887c370cf2edaf5f00b9eef3b3619c4d88a302b06a019f95f3cc464d91c4",
+    "src/frontend/phone-simulator.tsx": "7a516e8c0a219002ef6e5c8c8361a3ef7ebf55a151f176231c5a5377393389b5",
+    "src/frontend/preview-pages.tsx": "a7b0aaf860bec8fcf3e092f98b4d735e1ec94914597f1f8c0bc984194c97b8b5",
+    "src/frontend/quiz-detail.tsx": "47fe0b64530c898dcd62bce1a0f5b47d0d07769f84845f43618eecfefcbf35c9",
+    "src/frontend/quiz.tsx": "38a2b9fce787636b2e012e76772794b2097360d60e9da20ecd205bfa6c828db8",
+    "src/frontend/result.tsx": "cb4c38272260229719f29bed169aed6014a0ccfe3da61ce177a2c77c3b4cd661",
+    "src/frontend/scenarios.tsx": "894642a63a76186e2724ad1d7cd932e4ca1ba1bace570ccd16d8d9bd9f28419f",
+    "src/frontend/shell.tsx": "698e0a650565c7aa313833605a26e28e0c53883a07de1b9485c44b58ed9f07cb",
+    "src/frontend/training.tsx": "7a1f24d42e551f990c691e858c35562ce9bd341b79648c63a6296bc9623551ff",
+    "src/frontend/ui.tsx": "f47c6e3d0ae2a995e89e3e211ec32825ea1ca5c7d4aef8679a702e8c9310d6be",
+    "src/frontend/voice.tsx": "d4239d44a78d4006abf915a3f1a372d3c3f6fd62f5d13d8ec5c9b72f8f3d6a21",
+    "src/http/auth.ts": "7a85f6056c7082bc4aa929692aba8622f8632c57e713234500ace49883a381b3",
+    "src/http/body.ts": "f501087d8c60a3107ec9295cc8657b5b0bbaa0f87db8fd8ea7ff49c33c84d189",
+    "src/http/dto.ts": "b730f22bc0752c4ba5daf1d74bee9e3d54d0eb8a052167103b7de47f8a8ed1d4",
+    "src/http/errors.ts": "e67090c0844a02db24a7ab612c45df1a4730e0db8e2ade49029ac27b8ccd8528",
+    "src/http/handler.ts": "fa865653610e416952dd12a2db14a76b79da44da75770ca3d247df412111cc36",
+    "src/http/mapping.ts": "c14406fdd75957efe1661ada2d6aa7c74982ead56490e671ef86dcab6c1e7a2a",
+    "src/http/quiz-handler.ts": "b285d68715de6e63caf8b3fe23686867b5f77757ab679b7af3c8ac177ae308e1",
+    "src/http/register.ts": "9fd4fd75d3d46ca65121fe7071d8242b040a78ce19bb64842363ed982eaa4559",
+    "src/http/speech-handler.ts": "d6015d368133c09ba56fcc298b967ee8023453306664fb231327fee814bb7c16",
+    "src/http/voice-handler.ts": "ebdec7524526db38c5f3e48e3a1b163957d98442729a2505edad62dd0072d6d9",
+    "src/index.ts": "ee0399ca3ce8b694684eb359252912406e11144bf10b27b2a7858e0e87b84370",
+    "src/observability/latency.ts": "1f240e5fc601f1bcf17d19bd8317f808a0f417a7bce3df5980aca53ac42d2517",
+    "src/observability/measured-repository.ts": "a3ac25fc4fa1bbeac49fc7f1d32ac0012dbbce1e66048b671c884bb044234267",
+    "src/persistence/prisma-account-repository.ts": "f96b0a664f63bb6b11a7a647e9f88f5852cf7991707d42d9e34ad99d549b97b3",
+    "src/persistence/prisma-client.ts": "a02b73a1b8c639eb045df163a742daa2358b7bd3c007ad06aa616f2c2cf0f5cc",
+    "src/persistence/prisma-repository.ts": "385895194aaa03fa482f5e76cd7950176027057a3a3e6e488876b4013be5c483",
+    "src/persistence/quiz-repository.ts": "4a9b91103f9fc3b6f9212777069463c14a5157e9a752a5649a4cc3948408d04d",
+    "src/persistence/transaction-diagnostics.ts": "37dd3ff8b2570a47d8f9c79f1c5605e6d57901f96d84ddd27554d88b69d1ae98",
+    "src/providers/azure-speech.ts": "507abc8f47d814d672c3812e8db9df3e12571f10033e88ea4b63fe80bbd06710",
+    "src/providers/elevenlabs-speech.ts": "b4b57cfe3899385306976f358e7e5dcaec1b706d3bb0f30d5a3aacdd061faca5",
+    "src/providers/groq-scenario-provider.ts": "9f82d6d0a6103f1823e2e040f1d0d545215ba18474175383c7ec5243e7c1be11",
+    "src/providers/openai-prompt.ts": "647dcd838ca7661bd36e078e7890030364b461fb10bf6cd9c9670e589be750fb",
+    "src/providers/openai-scenario-provider.ts": "d305883fcefa4eee9bea07fdb83d004ae894e5345ccee79c7242e08b2020f7f8",
+    "src/public-api/account-policy.ts": "755f6f7cba964b411092269ecb4214a8bbb98e0b3363834c2fa8f9df2591f7ef",
+    "src/public-api/contracts.ts": "d1ca2d67d20f8e5d036888412da44248143994aa441b3d2501b192d935c1cf3d",
+    "src/public-api/phone.ts": "30cbb839fb1c281685c2a90799dd183ca4e076ca735cff4ab0eeb0c4c3364aca",
+    "src/public-api/quiz.ts": "3c9232dc8d7767744857696aa0141e78162d1a636c051ab6aec7f153af6cc71c",
+    "src/public-api/voice.ts": "d34a3486671fb6b98ec84f542d6d1be1406dc64fb4227d475af131e4b1418d58",
+    "src/quiz/contracts.ts": "bbf7d9461d076e9b291ab7925212973e5d618b3366ca57561b2be20121ecb3f4",
+    "src/quiz/memory-repository.ts": "0e8a471d195428f38d305ff5aa024210362b4d89b6e9a8260027dfc6df6f4e7e",
+    "src/quiz/service.ts": "098fe39765163bfde916f9851140ec0c9fcce809d28ac2573b6e9b7b411683e5",
+    "src/realtime/call-server.ts": "54ffb0cf40e8a27d1f71a98b84491edf0d8890bab76988abae6fe0e83d325158",
+    "src/security/bcrypt-password-hasher.ts": "160321ddc8b5de609251199eae368f38f0a6208efadecc84c1c6dc8a479e368d",
+    "src/server/account-runtime.ts": "ae6a6f680b8320218eedd8613e31b1dffe979c1d1b659ff53f47757f37814cde",
+    "src/server/call-runtime.ts": "75e8cf4a7973452a442f715e8cbb18040f12e9b4424a45e811da278500cc104e",
+    "src/server/call-story.ts": "14559b1993fa8ffab5a836a985878e6099c91ac15906ff8281f9b8e7f5740e9b",
+    "src/server/call-variant.ts": "7b92f7709aba0b3dea4fff15c1fe8530d7a86a051cf1319d084c428f8f0de8e8",
+    "src/server/database.ts": "86bfa9153eef334cdd5a79aa488eceec90219d1f4ff59dc98ead3a58458c9e19",
+    "src/server/quiz-runtime.ts": "0e7e3a7c74d92fb0c09b837e1a39978f4701fcc89a0c742e1d489f8b78cfe5f6",
+    "src/server/registration-diagnostics.ts": "76a6c11aebfd8a8f4ff6cd676c3b0b9247fde48eebbba8c27338e9a09395173a",
+    "src/server/runtime.ts": "6e53413f15a33105b692cd3da33e435125f6aa15d8788e521841d70ba94468d5",
+    "src/server/scenario-provider.ts": "b7193cd824471e2cf5d6834959c2dbb27a23579ad1138db3d9238bdfa21ee148",
+    "src/server/serve.ts": "4e1bc22e1aaf75d76f142f06eb95c7de929b51b463cb9ba9bcc66b10a1f08db2",
+    "src/server/training-diagnostics.ts": "9e559869c521a378beebd5f61f0b446ecd9b180204fff01d679fcfd7e534019e",
+    "src/server/voice-rate-limit.ts": "50bcfeb3957edf03d843bad6c36d83d79b4af7cc0a6bbdae566f689996679bd9",
+    "src/server/voice-runtime.ts": "ff60574b4e1126ec2da5a13031f64898fd2a3f8aea02ac6a01253518c844e0e2",
+    "src/speech/contracts.ts": "86b6171247d1782cb27404d7ea809b0580ea51a043ed4e0fd458a1c4e7918f7f",
+    "src/speech/pcm-wav.ts": "62e4a350fde269db0d7f330b0833bea8b2f7ca1fc85f54f14a20af2c20760efb",
+    "src/persistence/aggregate-reader.ts": "9f205bc3b50fd7f2576d46765405c346cd9e35340c03c97a018ccfe323e6b991"
+  },
+  "proofSha256": {
+    "scripts/prove-save-reload.mjs": "c4e1a0b96141e28fb7f7761f9e35467ece6c501b5d3a9916179e198cf6351811",
+    "scripts/shadow-aggregate/save-reload.mjs": "2fe021a112fee2a1c34553e37819c30f04fe26293652a508d941e38afd8dc383",
+    "tests/save-reload-shadow.test.ts": "b86134352a3d55ce44fc45e99102b06205ace3008b2c58ad851ce919edd90533"
+  },
+  "versions": {
+    "prisma": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "@prisma/adapter-pg": "7.10.0",
+    "pg": "8.23.1"
+  },
+  "decoderSha256": "72fccd9cca17d5357baf8b89447f2c0ca0f615613355a6fc9af1f9d5ac2984e5",
+  "stage": "case",
+  "attempts": [
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "duplicate-dialogue-replay",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "casMatched": false,
+      "reloads": 0,
+      "outcome": "REVISION_CONFLICT"
+    },
+    {
+      "case": "stale-revision-no-reload",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "stale-revision-no-reload",
+      "casMatched": false,
+      "reloads": 0,
+      "outcome": "REVISION_CONFLICT"
+    },
+    {
+      "case": "concurrent-distinct-CAS-one-winner",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "concurrent-distinct-CAS-one-winner",
+      "casMatched": false,
+      "reloads": 0,
+      "outcome": "REVISION_CONFLICT"
+    },
+    {
+      "case": "concurrent-duplicate-turn-one-commit",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "concurrent-duplicate-turn-one-commit",
+      "casMatched": false,
+      "reloads": 0,
+      "outcome": "REVISION_CONFLICT"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-decision",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-decision",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-dialogue",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-dialogue",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "foreign-key-write-failure-atomic-rollback",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "P2003"
+    },
+    {
+      "case": "owner-identity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "owner-identity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "SESSION_IDENTITY_IMMUTABLE"
+    },
+    {
+      "case": "message-history-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "message-history-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "HISTORY_IMMUTABLE"
+    },
+    {
+      "case": "opportunity-identity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "opportunity-identity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "OPPORTUNITY_IMMUTABLE"
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "OPPORTUNITY_IMMUTABLE"
+    },
+    {
+      "case": "corpus-historical-0-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-1-v2-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-2-v3-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-3-v4-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-4-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-5-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-6-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-7-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-8-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-9-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-10-v1-DEFAULT-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-11-v1-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-12-v1-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-13-v2-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-14-v2-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-15-v3-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-16-v3-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-17-v3-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-18-v3-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-19-v4-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-20-v4-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-21-v4-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-22-v4-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-23-v5-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-24-v5-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-25-v5-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-26-v5-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-27-v6-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-28-v6-SCAM_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-29-v6-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-historical-30-v6-NORMAL_CALL-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-completed-sms-v1-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-one-dialogue-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-completed-sms-v2-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-physical-reverse-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-completed-sms-v3-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-completed-sms-v4-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-critical-password-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-categorical-zero-decisions-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-abandoned-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-expired-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-01-one-character-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-01-assessment-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-01-completed-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-unassessed-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-result-sql-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-result-json-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-result-empty-object-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-result-empty-array-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-result-nested-json-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-02-one-character-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-02-assessment-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-02-completed-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N01-one-character-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N01-assessment-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N01-completed-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N02-one-character-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N02-assessment-null-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-call-CC-N02-completed-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-before-epoch-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-millisecond-boundary-UTC",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "result-immutability-rejection",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "RESULT_IMMUTABLE"
+    },
+    {
+      "case": "malformed-SessionOpportunity",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "malformed-TrainingEvent",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "malformed-TrainingMessage",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "malformed-DialogueTurnReceipt",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "INJECTED_SHADOW_ROLLBACK"
+    },
+    {
+      "case": "corpus-physical-reverse-Asia/Bangkok",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-before-epoch-Asia/Bangkok",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-millisecond-boundary-Asia/Bangkok",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-physical-reverse-America/New_York",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-before-epoch-America/New_York",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    },
+    {
+      "case": "corpus-millisecond-boundary-America/New_York",
+      "casMatched": true,
+      "reloads": 1,
+      "outcome": "COMMITTED"
+    }
+  ],
+  "comparisons": [
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "normal-dialogue-opportunity-events-completion-result-and-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "duplicate-dialogue-replay",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "expiry-only-save-and-competing-expiry",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "stale-revision-no-reload",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "concurrent-distinct-CAS-one-winner",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "concurrent-duplicate-turn-one-commit",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-decision",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-decision",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-transition",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-critical",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-dialogue",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-dialogue",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "beforeCommit-rollback-and-retry-safe-result",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "foreign-key-write-failure-atomic-rollback",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "owner-identity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true,
+      "unadaptedGetScopeReturnedNull": false
+    },
+    {
+      "case": "owner-identity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "SESSION_IDENTITY_IMMUTABLE",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "SESSION_IDENTITY_IMMUTABLE",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true,
+      "unadaptedGetScopeReturnedNull": true
+    },
+    {
+      "case": "message-history-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "message-history-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "HISTORY_IMMUTABLE",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "HISTORY_IMMUTABLE",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "opportunity-identity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "opportunity-identity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "OPPORTUNITY_IMMUTABLE",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "OPPORTUNITY_IMMUTABLE",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "finalized-opportunity-tamper",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "OPPORTUNITY_IMMUTABLE",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "OPPORTUNITY_IMMUTABLE",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-0-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-1-v2-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-2-v3-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-3-v4-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-4-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-5-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-6-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-7-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-8-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-9-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-10-v1-DEFAULT-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-11-v1-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-12-v1-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-13-v2-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-14-v2-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-15-v3-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-16-v3-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-17-v3-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-18-v3-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-19-v4-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-20-v4-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-21-v4-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-22-v4-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-23-v5-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-24-v5-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-25-v5-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-26-v5-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-27-v6-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-28-v6-SCAM_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-29-v6-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-historical-30-v6-NORMAL_CALL-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-completed-sms-v1-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-one-dialogue-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-completed-sms-v2-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-physical-reverse-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-completed-sms-v3-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-completed-sms-v4-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-critical-password-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-categorical-zero-decisions-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-abandoned-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-expired-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-01-one-character-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-01-assessment-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-01-completed-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-unassessed-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-result-sql-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-result-json-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-result-empty-object-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-result-empty-array-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-result-nested-json-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-02-one-character-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-02-assessment-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-02-completed-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N01-one-character-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N01-assessment-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N01-completed-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N02-one-character-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N02-assessment-null-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-call-CC-N02-completed-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-before-epoch-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-millisecond-boundary-UTC",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "result-immutability-rejection",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "RESULT_IMMUTABLE",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "RESULT_IMMUTABLE",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "malformed-SessionOpportunity",
+      "malformed": true,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": null,
+      "candidateError": "UNSUPPORTED_PERSISTED_ORDERING"
+    },
+    {
+      "case": "malformed-TrainingEvent",
+      "malformed": true,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": null,
+      "candidateError": "UNSUPPORTED_PERSISTED_ORDERING"
+    },
+    {
+      "case": "malformed-TrainingMessage",
+      "malformed": true,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": null,
+      "candidateError": "UNSUPPORTED_PERSISTED_ORDERING"
+    },
+    {
+      "case": "malformed-DialogueTurnReceipt",
+      "malformed": true,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": null,
+      "candidateError": "UNSUPPORTED_PERSISTED_ORDERING"
+    },
+    {
+      "case": "corpus-physical-reverse-Asia/Bangkok",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-before-epoch-Asia/Bangkok",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-millisecond-boundary-Asia/Bangkok",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-physical-reverse-America/New_York",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-before-epoch-America/New_York",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    },
+    {
+      "case": "corpus-millisecond-boundary-America/New_York",
+      "malformed": false,
+      "baselineStatements": 8,
+      "baselineValidation": "ACCEPT",
+      "rowMismatches": [],
+      "domainMismatches": [],
+      "candidateValidation": "ACCEPT",
+      "candidateError": null,
+      "candidateStatements": 1,
+      "postCasRevisionEquivalent": true
+    }
+  ],
+  "summary": {
+    "supportedComparisons": 117,
+    "exactMatches": 117,
+    "malformedRejections": 4,
+    "baselineReloadSelects": 8,
+    "candidateReloadSelects": 1,
+    "staleCasAttempts": 4,
+    "getScopedOwnerProbe": true
+  },
+  "runtimeUnchanged": true,
+  "proofUnchanged": true,
+  "completedAt": "2026-10-24T18:25:46.538Z"
+}

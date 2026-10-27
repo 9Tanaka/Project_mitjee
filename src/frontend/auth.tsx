@@ -18,11 +18,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
   return children;
 }
 export function AuthNavigation() {
-  const { status } = useSession(); const router = useRouter();
+  const { status } = useSession();
   const lock = useRef(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(false);
   async function logout() {
     if (lock.current) return; lock.current = true; setBusy(true); setError(false);
-    try { await signOut({ redirect: false, redirectTo: "/login" }); router.replace("/login"); router.refresh(); }
+    // Let Auth.js complete its cookie cleanup and perform a document navigation.
+    // Avoid SPA refresh/session refetch work competing with logout cookie removal.
+    // Session strategy/lifetime and backend verification are unchanged.
+    try { await signOut({ redirect: true, redirectTo: "/login" }); }
     catch { setError(true); }
     finally { lock.current = false; setBusy(false); }
   }
@@ -30,6 +33,7 @@ export function AuthNavigation() {
   return <nav aria-label="เมนูหลัก" className="nav">
     {status === "authenticated" ? <>
       <Link href="/scenarios" className="nav-link">สถานการณ์ฝึก</Link>
+      <Link href="/quiz" className="nav-link">Quiz</Link>
       <button className="nav-logout" onClick={() => void logout()} disabled={busy}>{busy ? "กำลังออก…" : "ออกจากระบบ"}</button>
       {error && <span role="alert" className="field-error">ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง</span>}
     </> : <><Link href="/login" className="nav-link">เข้าสู่ระบบ</Link><Link href="/register" className="button button-small">สมัครสมาชิก</Link></>}

@@ -5,6 +5,7 @@ import { copy } from "../src/domain/copy.js";
 import type { TrainingRepository } from "../src/domain/training-repository.js";
 import type { ActionInput } from "../src/domain/training-action.js";
 import { smsPhishingDialogueFixture as fixture } from "../src/fixtures/sms-phishing-dialogue.js";
+import { normalCallFixture } from "../src/fixtures/normal-call.js";
 import { ScenarioDialogueOrchestrator } from "../src/dialogue/orchestrator.js";
 import { MockScenarioModelProvider } from "../src/dialogue/mock-provider.js";
 
@@ -20,9 +21,9 @@ export const safeActions: ActionInput[] = [
   { kind: "PROGRESS", transitionId: "resolve" },
 ];
 
-export async function repositoryHarness(repository: TrainingRepository, id = randomUUID()) {
-  const core = await TrainingCore.create([fixture], repository, () => 1000);
-  await core.start(id, "test-owner", fixture.id, fixture.version);
+export async function repositoryHarness(repository: TrainingRepository, id = randomUUID(), template = fixture) {
+  const core = await TrainingCore.create([template], repository, () => 1000);
+  await core.start(id, "test-owner", template.id, template.version);
   let sequence = 0;
   const current = () => core.resume(id, "test-owner");
   const command = async (action: ActionInput, actionId = `a-${++sequence}`) => ({
@@ -113,11 +114,14 @@ export function repositoryContract(name: string, createRepository: () => Trainin
       expect(await h.current()).toEqual(before); expect(before.opportunities).toHaveLength(2);
     });
     it("published template and referenced version are immutable across Core instances", async () => {
-      const h = await repositoryHarness(createRepository()); const changed = copy(fixture); changed.title = "Changed";
+      // The shared catalog already owns SMS v3. Use a private template identity
+      // so publishing a new test version never conflicts with authored history.
+      const id = randomUUID(), template = { ...fixture, id: `immutability-${id}` };
+      const h = await repositoryHarness(createRepository(), id, template); const changed = copy(template); changed.title = "Changed";
       await expect(h.core.publishTemplate(changed)).rejects.toThrow("PUBLISHED_TEMPLATE_IMMUTABLE");
       const other = await TrainingCore.create([], h.repository, () => 1000);
       await expect(other.publishTemplate(changed)).rejects.toThrow("PUBLISHED_TEMPLATE_IMMUTABLE");
-      await other.publishTemplate({ ...fixture, version: 3 });
+      await other.publishTemplate({ ...template, version: 3 });
       expect((await other.getSessionTemplate(h.id, "test-owner")).version).toBe(2);
       const session = await h.current(); session.templateVersion = 3; session.revision++;
       await expect(h.repository.save(session, 0)).rejects.toThrow("SESSION_IDENTITY_IMMUTABLE");
@@ -125,7 +129,7 @@ export function repositoryContract(name: string, createRepository: () => Trainin
     });
     it("variant is part of the template key", async () => {
       const repository = createRepository(); const id = `variant-${randomUUID()}`;
-      await repository.publish({ ...fixture, id, category: "CALL_CENTER", variant: "NORMAL_CALL" });
+      await repository.publish({ ...normalCallFixture, id, version: 2 });
       await repository.publish({ ...fixture, id, category: "CALL_CENTER", variant: "SCAM_CALL" });
       expect((await repository.getTemplate(id, 2, "NORMAL_CALL")).variant).toBe("NORMAL_CALL");
       expect((await repository.getTemplate(id, 2, "SCAM_CALL")).variant).toBe("SCAM_CALL");
